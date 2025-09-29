@@ -11,6 +11,7 @@
 #include <iostream>
 
 // Column values are rounded to the nearest byte
+// TODO this would be better if definitely fast, using SIMD to unpack entire rows?
 template <typename Columns>
 class PackedVectorAligned {
 public:
