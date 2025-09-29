@@ -15,10 +15,10 @@ class PackedVector {
 public:
     // We read ulint at a time, this ensures we never need to read more than one ulint
     constexpr static uchar max_width = NUM_BITS(ulint) - 7; // should be 57 bits
-    constexpr static size_t NumCols = static_cast<size_t>(Columns::NUM_COLS);
+    constexpr static size_t NUM_COLS = static_cast<size_t>(Columns::NUM_COLS);
 
     PackedVector() = default;
-    PackedVector(const ulint num_rows, const std::array<uchar, NumCols>& widths) {
+    PackedVector(const ulint num_rows, const std::array<uchar, NUM_COLS>& widths) {
         PackedVector::num_rows = num_rows;
         PackedVector::widths = widths;
 
@@ -55,26 +55,33 @@ public:
     }
 
     template<size_t... Indices>
-    void set_row(size_t i, const std::array<ulint, NumCols>& values, std::index_sequence<Indices...>) {
+    void set_row(size_t i, const std::array<ulint, NUM_COLS>& values, std::index_sequence<Indices...>) {
         (set<static_cast<Columns>(Indices)>(i, values[Indices]), ...);
     }
-    void set_row(size_t i, const std::array<ulint, NumCols>& values) {
-        set_row(i, values, std::make_index_sequence<NumCols>{});
+    void set_row(size_t i, const std::array<ulint, NUM_COLS>& values) {
+        set_row(i, values, std::make_index_sequence<NUM_COLS>{});
     }
 
     template<size_t... Indices>
-    std::array<ulint, NumCols> get_row(size_t i, std::index_sequence<Indices...>) const { 
+    std::array<ulint, NUM_COLS> get_row(size_t i, std::index_sequence<Indices...>) const { 
         return {get<static_cast<Columns>(Indices)>(i)...};
     }
-    std::array<ulint, NumCols> get_row(size_t i) const { 
-        return get_row(i, std::make_index_sequence<NumCols>{});
+    std::array<ulint, NUM_COLS> get_row(size_t i) const { 
+        return get_row(i, std::make_index_sequence<NUM_COLS>{});
     }
 
     size_t size() const { return num_rows; }
-    size_t get_data_size() const { return data_size; }
+    size_t data_size() const { 
+        return CEIL_DIV(vector_width, NUM_BITS(word_t)) + sizeof(ulint)/sizeof(word_t);
+    }
+
     size_t get_num_rows() const { return num_rows; }
-    size_t get_num_cols() const { return NumCols; }
-    size_t get_row_width() const { return row_width; }
+    size_t get_num_cols() const { return NUM_COLS; }
+    std::array<uchar, NUM_COLS> get_widths() const { return widths; }
+
+    // size_t offsets() const { return offsets; }
+    // size_t row_width() const { return row_width; }
+    // size_t vector_width() const { return vector_width; }
 
     size_t serialize(std::ostream &out) {
         size_t written_bytes = 0;
@@ -98,31 +105,29 @@ public:
         in.read((char *)&num_rows, sizeof(num_rows));
         in.read((char *)widths.data(), sizeof(widths));
         init();
-        in.read((char *)data.data(), data_size * sizeof(word_t));
+        in.read((char *)data.data(), data_size() * sizeof(word_t));
     }
 
 private:
     size_t num_rows;
     size_t vector_width; // bit width of stored data (actual data size might be larger due to padding)
-    size_t data_size; // number of words in data vector
     size_t row_width; // width of each row in bits
 
-    std::array<uchar, NumCols> widths; // Bit width of each column
-    std::array<uint16_t, NumCols> offsets; // Offset of the first bit of each column in the vector
+    std::array<uchar, NUM_COLS> widths; // Bit width of each column
+    std::array<uint16_t, NUM_COLS> offsets; // Offset of the first bit of each column in the vector
 
     std::vector<word_t> data;
 
     void init() {
         size_t bit_pos = 0;
-        for (size_t i = 0; i < NumCols; i++) {
+        for (size_t i = 0; i < NUM_COLS; i++) {
             assert(widths[i] <= max_width);
             offsets[i] = bit_pos;
             bit_pos += widths[i];
         }
         row_width = bit_pos;
         vector_width = num_rows * row_width;
-        data_size = CEIL_DIV(vector_width, NUM_BITS(word_t)) + sizeof(ulint)/sizeof(word_t);
-        data.resize(data_size);
+        data.resize(data_size());
     }
 
     struct bit_pos {

@@ -1,10 +1,10 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Iinclude -O3
 
-HEADERS = $(wildcard include/*.hpp) $(wildcard include/ds/*.hpp)
+HEADERS = $(wildcard include/*.hpp) $(wildcard include/ds/*.hpp) $(wildcard include/move/*.hpp)
 
 # all: build invert move_build
-all: move_build
+all: move_test
 
 # Target to build the executable for build.cpp
 # build: src/build.cpp $(HEADERS)
@@ -15,8 +15,8 @@ all: move_build
 # 	$(CXX) $(CXXFLAGS) -o invert src/invert.cpp
 
 # Target to build the test executable for move_build.cpp
-move_build: src/move_build.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -o move_build src/move_build.cpp
+move_test: src/move_test.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -o move_test src/move_test.cpp
 
 .PHONY: debug
 debug: CXXFLAGS += -g -O0
@@ -24,4 +24,4 @@ debug: all
 
 # Clean up build files
 clean:
-	rm -f build invert move_build
+	rm -f build invert move_build move_test

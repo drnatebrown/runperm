@@ -2,9 +2,9 @@
 #define _MOVE_TABLE_HH
 
 #include "common.hpp"
-#include "move_row.hpp"
-#include "move_columns.hpp"
-#include "packed_vector.hpp"
+#include "move/move_row.hpp"
+#include "move/move_columns.hpp"
+#include "ds/packed_vector.hpp"
 
 template<typename Derived, typename ColumnsType>
 struct MoveTableInterface {
@@ -72,6 +72,8 @@ struct MoveTable : public MoveTableInterface<MoveTable<Row>, typename Row::Colum
 
     MoveTable() = default;
     MoveTable(PackedVector<Columns> &vec) {
+        Row::assert_widths(vec.get_widths());
+        
         table = std::vector<Row>(vec.size());
         for (size_t i = 0; i < vec.size(); ++i) {
             set_row(i, vec.get_row(i));

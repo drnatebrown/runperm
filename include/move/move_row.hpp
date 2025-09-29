@@ -2,23 +2,9 @@
 #define _MOVE_ROW_HPP
 
 #include "common.hpp"
-#include "move_columns.hpp"
+#include "move/move_columns.hpp"
 #include <stdexcept>
 #include <array>
-
-// template <>
-// struct MoveRowTraits<MoveCols> {
-//     static constexpr size_t PRIMARY_BITS = BYTES_TO_BITS(LENGTH_BYTES);
-//     static constexpr size_t POINTER_BITS = BYTES_TO_BITS(POINTER_BYTES);
-//     static constexpr size_t OFFSET_BITS = BYTES_TO_BITS(OFFSET_BYTES);
-// };
-
-// template <>
-// struct MoveRowTraits<MoveColsIdx> {
-//     static constexpr size_t PRIMARY_BITS = BYTES_TO_BITS(START_BYTES);
-//     static constexpr size_t POINTER_BITS = BYTES_TO_BITS(POINTER_BYTES);
-//     static constexpr size_t OFFSET_BITS = BYTES_TO_BITS(OFFSET_BYTES);
-// };
 
 template <typename ColumnsType>
 struct MoveRowTraits;
@@ -75,6 +61,13 @@ struct MoveRow {
     std::array<ulint, NUM_COLS> get() const {
         return get(std::make_index_sequence<NUM_COLS>{});
     }
+
+    static void assert_widths(const std::array<uchar, NUM_COLS>& widths) {
+        assert(widths[static_cast<size_t>(ColsTraits::PRIMARY)] <= RowTraits::PRIMARY_BITS);
+        assert(widths[static_cast<size_t>(Columns::POINTER)] <= RowTraits::POINTER_BITS);
+        assert(widths[static_cast<size_t>(Columns::OFFSET)] <= RowTraits::OFFSET_BITS);
+    }
+
 } __attribute__((packed));
 
 // Column Sizes for MoveCols

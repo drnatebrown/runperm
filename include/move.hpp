@@ -12,7 +12,8 @@
 #include <numeric>
 
 #include "common.hpp"
-#include "ds/move_table.hpp"
+#include "move/move_table.hpp"
+#include "ds/packed_vector.hpp"
 
 struct PermutationStats {
     size_t split_num_rows; // number of intervals after capping intervals to max allowed length
@@ -32,10 +33,15 @@ struct PermutationStats {
         if (max_allowed_length) { 
             for (ulint length : lengths) {
                 ulint num_splits = length / *max_allowed_length;
-                split_num_rows += num_splits;
-                max_observed_length = (num_splits > 0) ? *max_allowed_length : std::max(max_observed_length, length);
                 permutation_size += length;
-
+                if (num_splits > 0) {
+                    split_num_rows += (num_splits - 1);
+                    if (length % *max_allowed_length != 0) split_num_rows++;
+                    max_observed_length = *max_allowed_length;
+                }
+                else {
+                    max_observed_length = std::max(max_observed_length, length);
+                }
             }
         } else {
             for (ulint length : lengths) {
@@ -204,14 +210,16 @@ private:
 
         // If intervals are split, need to find where the split intervals permute to
         // TODO can we handle this when we preprocessed the lengths?
+        std::vector<ulint> new_interval_permutations;
         if (stats.max_allowed_length) {
-            std::vector<ulint> new_interval_permutations = std::vector<ulint>(stats.split_num_rows);
+            new_interval_permutations = std::vector<ulint>(stats.split_num_rows);
             size_t tbl_idx = 0;
             auto add_interval_permutation = [&](size_t i, size_t _length, size_t split) {
                 new_interval_permutations[tbl_idx++] = interval_permutation[i] + split * (*stats.max_allowed_length);
             };
             split_loop(add_interval_permutation);
             final_interval_permutation = &new_interval_permutations;
+            assert(tbl_idx == stats.split_num_rows);
         }
 
         // Sort the interval idx by their interval permutation
@@ -255,8 +263,11 @@ private:
     
     inline Position fast_forward(Position pos) const {
         if constexpr (ColsTraits::IS_LENGTH) {
-            while (pos.offset >= get_length(pos)) {
-                pos.offset -= get_length(pos.interval++);
+            ulint length = get_length(pos);
+            while (pos.offset >= length) {
+                pos.offset -= length;
+                ++pos.interval;
+                length = get_length(pos);
             }    
         } else if constexpr (ColsTraits::IS_START) {
             ulint curr_start = pos.idx - pos.offset;
