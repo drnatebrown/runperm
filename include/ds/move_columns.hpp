@@ -46,6 +46,7 @@ struct MoveColsTraits<MoveColsIdx> {
     
     struct Position {
         ulint interval = 0;
+        ulint offset = 0;
         ulint idx = 0;
     };
 };

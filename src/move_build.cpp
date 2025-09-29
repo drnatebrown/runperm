@@ -5,71 +5,231 @@
 #include <sstream>
 #include <optional>
 #include <vector>
+#include <chrono>
+#include <functional>
 
 using namespace std;
+using namespace std::chrono;
 
-// Test data
-vector<ulint> test_lengths = {10, 20, 15, 8};
-vector<ulint> test_permutations = {0, 10, 30, 45};
-size_t test_n = 53;
-
-void test_length_config() {
-    cout << "Testing LengthConfig..." << endl;
-    
-    // Test without max length
-    LengthConfig config1(test_lengths, std::nullopt);
-    assert(config1.split_num_rows == 4);
-    cout << "  No capping: " << config1.split_num_rows << " rows, max_length: " << config1.max_observed_length << endl;
-    
-    // Test with max length
-    LengthConfig config2(test_lengths, 12);
-    cout << "  With capping: " << config2.split_num_rows << " rows, max_length: " << config2.max_observed_length << endl;
-    
-    cout << "LengthConfig tests passed!" << endl << endl;
+std::vector<ulint> random_permutation(size_t n) {
+    std::vector<ulint> permutation(n);
+    for (size_t i = 0; i < n; ++i) {
+        permutation[i] = i;
+    }
+    std::random_shuffle(permutation.begin(), permutation.end());
+    return permutation;
 }
 
-template<typename Table>
-void test_table_type(const string& name) {
-    cout << "Testing " << name << "..." << endl;
+// ... existing code ...
+std::vector<ulint> random_runny_permutation(size_t n, size_t r) {
+    if (r == 0 || r > n) {
+        return random_permutation(n);
+    }
     
-    // Test basic construction and operations
-    LengthConfig config(test_lengths, std::nullopt);
+    // Step 1: Choose r-1 random break points in range [1, n-1] to create r intervals
+    std::vector<size_t> break_points;
+    if (r > 1) {
+        std::vector<size_t> possible_breaks;
+        for (size_t i = 1; i < n; ++i) {
+            possible_breaks.push_back(i);
+        }
+        std::random_shuffle(possible_breaks.begin(), possible_breaks.end());
+        
+        for (size_t i = 0; i < r - 1; ++i) {
+            break_points.push_back(possible_breaks[i]);
+        }
+        std::sort(break_points.begin(), break_points.end());
+    }
     
-    // Test table creation and basic operations
-    Table table; // Test default constructor
+    // Step 2: Define the intervals [start, end) for each of the r intervals
+    std::vector<std::pair<size_t, size_t>> intervals;
+    size_t start = 0;
+    for (size_t bp : break_points) {
+        intervals.push_back({start, bp});
+        start = bp;
+    }
+    intervals.push_back({start, n}); // Last interval goes to n
     
-    // Test setting and getting values
-    // TODO: Add specific tests once we know the interface
+    // Step 3: Create random order for processing the intervals
+    std::vector<size_t> interval_order(r);
+    for (size_t i = 0; i < r; ++i) {
+        interval_order[i] = i;
+    }
+    std::random_shuffle(interval_order.begin(), interval_order.end());
     
-    cout << name << " basic tests passed!" << endl << endl;
+    // Step 4: Fill intervals with consecutive numbers
+    std::vector<ulint> result(n);
+    ulint current_value = 0;
+    
+    for (size_t idx = 0; idx < r; ++idx) {
+        size_t interval_idx = interval_order[idx];
+        size_t start_pos = intervals[interval_idx].first;
+        size_t end_pos = intervals[interval_idx].second;
+        
+        // Fill this interval with consecutive values
+        for (size_t pos = start_pos; pos < end_pos; ++pos) {
+            result[pos] = current_value++;
+        }
+    }
+    
+    return result;
 }
 
-void test_serialization() {
-    cout << "Testing serialization..." << endl;
+bool verify_permutation(const std::vector<ulint>& perm) {
+    std::vector<ulint> sorted_perm(perm);
+    std::sort(sorted_perm.begin(), sorted_perm.end());
+    for (size_t i = 0; i < sorted_perm.size(); ++i) {
+        if (sorted_perm[i] != i) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_intervals(const std::vector<ulint> &perm) {
+    std::vector<ulint> lengths;
+    std::vector<ulint> interval_permutation;
+    for (size_t i = 0; i < perm.size(); ++i) {
+        if (i == 0 || perm[i] != perm[i - 1] + 1) {
+            lengths.push_back(1);
+            interval_permutation.push_back(perm[i]);
+        } else {
+            lengths.back()++;
+        }
+    }
+    return {lengths, interval_permutation};
+}
+
+
+std::vector<ulint> test_n = {50, 100, 1000, 10000};
+std::vector<size_t> test_n_over_r = {5, 10, 20, 50};
+
+ulint max_allowed_length = 12;
+
+// Helper function to get readable type name
+template<typename MoveStructType>
+std::string get_type_name() {
+    if constexpr (std::is_same_v<MoveStructType, MoveStructureTbl>) {
+        return "MoveStructureTbl";
+    } else if constexpr (std::is_same_v<MoveStructType, MoveStructureVec>) {
+        return "MoveStructureVec";
+    } else if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx>) {
+        return "MoveStructureTblIdx";
+    } else if constexpr (std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
+        return "MoveStructureVecIdx";
+    } else {
+        return "Unknown";
+    }
+}
+
+// Test function template
+template<typename MoveStructType>
+void test_move_structure(const std::vector<ulint>& lengths, 
+                        const std::vector<ulint>& interval_permutation,
+                        const std::vector<ulint>& starts,
+                        const std::vector<ulint>& pointers,
+                        const std::vector<ulint>& offsets,
+                        const std::vector<ulint>& test_perm,
+                        size_t n) {
     
-    // TODO: Create a table, serialize it, load it back, verify it matches
+    auto start_time = high_resolution_clock::now();
     
-    cout << "Serialization tests passed!" << endl << endl;
+    // Create move structure
+    auto move_structure = MoveStructType(lengths, interval_permutation);
+    
+    auto creation_time = high_resolution_clock::now();
+    
+    // Test getters
+    for (size_t i = 0; i < lengths.size(); ++i) {
+        assert(move_structure.get_length(i) == lengths[i]);
+        assert(move_structure.get_pointer(i) == pointers[i]);
+        assert(move_structure.get_offset(i) == offsets[i]);
+        
+        if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
+                      std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
+            assert(move_structure.get_start(i) == starts[i]);
+        }
+    }
+    
+    auto getter_time = high_resolution_clock::now();
+    
+    // Test move operations
+    typename MoveStructType::Position pos;
+    if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
+                  std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
+        pos = {0, 0, 0};  // idx types have 3 fields
+    } else {
+        pos = {0, 0};     // normal types have 2 fields
+    }
+
+    ulint real_pos = 0;
+    
+    for (size_t i = 0; i < n - 1; ++i) {
+        real_pos = test_perm[real_pos];
+        pos = move_structure.move(pos);
+        // assert(pos.idx == real_pos);
+    }
+    
+    auto move_time = high_resolution_clock::now();
+    
+    // Print timing results
+    auto creation_duration = duration_cast<microseconds>(creation_time - start_time);
+    auto getter_duration = duration_cast<microseconds>(getter_time - creation_time);
+    auto move_duration = duration_cast<microseconds>(move_time - getter_time);
+    auto total_duration = duration_cast<microseconds>(move_time - start_time);
+    
+    std::cout << "  " << get_type_name<MoveStructType>() << ":" << std::endl;
+    std::cout << "    Creation: " << creation_duration.count() << "μs" << std::endl;
+    std::cout << "    Getters: " << getter_duration.count() << "μs" << std::endl;
+    std::cout << "    Moves: " << move_duration.count() << "μs" << std::endl;
+    std::cout << "    Total: " << total_duration.count() << "μs" << std::endl;
+    std::stringstream ss;
+    std::cout << "    Size: " << move_structure.serialize(ss) << std::endl;
 }
 
 int main() {
     cout << "=== MoveStructure Table Tests ===" << endl << endl;
-    
-    try {
-        test_length_config();
-        
-        test_table_type<MoveTable<>>("MoveTable<>");
-        test_table_type<MoveVector<>>("MoveVector<>");
-        test_table_type<MoveTableIdx>("MoveTableIdx");  
-        test_table_type<MoveVectorIdx>("MoveVectorIdx");
-        
-        test_serialization();
-        
-        cout << "=== ALL TESTS PASSED ===" << endl;
-        
-    } catch (const exception& e) {
-        cerr << "TEST FAILED: " << e.what() << endl;
-        return 1;
+
+    for (size_t n : test_n) {
+        for (size_t n_over_r : test_n_over_r) {
+            size_t r = n / n_over_r;
+            std::vector<ulint> test_perm = random_runny_permutation(n, r);
+            if (!verify_permutation(test_perm)) {
+                std::cout << "Test permutation is not correct" << std::endl;
+                continue;
+            }
+            
+            auto [lengths, interval_permutation] = get_permutation_intervals(test_perm);
+            std::vector<ulint> starts(lengths.size());
+            size_t start = 0;
+            for (size_t i = 0; i < lengths.size(); ++i) {
+                starts[i] = start;
+                start += lengths[i];
+            }
+
+            vector<ulint> pointers(lengths.size());
+            vector<ulint> offsets(lengths.size());
+            for (size_t i = 0; i < lengths.size(); ++i) {
+                assert(interval_permutation[i] == test_perm[starts[i]]);
+                auto it = std::upper_bound(starts.begin(), starts.end(), interval_permutation[i]);
+                if (it != starts.begin()) {
+                    size_t index = std::distance(starts.begin(), it) - 1;
+                    size_t element = starts[index];
+                    pointers[i] = index;
+                    offsets[i] = interval_permutation[i] - element;
+                }
+            }
+
+            std::cout << "Testing n=" << n << ", r=" << r << " (n/r=" << n_over_r << "):" << std::endl;
+            
+            // Test all table types
+            test_move_structure<MoveStructureTbl>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
+            test_move_structure<MoveStructureVec>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
+            test_move_structure<MoveStructureTblIdx>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
+            test_move_structure<MoveStructureVecIdx>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
+            
+            std::cout << std::endl;
+        }
     }
     
     return 0;

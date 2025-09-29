@@ -3,7 +3,8 @@ CXXFLAGS = -std=c++17 -Iinclude -O3
 
 HEADERS = $(wildcard include/*.hpp) $(wildcard include/ds/*.hpp)
 
-all: build invert
+# all: build invert move_build
+all: move_build
 
 # Target to build the executable for build.cpp
 # build: src/build.cpp $(HEADERS)
@@ -23,4 +24,4 @@ debug: all
 
 # Clean up build files
 clean:
-	rm -f build invert
+	rm -f build invert move_build

@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstdio>
 #include <algorithm>
+#include <numeric>
 
 #include "common.hpp"
 #include "ds/move_table.hpp"
@@ -49,19 +50,23 @@ template <typename Table = MoveTable<>>
 class MoveStructure
 {
 public:
-    using Columns = typename Table::Columns;
-    using Position = typename MoveColsTraits<Columns>::Position;
+    MOVE_CLASS_TRAITS(typename Table::Columns)
+    using Position = typename ColsTraits::Position;
 
     MoveStructure() {}
 
     // n and r are the size of the permutation and the number of positions such that either i == 0 or π(i-1) != π(i) - 1
     // Should be with respect to the original permutation, not the split permutation
     MoveStructure(PackedVector<Columns> &move_permutation, size_t n, size_t r) 
-    : n(n), r(r), table(move_permutation) {}
+    : table(move_permutation), n(n), r(r) {}
 
     // As below, but assumes permutation stats were precomputed
-    MoveStructure(const std::vector<ulint> &lengths, const std::vector<ulint> &interval_permutation, PermutationStats stats) 
-    : MoveStructure(find_structure(lengths, interval_permutation, stats), stats.permutation_size, lengths.size()) {}
+    MoveStructure(const std::vector<ulint> &lengths, const std::vector<ulint> &interval_permutation, PermutationStats stats) {
+        r = lengths.size();
+        n = stats.permutation_size;
+        PackedVector<Columns> struture = find_structure(lengths, interval_permutation, stats);
+        table = Table(struture);
+    }
 
     // Length of interval and the permutation of the first position in each interval. If max allowed length is set, split intervals if greater than max allowed length
     MoveStructure(const std::vector<ulint> &lengths, const std::vector<ulint> &interval_permutation, std::optional<ulint> max_allowed_length = std::nullopt) 
@@ -69,9 +74,9 @@ public:
 
     ulint get_length(size_t i) const {
         assert(i < table.size());
-        if constexpr (MoveColsTraits<Columns>::IS_LENGTH) {
+        if constexpr (ColsTraits::IS_LENGTH) {
             return table.get_length(i);
-        } else if constexpr (MoveColsTraits<Columns>::IS_START) {
+        } else if constexpr (ColsTraits::IS_START) {
             return (i == table.size() - 1) ? n - table.get_start(i) : table.get_start(i + 1) - table.get_start(i);
         }
     }
@@ -118,13 +123,14 @@ public:
     Position move(Position pos) const
     {
         assert(pos.interval < table.size());
-        if constexpr (MoveColsTraits<Columns>::IS_LENGTH) {
+        if constexpr (ColsTraits::IS_LENGTH) {
             assert(pos.offset < get_length(pos));
             pos = {get_pointer(pos), pos.offset + get_offset(pos)};
-        } else if constexpr (MoveColsTraits<Columns>::IS_START) {
+        } else if constexpr (ColsTraits::IS_START) {
             assert(pos.idx < get_start(pos.interval + 1));
             ulint next_interval = get_pointer(pos);
-            pos = {next_interval, get_start(next_interval) + (pos.idx - get_start(pos)) + get_offset(pos)};
+            ulint next_offset = get_offset(pos) + pos.offset;
+            pos = {next_interval, next_offset, get_start(next_interval) + next_offset};
         }
         return fast_forward(pos);
     }
@@ -141,8 +147,7 @@ public:
         std::cout << "Rate n/r = " << double(n) / r << std::endl;
     }
 
-    size_t serialize(std::ostream &out) const
-    {
+    size_t serialize(std::ostream &out) {
         size_t written_bytes = 0;
 
         out.write((char *)&n, sizeof(n));
@@ -172,8 +177,8 @@ private:
     ulint r;
 
     // Finds the structure of permutations for move from the lengths and interval permutation of interval starts
-    static PackedVector<Columns> find_structure(const std::vector<ulint> lengths, const std::vector<ulint> interval_permutation, const PermutationStats stats) {
-        std::array<uchar, Columns::NUM_COLS> widths = {0};
+    static PackedVector<Columns> find_structure(const std::vector<ulint> lengths, std::vector<ulint> interval_permutation, const PermutationStats stats) {
+        std::array<uchar, NUM_COLS> widths = {0};
         if constexpr (MoveColsTraits<Columns>::IS_LENGTH) {
             widths[static_cast<size_t>(Columns::LENGTH)] = bit_width(stats.max_observed_length);
         } else if constexpr (MoveColsTraits<Columns>::IS_START) {
@@ -202,7 +207,7 @@ private:
         if (stats.max_allowed_length) {
             std::vector<ulint> new_interval_permutations = std::vector<ulint>(stats.split_num_rows);
             size_t tbl_idx = 0;
-            auto add_interval_permutation = [&](size_t i, size_t _, size_t split) {
+            auto add_interval_permutation = [&](size_t i, size_t _length, size_t split) {
                 new_interval_permutations[tbl_idx++] = interval_permutation[i] + split * (*stats.max_allowed_length);
             };
             split_loop(add_interval_permutation);
@@ -215,26 +220,25 @@ private:
         std::sort(indices.begin(), indices.end(), [&](size_t a, size_t b) { return (*final_interval_permutation)[a] < (*final_interval_permutation)[b]; });
         
         size_t tbl_idx = 0;
-        size_t sort_idx = 0;
         size_t start_val = 0;
+        auto sort_itr = indices.begin();
         auto add_interval = [&](size_t length) {
-            if constexpr (MoveColsTraits<Columns>::IS_LENGTH) {
-                structure.set<Columns::LENGTH>(tbl_idx, length);
+            if constexpr (ColsTraits::IS_LENGTH) {
+                structure.template set<Columns::LENGTH>(tbl_idx, length);
             }
-            else if constexpr (MoveColsTraits<Columns>::IS_START) {
-                structure.set<Columns::START>(tbl_idx, start_val);
+            else if constexpr (ColsTraits::IS_START) {
+                structure.template set<Columns::START>(tbl_idx, start_val);
             }
 
-            while (sort_idx < indices.size() && (*final_interval_permutation)[indices[sort_idx]] < start_val + length) {
-                structure.set<Columns::POINTER>(indices[sort_idx], tbl_idx);
-                structure.set<Columns::OFFSET>(indices[sort_idx], (*final_interval_permutation)[indices[sort_idx]] - start_val);
-                ++sort_idx;
+            while (sort_itr != indices.end() && (*final_interval_permutation)[*sort_itr] < start_val + length) {
+                structure.template set<Columns::POINTER>(*sort_itr, tbl_idx);
+                structure.template set<Columns::OFFSET>(*sort_itr, (*final_interval_permutation)[*sort_itr] - start_val);
+                ++sort_itr;
             }
-            
             ++tbl_idx;
             start_val += length;
         };
-        auto add_interval_split = [&](size_t _, size_t length, size_t _) {
+        auto add_interval_split = [&](size_t _i, size_t length, size_t _split) {
             add_interval(length);
         };
         if (stats.max_allowed_length) {
@@ -250,17 +254,27 @@ private:
     }
     
     inline Position fast_forward(Position pos) const {
-        if constexpr (MoveColsTraits<Columns>::IS_LENGTH) {
+        if constexpr (ColsTraits::IS_LENGTH) {
             while (pos.offset >= get_length(pos)) {
                 pos.offset -= get_length(pos.interval++);
             }    
-        } else if constexpr (MoveColsTraits<Columns>::IS_START) {
-            while (pos.idx <= get_start(pos.interval + 1)) {
+        } else if constexpr (ColsTraits::IS_START) {
+            ulint curr_start = pos.idx - pos.offset;
+            ulint next_start = get_start(pos.interval + 1);
+            while (pos.idx >= next_start) {
+                pos.offset -= next_start - curr_start;
                 ++pos.interval;
+                curr_start = next_start;
+                next_start = get_start(pos.interval + 1);
             }
         }
         return pos;
     }
 };
+
+using MoveStructureTbl = MoveStructure<MoveTable<>>;
+using MoveStructureTblIdx = MoveStructure<MoveTableIdx>;
+using MoveStructureVec = MoveStructure<MoveVector<>>;
+using MoveStructureVecIdx = MoveStructure<MoveVectorIdx>;
 
 #endif /* end of include guard: _Move_HPP */

@@ -6,9 +6,9 @@
 #include "move_columns.hpp"
 #include "packed_vector.hpp"
 
-template<typename Derived, typename Columns>
+template<typename Derived, typename ColumnsType>
 struct MoveTableInterface {
-    using Columns = Columns;
+    MOVE_CLASS_TRAITS(ColumnsType)
 
     template <typename C = Columns>
     void set_primary(size_t i, ulint start, ulint length) {
@@ -66,7 +66,8 @@ struct MoveTableInterface {
 
 template<typename Row = MoveRow<>>
 struct MoveTable : public MoveTableInterface<MoveTable<Row>, typename Row::Columns> {
-    using Columns = typename Row::Columns;
+    MOVE_CLASS_TRAITS(typename Row::Columns)
+    
     std::vector<Row> table;
 
     MoveTable() = default;
@@ -86,26 +87,26 @@ struct MoveTable : public MoveTableInterface<MoveTable<Row>, typename Row::Colum
 
     template <Columns Col>
     ulint get(size_t i) const {
-        return table[i].get<Col>();
+        return table[i].template get<Col>();
     }
 
-    void set_row(size_t i, const std::array<ulint, Columns::NUM_COLS>& values) {
+    void set_row(size_t i, const std::array<ulint, NUM_COLS>& values) {
         table[i].set(values);
     }
 
-    std::array<ulint, Columns::NUM_COLS> get_row(size_t i) const {
+    std::array<ulint, NUM_COLS> get_row(size_t i) const {
         return table[i].get();
     }
 
-    size_t serialize(std::ostream &out)
-    {
+    size_t serialize(std::ostream &out) {
         size_t written_bytes = 0;
 
-        out.write((char *)&table.size(), sizeof(table.size()));
-        written_bytes += sizeof(table.size());
+        size_t tbl_size = table.size();
+        out.write((char *)&tbl_size, sizeof(tbl_size));
+        written_bytes += sizeof(tbl_size);
 
         char* data = reinterpret_cast<char*>(table.data());
-        size_t size = table.size() * sizeof(Row);
+        size_t size = tbl_size * sizeof(Row);
         out.write(data, size);
         written_bytes += size;
 
@@ -118,20 +119,21 @@ struct MoveTable : public MoveTableInterface<MoveTable<Row>, typename Row::Colum
         in.read((char *)&size, sizeof(size));
 
         table = std::vector<Row>(size);
-        const char* data = reinterpret_cast<const char*>(table.data());
+        char* data = reinterpret_cast<char*>(table.data());
         size_t bytes = size * sizeof(Row);
         in.read(data, bytes);
     }
 };
 
-template <typename Columns = MoveCols>
-struct MoveVector : public MoveTableInterface<MoveVector<Columns>, Columns> {
-    using Columns = Columns;
+template <typename ColumnsType = MoveCols>
+struct MoveVector : public MoveTableInterface<MoveVector<ColumnsType>, ColumnsType> {
+    MOVE_CLASS_TRAITS(ColumnsType)
+    
     PackedVector<Columns> vec;
 
     MoveVector() = default;
     MoveVector(PackedVector<Columns> &vec) {
-        this->vec = std::move(vec);
+        this->vec = vec;
     }
 
     size_t size() const { return vec.size(); }
@@ -143,19 +145,18 @@ struct MoveVector : public MoveTableInterface<MoveVector<Columns>, Columns> {
 
     template <Columns Col>
     ulint get(size_t i) const {
-        return vec.get<Col>(i);
+        return vec.template get<Col>(i);
     }
 
-    void set_row(size_t i, std::array<ulint, Columns::NUM_COLS> values) {
+    void set_row(size_t i, std::array<ulint, NUM_COLS> values) {
         vec.set_row(i, values);
     }
 
-    std::array<ulint, Columns::NUM_COLS> get_row(size_t i) const {
+    std::array<ulint, NUM_COLS> get_row(size_t i) const {
         return vec.get_row(i);
     }
 
-    size_t serialize(std::ostream &out)
-    {
+    size_t serialize(std::ostream &out) {
         return vec.serialize(out);
     }
 
