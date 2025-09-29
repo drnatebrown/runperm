@@ -10,11 +10,14 @@
 #include <array>
 #include <iostream>
 
-template <typename Columns, typename word_t = uchar>
+template <typename Columns>
 class PackedVector {
 public:
+    using word_t = uchar;
+
     // We read ulint at a time, this ensures we never need to read more than one ulint
-    constexpr static uchar max_width = NUM_BITS(ulint) - 7; // should be 57 bits
+    // should be 57 bits for 64 bit ulint and 8 bit word_t
+    constexpr static uchar max_width = NUM_BITS(ulint) - (NUM_BITS(word_t) - 1);
     constexpr static size_t NUM_COLS = static_cast<size_t>(Columns::NUM_COLS);
 
     PackedVector() = default;
@@ -38,19 +41,19 @@ public:
         bit_pos pos(get_row_start(i) + offsets[static_cast<size_t>(Col)]);
         ulint bits = 0;
         std::memcpy(&bits, &data[pos.chunk], sizeof(ulint));
-        return extract_bits(bits, pos.offset, widths[static_cast<size_t>(Col)]);
+        return extract_bits(bits, pos.offset, masks_extract[static_cast<size_t>(Col)]);
     }      
 
     template <Columns Col>
     void set(size_t i, ulint val) {
         assert(i < num_rows);
-        assert(val < (1ULL << widths[static_cast<size_t>(Col)])); // value must fit in the column
+        assert(val < POW2(widths[static_cast<size_t>(Col)])); // value must fit in the column
 
         bit_pos pos(get_row_start(i) + offsets[static_cast<size_t>(Col)]);
 
         ulint bits = 0;
         std::memcpy(&bits, &data[pos.chunk], sizeof(ulint));
-        write_bits(bits, pos.offset, widths[static_cast<size_t>(Col)], val);
+        write_bits(bits, pos.offset, masks_write[pos.offset][static_cast<size_t>(Col)], val);
         std::memcpy(&data[pos.chunk], &bits, sizeof(ulint));
     }
 
@@ -115,6 +118,8 @@ private:
 
     std::array<uchar, NUM_COLS> widths; // Bit width of each column
     std::array<uint16_t, NUM_COLS> offsets; // Offset of the first bit of each column in the vector
+    std::array<ulint, NUM_COLS> masks_extract; // Mask of the bits of each column for get
+    std::array<std::array<ulint, NUM_COLS>, NUM_BITS(word_t)> masks_write; // The mask for each offset to reset the bits
 
     std::vector<word_t> data;
 
@@ -123,6 +128,10 @@ private:
         for (size_t i = 0; i < NUM_COLS; i++) {
             assert(widths[i] <= max_width);
             offsets[i] = bit_pos;
+            masks_extract[i] = MASK(widths[i]);
+            for (size_t j = 0; j < NUM_BITS(word_t); j++) {
+                masks_write[j][i] = ~(masks_extract[i] << j);
+            }
             bit_pos += widths[i];
         }
         row_width = bit_pos;
@@ -144,13 +153,13 @@ private:
         return i*row_width;
     }
 
-    inline ulint extract_bits(ulint bits, uchar start, uchar width) const {
-        return (bits >> start) & ((1ULL << width) - 1);
+    inline ulint extract_bits(ulint bits, uchar start, ulint mask) const {
+        return (bits >> start) & mask;
     }
 
-    inline void write_bits(ulint& bits, uchar start, uchar width, ulint val) {
+    inline void write_bits(ulint& bits, uchar start, ulint mask, ulint val) {
         // clear old bits
-        bits &= ~(((1ULL << width) - 1) << start);
+        bits &= mask;
         // set new bits
         bits |= (val << start);
     }

@@ -18,6 +18,8 @@
 #define BITS_TO_BYTES(bits) ((bits) / 8)
 #define NUM_BITS(type) (BYTES_TO_BITS(sizeof(type))) 
 #define CEIL_DIV(num, den) ((num + den - 1) / den)
+#define POW2(bits) (1ULL << (bits))
+#define MASK(bits) POW2(bits) - 1
 
 #define MOVE_STRUCTURE_EXTENSION ".move"
 

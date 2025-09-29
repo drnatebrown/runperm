@@ -147,25 +147,25 @@ void test_move_structure(const std::vector<ulint>& lengths,
     
     // Test getters
     for (size_t i = 0; i < lengths.size(); ++i) {
-        // assert(move_structure.get_pointer(i) == pointers[i]);
-        // assert(move_structure.get_offset(i) == offsets[i]);
+        assert(move_structure.get_pointer(i) == pointers[i]);
+        assert(move_structure.get_offset(i) == offsets[i]);
         
-        // if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
-        //               std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
-        //     assert(move_structure.get_start(i) == starts[i]);
-        // }
-        // else {
-        //     assert(move_structure.get_length(i) == lengths[i]);
-        // }
-        ulint pointer = move_structure.get_pointer(i);
-        ulint offset = move_structure.get_offset(i);
         if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
                       std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
-            ulint start = move_structure.get_start(i);
+            assert(move_structure.get_start(i) == starts[i]);
         }
         else {
-            ulint length = move_structure.get_length(i);
+            assert(move_structure.get_length(i) == lengths[i]);
         }
+        // ulint pointer = move_structure.get_pointer(i);
+        // ulint offset = move_structure.get_offset(i);
+        // if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
+        //               std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
+        //     ulint start = move_structure.get_start(i);
+        // }
+        // else {
+        //     ulint length = move_structure.get_length(i);
+        // }
     }
     
     auto getter_time = high_resolution_clock::now();
