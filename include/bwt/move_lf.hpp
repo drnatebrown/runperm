@@ -1,5 +1,5 @@
-// #ifndef _LF_move_HH
-// #define _LF_move_HH
+// #ifndef _move_LF_HH
+// #define _move_LF_HH
 
 // #include <fstream>
 // #include <iostream>
@@ -9,18 +9,11 @@
 // #include <assert.h>
 // #include <cstdio>
 // #include "common.hpp"
-// #include "ds/move_row.hpp"
+// #include "move.hpp"
 // #include "ds/packed_row.hpp"
 
-// using namespace std;
-
-// struct position {
-//     ulint interval = 0;
-//     ulint offset = 0;
-// };
-
-// template <typename row_t = MoveRowStruct>
-// class LF_move
+// template <typename Table>
+// class MoveLF : public MoveStructure<Table>
 // {
 // public:
 //     LF_move() {}
@@ -96,18 +89,6 @@
 //         r = LF_runs.size();
 
 //         compute_table(L_block_indices);
-//     }
-
-//     const row_t get(size_t i)
-//     {
-//         assert(i < LF_runs.size());
-//         return LF_runs[i];
-//     }
-
-//     const row_t get(position p)
-//     {
-//         assert(p.interval < LF_runs.size());
-//         return LF_runs[p.interval];
 //     }
 
 //     uchar get_char(size_t i)

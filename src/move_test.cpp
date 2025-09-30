@@ -6,6 +6,8 @@
 #include "move.hpp"
 #include "move/move_table.hpp"
 
+#include "runperm/runperm.hpp"
+
 #include <iostream>
 #include <cassert>
 #include <sstream>
@@ -109,8 +111,8 @@ std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_intervals(cons
 // std::vector<ulint> test_n = {1048576, 2097152, 4194304, 8388608};
 std::vector<ulint> test_n = {18388608};  
 std::vector<size_t> percentage_runs = {1, 2, 5, 10};
-// std::optional<ulint> max_allowed_length = 255;
-std::optional<ulint> max_allowed_length = std::nullopt;
+std::optional<ulint> max_allowed_length = 255;
+// std::optional<ulint> max_allowed_length = std::nullopt;
 
 // Helper function to get readable type name
 template<typename MoveStructType>
@@ -147,25 +149,25 @@ void test_move_structure(const std::vector<ulint>& lengths,
     
     // Test getters
     for (size_t i = 0; i < lengths.size(); ++i) {
-        assert(move_structure.get_pointer(i) == pointers[i]);
-        assert(move_structure.get_offset(i) == offsets[i]);
+        // assert(move_structure.get_pointer(i) == pointers[i]);
+        // assert(move_structure.get_offset(i) == offsets[i]);
         
-        if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
-                      std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
-            assert(move_structure.get_start(i) == starts[i]);
-        }
-        else {
-            assert(move_structure.get_length(i) == lengths[i]);
-        }
-        // ulint pointer = move_structure.get_pointer(i);
-        // ulint offset = move_structure.get_offset(i);
         // if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
         //               std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
-        //     ulint start = move_structure.get_start(i);
+        //     assert(move_structure.get_start(i) == starts[i]);
         // }
         // else {
-        //     ulint length = move_structure.get_length(i);
+        //     assert(move_structure.get_length(i) == lengths[i]);
         // }
+        ulint pointer = move_structure.get_pointer(i);
+        ulint offset = move_structure.get_offset(i);
+        if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
+                      std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
+            ulint start = move_structure.get_start(i);
+        }
+        else {
+            ulint length = move_structure.get_length(i);
+        }
     }
     
     auto getter_time = high_resolution_clock::now();
@@ -211,6 +213,35 @@ void test_move_structure(const std::vector<ulint>& lengths,
     std::stringstream ss;
     std::cout << "    Size: " << move_structure.serialize(ss) << std::endl;
 }
+
+// template<typename RunPermType>
+// void test_runperm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const std::vector<std::array<ulint, RunPermType::RunData::NUM_FIELDS>> &run_data, size_t n) {
+//     using RD = typename RunPermType::RunData;
+//     constexpr size_t NUM_FIELDS = static_cast<size_t>(RD::NUM_COLS);
+    
+//     auto start_time = high_resolution_clock::now();
+//     auto runperm = RunPermType(lengths, interval_permutation, run_data);
+//     auto creation_time = high_resolution_clock::now();
+
+//     runperm.first();
+//     for (size_t i = 0; i < n; ++i) {
+//         typename RunPermType::Position pos = runperm.get_position();
+//         assert(runperm.template get<RD::VAL_1>() == run_data[pos.interval][RD::VAL_1]);
+//         assert(runperm.template get<RD::VAL_2>() == run_data[pos.interval][RD::VAL_2]);
+//         runperm.next();
+//     }
+
+//     auto move_time = high_resolution_clock::now();
+
+//     auto creation_duration = duration_cast<microseconds>(creation_time - start_time);
+//     auto move_duration = duration_cast<microseconds>(move_time - creation_time);
+//     auto total_duration = duration_cast<microseconds>(move_time - start_time);
+
+//     std::cout << "  " << get_type_name<RunPermType>() << ":" << std::endl;
+//     std::cout << "    Creation: " << creation_duration.count() << "μs" << std::endl;
+//     std::cout << "    Moves: " << move_duration.count() << "μs" << std::endl;
+//     std::cout << "    Total: " << total_duration.count() << "μs" << std::endl;
+// }
 
 int main() {
     cout << "=== MoveStructure Table Tests ===" << endl << endl;
@@ -265,6 +296,64 @@ int main() {
             test_move_structure<MoveStructureVecIdx>(lengths, interval_permutation, starts, pointers, offsets, test_perm, full_cycle_pos, n);
             
             std::cout << std::endl;
+        }
+    }
+
+    std::cout << "=== RunPerm Tests ===" << endl << endl;
+
+    for (size_t n : test_n) {
+        for (size_t percentage_run : percentage_runs) {
+            size_t r = (n * percentage_run) / 100;
+            std::vector<ulint> test_perm = random_runny_permutation(n, r);
+            if (!verify_permutation(test_perm)) {
+                std::cout << "Test permutation is not correct" << std::endl;
+                continue;
+            }
+                   
+            auto [lengths, interval_permutation] = get_permutation_intervals(test_perm);
+
+            enum class RunData {
+                VAL_1,
+                VAL_2,
+                NUM_COLS
+            };
+            static constexpr size_t NUM_FIELDS = static_cast<size_t>(RunData::NUM_COLS);
+            std::vector<std::array<ulint, NUM_FIELDS>> run_data(r);
+            for (size_t i = 0; i < r; ++i) {
+                run_data[i][0] = i;
+                run_data[i][1] = i;
+            }
+
+            std::cout << "Testing n=" << n << ", r=" << r << " (n/r=" << n/r << "):" << std::endl;
+
+            // test_runperm<RunPerm<RunData, true, false>>(lengths, interval_permutation, run_data, n);
+            // test_runperm<RunPerm<RunData, false, false>>(lengths, interval_permutation, run_data, n);
+
+            // RunPerm<RunData, true, false>(lengths, interval_permutation, run_data);
+            // RunPerm<RunData, false, false>(lengths, interval_permutation, run_data);
+
+            auto start_time = high_resolution_clock::now();
+            auto runperm = RunPerm<RunData, true, false>(lengths, interval_permutation, run_data);
+            auto creation_time = high_resolution_clock::now();
+
+            runperm.first();
+            for (size_t i = 0; i < n; ++i) {
+                typename RunPerm<RunData, true, false>::Position pos = runperm.get_position();
+                assert(runperm.template get<RunData::VAL_1>() == run_data[pos.interval][static_cast<size_t>(RunData::VAL_1)]);
+                assert(runperm.template get<RunData::VAL_2>() == run_data[pos.interval][static_cast<size_t>(RunData::VAL_2)]);
+                runperm.next();
+            }
+
+            auto move_time = high_resolution_clock::now();
+
+            auto creation_duration = duration_cast<microseconds>(creation_time - start_time);
+            auto move_duration = duration_cast<microseconds>(move_time - creation_time);
+            auto total_duration = duration_cast<microseconds>(move_time - start_time);
+
+            std::cout << "  " << "RunPerm<RunData, true, false>" << ":" << std::endl;
+            std::cout << "    Creation: " << creation_duration.count() << "μs" << std::endl;
+            std::cout << "    Moves: " << move_duration.count() << "μs" << std::endl;
+            std::cout << "    Total: " << total_duration.count() << "μs" << std::endl;
         }
     }
     

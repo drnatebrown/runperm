@@ -12,55 +12,55 @@ struct MoveTableInterface {
 
     template <typename C = Columns>
     void set_primary(size_t i, ulint start, ulint length) {
-        if constexpr (MoveColsTraits<C>::IS_LENGTH) {
-            set_length(i, length);
-        } else if constexpr (MoveColsTraits<C>::IS_START) {
-            set_start(i, start);
+        if constexpr (MoveColsTraits<C>::RELATIVE) {
+            static_cast<Derived*>(this)->template set<MoveColsTraits<C>::PRIMARY>(i, length);
+        } else if constexpr (MoveColsTraits<C>::ABSOLUTE) {
+            static_cast<Derived*>(this)->template set<MoveColsTraits<C>::PRIMARY>(i, start);
         }
     }
 
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::IS_LENGTH, void>
+    std::enable_if_t<MoveColsTraits<C>::HAS_LENGTH, void>
     set_length(size_t i, ulint l) {
-        static_cast<Derived*>(this)->template set<MoveColsTraits<C>::PRIMARY>(i, l);
+        static_cast<Derived*>(this)->template set<MoveColsTraits<C>::LENGTH>(i, l);
     }
     
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::IS_START, void>
+    std::enable_if_t<MoveColsTraits<C>::HAS_START, void>
     set_start(size_t i, ulint s) {
-        static_cast<Derived*>(this)->template set<MoveColsTraits<C>::PRIMARY>(i, s);
+        static_cast<Derived*>(this)->template set<MoveColsTraits<C>::START>(i, s);
     }
     
     void set_pointer(size_t i, ulint p) {
-        static_cast<Derived*>(this)->template set<Columns::POINTER>(i, p);
+        static_cast<Derived*>(this)->template set<ColsTraits::POINTER>(i, p);
     }
     
     void set_offset(size_t i, ulint o) {
-        static_cast<Derived*>(this)->template set<Columns::OFFSET>(i, o);
+        static_cast<Derived*>(this)->template set<ColsTraits::OFFSET>(i, o);
     }
     
     ulint get_primary(size_t i) const {
-        return static_cast<const Derived*>(this)->template get<MoveColsTraits<Columns>::PRIMARY>(i);
+        return static_cast<const Derived*>(this)->template get<ColsTraits::PRIMARY>(i);
     }
 
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::IS_LENGTH, ulint>
+    std::enable_if_t<MoveColsTraits<C>::HAS_LENGTH, ulint>
     get_length(size_t i) const {
-        return static_cast<const Derived*>(this)->template get<MoveColsTraits<C>::PRIMARY>(i);
+        return static_cast<const Derived*>(this)->template get<MoveColsTraits<C>::LENGTH>(i);
     }
     
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::IS_START, ulint>
+    std::enable_if_t<MoveColsTraits<C>::HAS_START, ulint>
     get_start(size_t i) const {
-        return static_cast<const Derived*>(this)->template get<MoveColsTraits<C>::PRIMARY>(i);
+        return static_cast<const Derived*>(this)->template get<MoveColsTraits<C>::START>(i);
     }
     
     ulint get_pointer(size_t i) const {
-        return static_cast<const Derived*>(this)->template get<Columns::POINTER>(i);
+        return static_cast<const Derived*>(this)->template get<ColsTraits::POINTER>(i);
     }
     
     ulint get_offset(size_t i) const {
-        return static_cast<const Derived*>(this)->template get<Columns::OFFSET>(i);
+        return static_cast<const Derived*>(this)->template get<ColsTraits::OFFSET>(i);
     }
 };
 
@@ -125,6 +125,11 @@ struct MoveTable : public MoveTableInterface<MoveTable<Row>, typename Row::Colum
         size_t bytes = size * sizeof(Row);
         in.read(data, bytes);
     }
+
+    // Widths don't help, the struct is already defined
+    static size_t bits_needed(size_t num_rows, std::array<uchar, NUM_COLS> widths) {
+        return BYTES_TO_BITS(sizeof(Row)) * num_rows;
+    }
 };
 
 template <typename ColumnsType = MoveCols>
@@ -165,6 +170,14 @@ struct MoveVector : public MoveTableInterface<MoveVector<ColumnsType>, ColumnsTy
     void load(std::istream &in)
     {
         vec.load(in);
+    }
+
+    // Easy, just sum the widths
+    static size_t bits_needed(size_t num_rows, std::array<uchar, NUM_COLS> widths) {
+        size_t total_width = std::accumulate(widths.begin(), widths.end(), 0, [](size_t sum, uchar width) {
+            return sum + width;
+        });
+        return total_width * num_rows;
     }
 };
 

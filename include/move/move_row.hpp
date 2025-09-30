@@ -36,8 +36,8 @@ struct MoveRow {
     template <Columns Col>
     void set(ulint val) {
         if constexpr (Col == ColsTraits::PRIMARY) primary = val;
-        else if constexpr (Col == Columns::POINTER) pointer = val;
-        else if constexpr (Col == Columns::OFFSET) offset = val;
+        else if constexpr (Col == ColsTraits::POINTER) pointer = val;
+        else if constexpr (Col == ColsTraits::OFFSET) offset = val;
     }
     template <size_t... Indices>
     void set(const std::array<ulint, NUM_COLS>& values, std::index_sequence<Indices...>) {
@@ -50,8 +50,8 @@ struct MoveRow {
     template <Columns Col>
     ulint get() const {
         if constexpr (Col == ColsTraits::PRIMARY) return primary;
-        else if constexpr (Col == Columns::POINTER) return pointer;
-        else if constexpr (Col == Columns::OFFSET)   return offset;
+        else if constexpr (Col == ColsTraits::POINTER) return pointer;
+        else if constexpr (Col == ColsTraits::OFFSET)   return offset;
         else throw std::invalid_argument("Invalid column");
     }
     template <size_t... Indices>
@@ -64,8 +64,8 @@ struct MoveRow {
 
     static void assert_widths(const std::array<uchar, NUM_COLS>& widths) {
         assert(widths[static_cast<size_t>(ColsTraits::PRIMARY)] <= RowTraits::PRIMARY_BITS);
-        assert(widths[static_cast<size_t>(Columns::POINTER)] <= RowTraits::POINTER_BITS);
-        assert(widths[static_cast<size_t>(Columns::OFFSET)] <= RowTraits::OFFSET_BITS);
+        assert(widths[static_cast<size_t>(ColsTraits::POINTER)] <= RowTraits::POINTER_BITS);
+        assert(widths[static_cast<size_t>(ColsTraits::OFFSET)] <= RowTraits::OFFSET_BITS);
     }
 
 } __attribute__((packed));

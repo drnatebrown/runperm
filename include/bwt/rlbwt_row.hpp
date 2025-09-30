@@ -1,16 +1,5 @@
-// #include "common.hpp"
 
-// using namespace std;
-
-// // Supports π = LF or π = FL
-// enum class RLBWT_Col {
-//     CHARACTER, // RLBWT Character
-//     LENGTH, // RLBWT Length
-//     POINTER, // Where BWT[i] is run head, interval is the run containing π(i)
-//     OFFSET // Offset of π(i) into the run that contains it
-// };
-
-// // Row of the RLBWT table (bitpacked)
+// Row of the RLBWT table (bitpacked)
 // // Bytes set in common.hpp
 // template <
 //     size_t CHARACTER_BITS = BYTES_TO_BITS(CHARACTER_BYTES),

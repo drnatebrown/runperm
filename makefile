@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Iinclude -O3
 
-HEADERS = $(wildcard include/*.hpp) $(wildcard include/ds/*.hpp) $(wildcard include/move/*.hpp)
+HEADERS = $(wildcard include/*.hpp) $(wildcard include/ds/*.hpp) $(wildcard include/move/*.hpp) $(wildcard include/runperm/*.hpp)
 
 # all: build invert move_build
 all: move_test
