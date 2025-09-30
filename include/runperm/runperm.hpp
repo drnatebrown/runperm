@@ -82,6 +82,9 @@ public:
         } else {
             perm = Permutation(lengths, interval_permutation, stats);
             this->field_data = PackedVector<RunData>(run_data.size(), field_widths);
+            for (size_t i = 0; i < run_data.size(); ++i) {
+                this->field_data.template set_row(i, run_data[i]);
+            }
         }
         // std::optional<ulint> optimal_length_max = std::nullopt;
         // constrexpr if (SplitIntervals) {
