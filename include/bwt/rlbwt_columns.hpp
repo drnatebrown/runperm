@@ -12,7 +12,7 @@ enum class RLBWTCols {
     POINTER, // Corresponds to character that is BWT run head, interval is the run containing its π
     OFFSET, // Offset of π within its run
     CHARACTER, // RLBWT Character
-    NUM_COLS // Helper to get the number of columns
+    COUNT // Helper to get the number of columns
 };
 
 // Supports π = LF or π = FL, using new fields specific to RLBWT
@@ -23,7 +23,7 @@ enum class RLBWTColsIdx {
     POINTER, // Corresponds to character that is BWT run head, interval is the run containing its π
     OFFSET, // Offset of π within its run
     CHARACTER, // RLBWT Character
-    NUM_COLS // Helper to get the number of columns
+    COUNT // Helper to get the number of columns
 };
 
 /* They just extend the existing MoveCols enum */

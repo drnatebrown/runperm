@@ -65,6 +65,7 @@ template <typename Table = MoveTable<>>
 class MoveStructure
 {
 public:
+    // Sets NumCols, Columns, and ColsTraits
     MOVE_CLASS_TRAITS(typename Table::Columns)
     using Position = typename ColsTraits::Position;
 
@@ -84,7 +85,7 @@ public:
         assert(i < table.size());
         if constexpr (ColsTraits::RELATIVE) {
             return table.template get<ColsTraits::PRIMARY>(i);
-        } else if constexpr (ColsTraits::ABSOLUTE) {
+        } else {
             return (i == table.size() - 1)
                 ? n - table.template get<ColsTraits::PRIMARY>(i)
                 : table.template get<ColsTraits::PRIMARY>(i + 1) - table.template get<ColsTraits::PRIMARY>(i);
@@ -95,13 +96,13 @@ public:
     }
 
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::ABSOLUTE, ulint>
+    std::enable_if_t<MoveColsTraits<C>::HAS_START, ulint>
     get_start(size_t i) const {
         assert(i <= table.size());
         return (i == table.size()) ? n : table.get_start(i);
     }
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::ABSOLUTE, ulint>
+    std::enable_if_t<MoveColsTraits<C>::HAS_START, ulint>
     inline get_start(Position pos) const {
         return get_start(pos.interval);
     }
@@ -147,7 +148,7 @@ public:
         size_t offset = get_length(interval) - 1;
         if constexpr (ColsTraits::RELATIVE) {
             return Position(interval, offset);
-        } else if constexpr (ColsTraits::ABSOLUTE) {
+        } else {
             return Position(interval, offset, n - 1);
         }
     }
@@ -158,7 +159,7 @@ public:
         if constexpr (ColsTraits::RELATIVE) {
             assert(pos.offset < get_length(pos));
             pos = {get_pointer(pos), pos.offset + get_offset(pos)};
-        } else if constexpr (ColsTraits::ABSOLUTE) {
+        } else {
             assert(pos.idx < get_start(pos.interval + 1));
             ulint next_interval = get_pointer(pos);
             ulint next_offset = get_offset(pos) + pos.offset;
@@ -237,7 +238,7 @@ private:
         const std::vector<ulint>& lengths,
         const std::vector<ulint>& interval_permutation,
         const PermutationStats& stats,
-        const std::array<uchar, ColsTraits::NUM_COLS>& column_widths,
+        const std::array<uchar, NumCols>& column_widths,
         OnRowSetCallback on_row_set
     ) {
         MoveStructure ms;
@@ -318,7 +319,7 @@ private:
             if constexpr (ColsTraits::RELATIVE) {
                 structure.template set<ColsTraits::PRIMARY>(tbl_idx, length);
             }
-            else if constexpr (ColsTraits::ABSOLUTE) {
+            else {
                 structure.template set<ColsTraits::PRIMARY>(tbl_idx, start_val);
             }
 
@@ -362,7 +363,7 @@ private:
     // callback to assist with setting other data in the table that isn't directly related to the move structure
     // this is necessary for, example, RunPerm, which hides this advanced logic from the user
     template<typename OnRowSetCallback>
-    static PackedVector<Columns> find_structure(const std::vector<ulint> &lengths, const std::vector<ulint> &interval_permutation, const PermutationStats stats, std::array<uchar, NUM_COLS> column_widths, OnRowSetCallback on_row_set) {
+    static PackedVector<Columns> find_structure(const std::vector<ulint> &lengths, const std::vector<ulint> &interval_permutation, const PermutationStats stats, std::array<uchar, NumCols> column_widths, OnRowSetCallback on_row_set) {
         PackedVector<Columns> structure(stats.split_num_rows, column_widths);
 
         std::vector<ulint> split_interval_permutation; // if computed, see below
@@ -379,15 +380,15 @@ private:
         return structure;
     }
 
-    static std::array<uchar, NUM_COLS> get_move_widths(const PermutationStats& stats) {
-        std::array<uchar, NUM_COLS> widths = {0};
-        for (size_t i = 0; i < NUM_COLS; ++i) {
+    static std::array<uchar, NumCols> get_move_widths(const PermutationStats& stats) {
+        std::array<uchar, NumCols> widths = {0};
+        for (size_t i = 0; i < NumCols; ++i) {
             widths[i] = BYTES_TO_BITS(DEFAULT_BYTES);
         }
 
         if constexpr (ColsTraits::RELATIVE) {
             widths[static_cast<size_t>(ColsTraits::PRIMARY)] = bit_width(stats.max_observed_length);
-        } else if constexpr (ColsTraits::ABSOLUTE) {
+        } else {
             widths[static_cast<size_t>(ColsTraits::PRIMARY)] = bit_width(stats.permutation_size);
         }
 
@@ -416,7 +417,7 @@ private:
                 ++pos.interval;
                 length = get_length(pos);
             }    
-        } else if constexpr (ColsTraits::ABSOLUTE) {
+        } else {
             ulint curr_start = pos.idx - pos.offset;
             ulint next_start = get_start(pos.interval + 1);
             while (pos.idx >= next_start) {

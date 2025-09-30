@@ -21,6 +21,7 @@ struct MoveRowTraits<MoveRowBits<ColsType, P, PTR, OFF>> {
 
 template <typename ColumnsType = MoveCols>
 struct MoveRow {
+    // Sets NumCols, Columns, and ColsTraits
     MOVE_CLASS_TRAITS(ColumnsType)
     using RowTraits = MoveRowTraits<Columns>;
 
@@ -29,7 +30,7 @@ struct MoveRow {
     ulint offset : RowTraits::OFFSET_BITS;
 
     MoveRow() = default;
-    MoveRow(const std::array<ulint, NUM_COLS>& values) {
+    MoveRow(const std::array<ulint, NumCols>& values) {
         set(values);
     }
 
@@ -40,11 +41,11 @@ struct MoveRow {
         else if constexpr (Col == ColsTraits::OFFSET) offset = val;
     }
     template <size_t... Indices>
-    void set(const std::array<ulint, NUM_COLS>& values, std::index_sequence<Indices...>) {
+    void set(const std::array<ulint, NumCols>& values, std::index_sequence<Indices...>) {
         (set<static_cast<Columns>(Indices)>(values[Indices]), ...);
     }
-    void set(const std::array<ulint, NUM_COLS>& values) {
-        set(values, std::make_index_sequence<NUM_COLS>{});
+    void set(const std::array<ulint, NumCols>& values) {
+        set(values, std::make_index_sequence<NumCols>{});
     }
 
     template <Columns Col>
@@ -55,14 +56,14 @@ struct MoveRow {
         else throw std::invalid_argument("Invalid column");
     }
     template <size_t... Indices>
-    std::array<ulint, NUM_COLS> get(std::index_sequence<Indices...>) const {
+    std::array<ulint, NumCols> get(std::index_sequence<Indices...>) const {
         return {get<static_cast<Columns>(Indices)>()...};
     }
-    std::array<ulint, NUM_COLS> get() const {
-        return get(std::make_index_sequence<NUM_COLS>{});
+    std::array<ulint, NumCols> get() const {
+        return get(std::make_index_sequence<NumCols>{});
     }
 
-    static void assert_widths(const std::array<uchar, NUM_COLS>& widths) {
+    static void assert_widths(const std::array<uchar, NumCols>& widths) {
         assert(widths[static_cast<size_t>(ColsTraits::PRIMARY)] <= RowTraits::PRIMARY_BITS);
         assert(widths[static_cast<size_t>(ColsTraits::POINTER)] <= RowTraits::POINTER_BITS);
         assert(widths[static_cast<size_t>(ColsTraits::OFFSET)] <= RowTraits::OFFSET_BITS);

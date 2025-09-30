@@ -12,7 +12,7 @@ enum class MoveCols {
     LENGTH, // Length of move interval
     POINTER, // Where i is start of current interval, the interval containing π(i)
     OFFSET, // Offset of π(i) within that interval
-    NUM_COLS // Helper to get the number of columns
+    COUNT // Helper to get the number of columns
 };
 
 /* Above, but uses absolute indices instead of relative intervals */
@@ -20,14 +20,32 @@ enum class MoveColsIdx {
     START, // i is the start of the interval
     POINTER, // Where i is start of current inverval, the interval containing π(i)
     OFFSET, // Offset of π(i) within that interval
-    NUM_COLS // Helper to get the number of columns
+    COUNT // Helper to get the number of columns
+};
+
+template<bool IsRelative>
+struct MovePosition;
+
+template <>
+struct MovePosition<true> {
+    struct type {
+        ulint interval = 0;
+        ulint offset = 0;
+    };
+};
+template <>
+struct MovePosition<false> {
+    struct type {
+        ulint interval = 0;
+        ulint offset = 0;
+        ulint idx = 0;
+    };
 };
 
 template <typename ColumnsType>
 struct MoveColsTraits;
 /* Needs to define:
-   - ABSOLUTE: bool
-   - RELATIVE: bool
+   - RELATIVE: bool // whether position is relative or absolute
    - PRIMARY: enum class Columns
    - POINTER: enum class Columns
    - OFFSET: enum class Columns
@@ -38,41 +56,32 @@ struct MoveColsTraits;
 
 template <>
 struct MoveColsTraits<MoveCols> {
-    static constexpr bool ABSOLUTE = false;
     static constexpr bool RELATIVE = true;
     static constexpr MoveCols PRIMARY = MoveCols::LENGTH;
     static constexpr MoveCols POINTER = MoveCols::POINTER;
     static constexpr MoveCols OFFSET = MoveCols::OFFSET;
-    static constexpr size_t NUM_COLS = static_cast<size_t>(MoveCols::NUM_COLS);
-
-    struct Position {
-        ulint interval = 0;
-        ulint offset = 0;
-    };
+    static constexpr size_t NUM_COLS = static_cast<size_t>(MoveCols::COUNT);
 
     static constexpr bool HAS_LENGTH = true;
     static constexpr bool HAS_START = false;
     static constexpr MoveCols LENGTH = MoveCols::LENGTH;
+
+    using Position = MovePosition<RELATIVE>::type;
 };
 
 template <>
 struct MoveColsTraits<MoveColsIdx> {
-    static constexpr bool ABSOLUTE = true;
     static constexpr bool RELATIVE = false;
     static constexpr MoveColsIdx PRIMARY = MoveColsIdx::START;
     static constexpr MoveColsIdx POINTER = MoveColsIdx::POINTER;
     static constexpr MoveColsIdx OFFSET = MoveColsIdx::OFFSET;
-    static constexpr size_t NUM_COLS = static_cast<size_t>(MoveColsIdx::NUM_COLS);
-    
-    struct Position {
-        ulint interval = 0;
-        ulint offset = 0;
-        ulint idx = 0;
-    };
+    static constexpr size_t NUM_COLS = static_cast<size_t>(MoveColsIdx::COUNT);
 
     static constexpr bool HAS_LENGTH = false;
     static constexpr bool HAS_START = true;
     static constexpr MoveColsIdx START = MoveColsIdx::START;
+
+    using Position = MovePosition<RELATIVE>::type;
 };
 
 /* Useful if a specialized move column just extends the existing MoveCols enum, i.e.
@@ -82,13 +91,13 @@ struct MoveColsTraits<MoveColsIdx> {
      OFFSET,
      NEW_VAL1,
      NEW_VAL2,
-     NUM_COLS
+     COUNT
    };
    
    Just resets the NUM_COLS to the new value */
 template <typename Columns, typename BaseColumns>
 struct ExtendTraits : public MoveColsTraits<BaseColumns> {
-    static constexpr size_t NUM_COLS = static_cast<size_t>(Columns::NUM_COLS);
+    static constexpr size_t NUM_COLS = static_cast<size_t>(Columns::COUNT);
 };
 
 /* Allows for switching between Length and Start columns, if passed one type but want relative or absolute positions.

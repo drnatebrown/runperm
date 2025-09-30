@@ -10,79 +10,107 @@
 #include <array>
 #include <iostream>
 
+// Implemented below, packed vector aligned wraps it to use columns enum
+template<size_t NumCols>
+class PackedMatrixAligned;
+
+template<class Columns>
+class PackedVectorAligned : public PackedMatrixAligned<static_cast<size_t>(Columns::NUM_COLS)> {
+    using Base = PackedMatrixAligned<static_cast<size_t>(Columns::COUNT)>;
+
+public:
+    PackedVectorAligned() = default;
+    PackedVectorAligned(size_t rows, const std::array<uchar, static_cast<size_t>(Columns::COUNT)>& widths)
+        : Base(rows, widths) {}
+
+    template<Columns Col>
+    ulint get(size_t row) const {
+        return Base::template get<static_cast<size_t>(Col)>(row);
+    }
+
+    template<Columns Col>
+    void set(size_t row, ulint val) {
+        Base::template set<static_cast<size_t>(Col)>(row, val);
+    }
+};
+
 // Column values are rounded to the nearest byte
 // TODO this would be better if definitely fast, using SIMD to unpack entire rows?
-template <typename Columns>
-class PackedVectorAligned {
+template <size_t NumCols>
+class PackedMatrixAligned {
 public:
     using word_t = uchar;
 
     // We read ulint at a time, this ensures we never need to read more than one ulint
     constexpr static uchar max_width = NUM_BITS(ulint); // should be 64 bits
-    constexpr static size_t NUM_COLS = static_cast<size_t>(Columns::NUM_COLS);
 
-    PackedVectorAligned() = default;
-    PackedVectorAligned(const ulint num_rows, const std::array<uchar, NUM_COLS>& widths) {
-        PackedVectorAligned::num_rows = num_rows;
-        PackedVectorAligned::widths = widths;
+    PackedMatrixAligned() = default;
+    PackedMatrixAligned(const ulint rows, const std::array<uchar, NumCols>& widths) {
+        PackedMatrixAligned::num_rows = rows;
+        PackedMatrixAligned::widths = widths;
 
         init();
     }
 
-    PackedVectorAligned(PackedVectorAligned&& other) noexcept = default;
-    PackedVectorAligned& operator=(PackedVectorAligned&& other) noexcept = default;
-    PackedVectorAligned(const PackedVectorAligned& other) = default;
-    PackedVectorAligned& operator=(const PackedVectorAligned& other) = default;
-    ~PackedVectorAligned() = default;
+    PackedMatrixAligned(PackedMatrixAligned&& other) noexcept = default;
+    PackedMatrixAligned& operator=(PackedMatrixAligned&& other) noexcept = default;
+    PackedMatrixAligned(const PackedMatrixAligned& other) = default;
+    PackedMatrixAligned& operator=(const PackedMatrixAligned& other) = default;
+    ~PackedMatrixAligned() = default;
 
-    template <Columns Col>
-    ulint get(size_t i) const {
-        assert(i < num_rows);
+    template<size_t Col>
+    ulint get(size_t row) const {
+        static_assert(Col < NumCols, "Column out of bounds");
+        assert(row < num_rows);
 
-        size_t byte_pos = get_row_start_byte(i) + byte_offsets[static_cast<size_t>(Col)];
+        size_t byte_pos = get_row_start_byte(row) + byte_offsets[Col];
         ulint bits = 0;
         std::memcpy(&bits, &data[byte_pos], sizeof(ulint));
-        return extract_bits(bits, masks_extract[static_cast<size_t>(Col)]);
+        return extract_bits(bits, masks_extract[Col]);
     }      
 
-    template <Columns Col>
-    void set(size_t i, ulint val) {
-        assert(i < num_rows);
-        assert(val < POW2(BYTES_TO_BITS(byte_widths[static_cast<size_t>(Col)]))); // value must fit in the column
+    template<size_t Col>
+    void set(size_t row, ulint val) {
+        static_assert(Col < NumCols, "Column out of bounds");
+        assert(row < num_rows);
+        assert(val < POW2(BYTES_TO_BITS(byte_widths[Col]))); // value must fit in the column
 
-        size_t byte_pos = get_row_start_byte(i) + byte_offsets[static_cast<size_t>(Col)];
+        size_t byte_pos = get_row_start_byte(row) + byte_offsets[Col];
 
         ulint bits = 0;
         std::memcpy(&bits, &data[byte_pos], sizeof(ulint));
-        write_bits(bits, masks_write[static_cast<size_t>(Col)], val);
+        write_bits(bits, masks_write[Col], val);
         std::memcpy(&data[byte_pos], &bits, sizeof(ulint));
     }
 
-    template<size_t... Indices>
-    void set_row(size_t i, const std::array<ulint, NUM_COLS>& values, std::index_sequence<Indices...>) {
-        (set<static_cast<Columns>(Indices)>(i, values[Indices]), ...);
+    template<size_t... Col>
+    void set_row(size_t row, const std::array<ulint, NumCols>& values, std::index_sequence<Col...>) {
+        (set<Col>(row, values[Col]), ...);
     }
-    void set_row(size_t i, const std::array<ulint, NUM_COLS>& values) {
-        set_row(i, values, std::make_index_sequence<NUM_COLS>{});
-    }
-
-    template<size_t... Indices>
-    std::array<ulint, NUM_COLS> get_row(size_t i, std::index_sequence<Indices...>) const { 
-        return {get<static_cast<Columns>(Indices)>(i)...};
-    }
-    std::array<ulint, NUM_COLS> get_row(size_t i) const { 
-        return get_row(i, std::make_index_sequence<NUM_COLS>{});
+    void set_row(size_t row, const std::array<ulint, NumCols>& values) {
+        set_row(row, values, std::make_index_sequence<NumCols>{});
     }
 
+    template<size_t... Col>
+    std::array<ulint, NumCols> get_row(size_t row, std::index_sequence<Col...>) const { 
+        return {get<Col>(row)...};
+    }
+    std::array<ulint, NumCols> get_row(size_t row) const { 
+        return get_row(row, std::make_index_sequence<NumCols>{});
+    }
+
+
+    [[nodiscard]] size_t size() const noexcept { return num_rows; }
+    [[nodiscard]] size_t rows() const noexcept { return num_rows; }
+    [[nodiscard]] static constexpr size_t cols() noexcept { return NumCols; }
+    [[nodiscard]] size_t data_size() const noexcept {
+        return byte_row_width*num_rows + sizeof(ulint)/sizeof(word_t);
+    }
+    [[nodiscard]] const std::array<uchar, NumCols>& widths() const noexcept { return widths; }
     size_t size() const { return num_rows; }
     size_t data_size() const { 
         return byte_row_width*num_rows + sizeof(ulint)/sizeof(word_t);
     }
-
-    size_t get_num_rows() const { return num_rows; }
-    size_t get_num_cols() const { return NUM_COLS; }
-    std::array<uchar, NUM_COLS> get_widths() const { return widths; }
-    std::array<uchar, NUM_COLS> get_byte_widths() const { return byte_widths; }
 
     size_t serialize(std::ostream &out) {
         size_t written_bytes = 0;
@@ -113,21 +141,21 @@ private:
     size_t byte_vector_width; // byte width of stored data (actual data size might be larger due to padding)
     size_t byte_row_width; // width of each row in bytes
 
-    std::array<uchar, NUM_COLS> widths; // Intended bit width of each column
-    std::array<uchar, NUM_COLS> byte_widths; // Actual byte width of each column
-    std::array<uint16_t, NUM_COLS> byte_offsets; // Offset of the first byte of each column in the vector
-    std::array<ulint, NUM_COLS> masks_extract; // Mask of the bits of each column for get
-    std::array<ulint, NUM_COLS> masks_write; // Mask of the bits of each column for set
+    std::array<uchar, NumCols> widths; // Intended bit width of each column
+    std::array<uchar, NumCols> byte_widths; // Actual byte width of each column
+    std::array<uint16_t, NumCols> byte_offsets; // Offset of the first byte of each column in the vector
+    std::array<ulint, NumCols> masks_extract; // Mask of the bits of each column for get
+    std::array<ulint, NumCols> masks_write; // Mask of the bits of each column for set
 
     std::vector<word_t> data;
 
-    inline size_t get_row_start_byte(size_t i) const {
-        return i*byte_row_width;
+    inline size_t get_row_start_byte(size_t row) const {
+        return row*byte_row_width;
     }
 
     void init() {
         size_t byte_pos = 0;
-        for (size_t i = 0; i < NUM_COLS; i++) {
+        for (size_t i = 0; i < NumCols; i++) {
             assert(widths[i] <= max_width);
             // Round up to the nearest byte
             if (widths[i] % NUM_BITS(word_t) != 0) {

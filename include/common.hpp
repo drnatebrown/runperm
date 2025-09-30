@@ -25,10 +25,29 @@
 
 #define MOVE_STRUCTURE_EXTENSION ".move"
 
+// ENUM REPRESENTS COLUMNS, USE ENUM HELPERS TO ENFORCE STRUCTURE
+template<class E>
+constexpr size_t to_index(E e) noexcept { return static_cast<size_t>(e); }
+template<class E>
+constexpr E to_enum(size_t index) noexcept { return static_cast<E>(index); }
+
+template<class E>
+constexpr size_t enum_size() noexcept { return static_cast<size_t>(E::COUNT); }
+
+// Ensures enum is contiguous from 0 to count-1
+template<class E, size_t... I>
+constexpr bool verify_enum_impl(std::index_sequence<I...>) {
+    return ((to_index(static_cast<E>(I)) == I) && ...);
+}
+template<class E>
+constexpr bool verify_enum() {
+    return verify_enum_impl<E>(std::make_index_sequence<enum_size<E>()>{});
+}
+
 #define MOVE_CLASS_TRAITS(ColumnsParam) \
     using Columns = ColumnsParam; \
     using ColsTraits = typename ResolveColsTraits<Columns>::type;  \
-    static constexpr size_t NUM_COLS = ColsTraits::NUM_COLS;
+    static constexpr size_t NumCols = ColsTraits::NUM_COLS;
 
 typedef unsigned char uchar;
 typedef unsigned long int ulint;

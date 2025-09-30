@@ -24,7 +24,7 @@ template<typename RunDataType, // Fields to be stored alongside the move structu
 class RunPerm : FieldDataHolder<RunDataType, IntegratedMoveStructure> {
     using RunData = RunDataType;
 private:
-    static constexpr size_t NUM_FIELDS = static_cast<size_t>(RunDataType::NUM_COLS);
+    static constexpr size_t NUM_FIELDS = static_cast<size_t>(RunDataType::COUNT);
 
     // check if we're using MoveTable
     static constexpr bool is_move_table_type() {

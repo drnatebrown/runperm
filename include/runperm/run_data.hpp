@@ -8,6 +8,9 @@ struct RunDataColumns {
     using RD = RunData;
     using Base = BaseColumns;
     using BaseTraits = MoveColsTraits<BaseColumns>;
+
+    static constexpr size_t NUM_DATA_COLS = static_cast<size_t>(RunData::COUNT);
+    
     // Inherits from some BaseColumns type used by the move structure
     enum class E : size_t {
         // mirror base columns
@@ -16,7 +19,7 @@ struct RunDataColumns {
         OFFSET  = static_cast<size_t>(BaseTraits::OFFSET),
         /* other unlisted base columns here*/
         // total columns = base + user fields
-        NUM_COLS = static_cast<size_t>(BaseTraits::NUM_COLS) + static_cast<size_t>(RunData::NUM_COLS)
+        COUNT = static_cast<size_t>(BaseTraits::NUM_COLS) + static_cast<size_t>(NUM_DATA_COLS)
     };
     
     template<RunData RunDataField>
@@ -25,7 +28,7 @@ struct RunDataColumns {
     }
     
     static constexpr size_t NUM_BASE_COLS = static_cast<size_t>(BaseTraits::NUM_COLS);
-    static constexpr size_t NUM_FIELDS = static_cast<size_t>(RunData::NUM_COLS);
+    static constexpr size_t NUM_FIELDS = static_cast<size_t>(NUM_DATA_COLS);
     static constexpr size_t NUM_COLS = NUM_BASE_COLS + NUM_FIELDS;
 
     // ADL back-link

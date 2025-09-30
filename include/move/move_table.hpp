@@ -8,13 +8,14 @@
 
 template<typename Derived, typename ColumnsType>
 struct MoveTableInterface {
+    // Sets NumCols, Columns, and ColsTraits
     MOVE_CLASS_TRAITS(ColumnsType)
 
     template <typename C = Columns>
     void set_primary(size_t i, ulint start, ulint length) {
         if constexpr (MoveColsTraits<C>::RELATIVE) {
             static_cast<Derived*>(this)->template set<MoveColsTraits<C>::PRIMARY>(i, length);
-        } else if constexpr (MoveColsTraits<C>::ABSOLUTE) {
+        } else {
             static_cast<Derived*>(this)->template set<MoveColsTraits<C>::PRIMARY>(i, start);
         }
     }
@@ -66,6 +67,7 @@ struct MoveTableInterface {
 
 template<typename Row = MoveRow<>>
 struct MoveTable : public MoveTableInterface<MoveTable<Row>, typename Row::Columns> {
+    // Sets NumCols, Columns, and ColsTraits
     MOVE_CLASS_TRAITS(typename Row::Columns)
     
     std::vector<Row> table;
@@ -92,11 +94,11 @@ struct MoveTable : public MoveTableInterface<MoveTable<Row>, typename Row::Colum
         return table[i].template get<Col>();
     }
 
-    void set_row(size_t i, const std::array<ulint, NUM_COLS>& values) {
+    void set_row(size_t i, const std::array<ulint, NumCols>& values) {
         table[i].set(values);
     }
 
-    std::array<ulint, NUM_COLS> get_row(size_t i) const {
+    std::array<ulint, NumCols> get_row(size_t i) const {
         return table[i].get();
     }
 
@@ -127,13 +129,14 @@ struct MoveTable : public MoveTableInterface<MoveTable<Row>, typename Row::Colum
     }
 
     // Widths don't help, the struct is already defined
-    static size_t bits_needed(size_t num_rows, std::array<uchar, NUM_COLS> widths) {
+    static size_t bits_needed(size_t num_rows, std::array<uchar, NumCols> widths) {
         return BYTES_TO_BITS(sizeof(Row)) * num_rows;
     }
 };
 
 template <typename ColumnsType = MoveCols>
 struct MoveVector : public MoveTableInterface<MoveVector<ColumnsType>, ColumnsType> {
+    // Sets NumCols, Columns, and ColsTraits
     MOVE_CLASS_TRAITS(ColumnsType)
     
     PackedVector<Columns> vec;
@@ -155,11 +158,11 @@ struct MoveVector : public MoveTableInterface<MoveVector<ColumnsType>, ColumnsTy
         return vec.template get<Col>(i);
     }
 
-    void set_row(size_t i, std::array<ulint, NUM_COLS> values) {
+    void set_row(size_t i, std::array<ulint, NumCols> values) {
         vec.set_row(i, values);
     }
 
-    std::array<ulint, NUM_COLS> get_row(size_t i) const {
+    std::array<ulint, NumCols> get_row(size_t i) const {
         return vec.get_row(i);
     }
 
@@ -173,7 +176,7 @@ struct MoveVector : public MoveTableInterface<MoveVector<ColumnsType>, ColumnsTy
     }
 
     // Easy, just sum the widths
-    static size_t bits_needed(size_t num_rows, std::array<uchar, NUM_COLS> widths) {
+    static size_t bits_needed(size_t num_rows, std::array<uchar, NumCols> widths) {
         size_t total_width = std::accumulate(widths.begin(), widths.end(), 0, [](size_t sum, uchar width) {
             return sum + width;
         });
