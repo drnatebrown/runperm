@@ -124,7 +124,7 @@ using SwitchColumns = std::conditional_t<UseAbsolutePositions,
     typename ColumnSwitcher<BaseColumns>::Absolute,
     typename ColumnSwitcher<BaseColumns>::Relative>;
 
-/* This was done using generative code... Advanced and not sure how to do it better */
+/* Code below is only useful to interact with runperm, so we can have extended columns types */
 // ADL detector: is C an extended enum (has friend runperm_parent(C))?
 template<class C, class = void>
 struct is_runperm_extended : std::false_type {};
@@ -133,37 +133,12 @@ template<class C>
 struct is_runperm_extended<C, std::void_t<decltype(runperm_parent(std::declval<C>()))>>
     : std::true_type {};
 
-// Get the parent RunDataColumns<RD,Base> for extended enums via ADL
+// Get the parent RunDataColumns<RunData,Base> for extended enums via ADL
 template<class C>
 using runperm_parent_t = std::remove_pointer_t<decltype(runperm_parent(std::declval<C>()))>;
 
-// Default resolver: plain traits
+// Resolver can now resolve extended columns types, or just use existing specializations
 template<class C, bool = is_runperm_extended<C>::value>
 struct ResolveColsTraits { using type = MoveColsTraits<C>; };
-
-// Extended enum: inherit base traits, remap enum constants to C, update NUM_COLS
-template<class C>
-struct ResolveColsTraits<C, true> {
-    using Parent   = runperm_parent_t<C>;           // RunDataColumns<RD, Base>
-    using BaseCols = typename Parent::Base;
-    using BaseT    = MoveColsTraits<BaseCols>;
-
-    struct type : BaseT {
-        using Columns = C;
-
-        static constexpr size_t NUM_COLS = static_cast<size_t>(Columns::NUM_COLS);
-
-        static constexpr Columns PRIMARY = static_cast<Columns>(BaseT::PRIMARY);
-        static constexpr Columns POINTER = static_cast<Columns>(BaseT::POINTER);
-        static constexpr Columns OFFSET  = static_cast<Columns>(BaseT::OFFSET);
-
-        static constexpr bool HAS_LENGTH = BaseT::HAS_LENGTH;
-        static constexpr bool HAS_START  = BaseT::HAS_START;
-
-        using Position = typename BaseT::Position;
-        static constexpr bool RELATIVE = BaseT::RELATIVE;
-        static constexpr bool ABSOLUTE = BaseT::ABSOLUTE;
-    };
-};
 
 #endif /* end of include guard: _MOVE_COLUMNS_HPP */

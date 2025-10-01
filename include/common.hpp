@@ -25,6 +25,13 @@
 
 #define MOVE_STRUCTURE_EXTENSION ".move"
 
+typedef unsigned char uchar;
+typedef unsigned long int ulint;
+
+constexpr uchar bit_width(ulint value) {
+    return value == 0 ? 1 : 64 - __builtin_clzll(value);
+}
+
 // ENUM REPRESENTS COLUMNS, USE ENUM HELPERS TO ENFORCE STRUCTURE
 template<class E>
 constexpr size_t to_index(E e) noexcept { return static_cast<size_t>(e); }
@@ -49,10 +56,4 @@ constexpr bool verify_enum() {
     using ColsTraits = typename ResolveColsTraits<Columns>::type;  \
     static constexpr size_t NumCols = ColsTraits::NUM_COLS;
 
-typedef unsigned char uchar;
-typedef unsigned long int ulint;
-
-constexpr uchar bit_width(ulint value) {
-    return value == 0 ? 1 : 64 - __builtin_clzll(value);
-}
 #endif /* end of include guard: _COMMON_HPP */
