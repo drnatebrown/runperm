@@ -56,4 +56,20 @@ constexpr bool verify_enum() {
     using ColsTraits = typename ResolveColsTraits<Columns>::type;  \
     static constexpr size_t NumCols = ColsTraits::NUM_COLS;
 
+/* PERMUTATION UTILITIES */
+inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_intervals(const std::vector<ulint> &permutation) {
+    std::vector<ulint> lengths;
+    std::vector<ulint> interval_permutation;
+    for (size_t i = 0; i < permutation.size(); ++i) {
+        if (i == 0 || permutation[i] != permutation[i - 1] + 1) {
+            lengths.push_back(1);
+            interval_permutation.push_back(permutation[i]);
+        } else {
+            ++lengths.back();
+        }
+    }
+    return {lengths, interval_permutation};
+}
+
+
 #endif /* end of include guard: _COMMON_HPP */
