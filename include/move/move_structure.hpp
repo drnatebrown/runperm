@@ -84,11 +84,11 @@ public:
     ulint get_length(size_t i) const {
         assert(i < table.size());
         if constexpr (ColsTraits::RELATIVE) {
-            return table.template get<ColsTraits::PRIMARY>(i);
+            return table.template get<to_cols(ColsTraits::PRIMARY)>(i);
         } else {
             return (i == table.size() - 1)
-                ? n - table.template get<ColsTraits::PRIMARY>(i)
-                : table.template get<ColsTraits::PRIMARY>(i + 1) - table.template get<ColsTraits::PRIMARY>(i);
+                ? n - table.template get<to_cols(ColsTraits::PRIMARY)>(i)
+                : table.template get<to_cols(ColsTraits::PRIMARY)>(i + 1) - table.template get<to_cols(ColsTraits::PRIMARY)>(i);
         }
     }
     inline ulint get_length(Position pos) const {
@@ -209,6 +209,27 @@ private:
     ulint n;
     ulint r;
 
+    inline Position fast_forward(Position pos) const {
+        if constexpr (ColsTraits::RELATIVE) {
+            ulint length = get_length(pos);
+            while (pos.offset >= length) {
+                pos.offset -= length;
+                ++pos.interval;
+                length = get_length(pos);
+            }    
+        } else {
+            ulint curr_start = pos.idx - pos.offset;
+            ulint next_start = get_start(pos.interval + 1);
+            while (pos.idx >= next_start) {
+                pos.offset -= next_start - curr_start;
+                ++pos.interval;
+                curr_start = next_start;
+                next_start = get_start(pos.interval + 1);
+            }
+        }
+        return pos;
+    }
+
     template<typename RunData,
          bool IntegratedMoveStructure,
          bool SplitIntervals,
@@ -317,10 +338,10 @@ private:
         auto sort_itr = sorted_indices.begin();
         auto add_interval = [&](size_t i, size_t length) {
             if constexpr (ColsTraits::RELATIVE) {
-                structure.template set<ColsTraits::PRIMARY>(tbl_idx, length);
+                structure.template set<to_cols(ColsTraits::PRIMARY)>(tbl_idx, length);
             }
             else {
-                structure.template set<ColsTraits::PRIMARY>(tbl_idx, start_val);
+                structure.template set<to_cols(ColsTraits::PRIMARY)>(tbl_idx, start_val);
             }
 
             // if constexpr (ColsTraits::HAS_LENGTH) {
@@ -341,8 +362,8 @@ private:
             }
 
             while (sort_itr != sorted_indices.end() && final_interval_permutation[*sort_itr] < start_val + length) {
-                structure.template set<ColsTraits::POINTER>(*sort_itr, tbl_idx);
-                structure.template set<ColsTraits::OFFSET>(*sort_itr, final_interval_permutation[*sort_itr] - start_val);
+                structure.template set<to_cols(ColsTraits::POINTER)>(*sort_itr, tbl_idx);
+                structure.template set<to_cols(ColsTraits::OFFSET)>(*sort_itr, final_interval_permutation[*sort_itr] - start_val);
                 ++sort_itr;
             }
             ++tbl_idx;
@@ -407,27 +428,6 @@ private:
 
     static PackedVector<Columns> find_structure(const std::vector<ulint> &lengths, const std::vector<ulint> &interval_permutation, const PermutationStats stats) {
         return find_structure(lengths, interval_permutation, stats, get_move_widths(stats), nullptr);
-    }
-    
-    inline Position fast_forward(Position pos) const {
-        if constexpr (ColsTraits::RELATIVE) {
-            ulint length = get_length(pos);
-            while (pos.offset >= length) {
-                pos.offset -= length;
-                ++pos.interval;
-                length = get_length(pos);
-            }    
-        } else {
-            ulint curr_start = pos.idx - pos.offset;
-            ulint next_start = get_start(pos.interval + 1);
-            while (pos.idx >= next_start) {
-                pos.offset -= next_start - curr_start;
-                ++pos.interval;
-                curr_start = next_start;
-                next_start = get_start(pos.interval + 1);
-            }
-        }
-        return pos;
     }
 };
 

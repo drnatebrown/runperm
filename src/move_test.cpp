@@ -203,7 +203,7 @@ void test_runperm(const std::vector<ulint>& lengths,
                   const std::vector<ulint>& interval_permutation, 
                   const std::vector<std::array<ulint, 2>>& run_data, 
                   size_t n) {
-    using RunPermType = RunPerm<RunData, false, false>;
+    using RunPermType = RunPerm<RunData, true, false>;
     
     auto start_time = high_resolution_clock::now();
     auto runperm = RunPermType(lengths, interval_permutation, run_data);
@@ -309,8 +309,8 @@ void tests() {
                 COUNT
             };
             static constexpr size_t NUM_FIELDS = static_cast<size_t>(RunData::COUNT);
-            std::vector<std::array<ulint, NUM_FIELDS>> run_data(r);
-            for (size_t i = 0; i < r; ++i) {
+            std::vector<std::array<ulint, NUM_FIELDS>> run_data(lengths.size());
+            for (size_t i = 0; i < lengths.size(); ++i) {
                 run_data[i][0] = rand() % val1_max;
                 run_data[i][1] = rand() % val2_max;
             }
@@ -326,7 +326,56 @@ int main() {
     tests();
     std::cout << "Tests complete" << std::endl;
 
-    // std::vector<ulint> permutation = {6,7,8,3,4,1,2,5};
-    // MovePerm<> 
+    // std::cout << "=== RunPerm Tests ===" << endl << endl;
+
+    // enum class RunData {
+    //     EASY,
+    //     HARD,
+    //     COUNT
+    // };
+    // std::vector<std::array<ulint, static_cast<size_t>(RunData::COUNT)>> run_data = {{
+    //     {1, 2},
+    //     {3, 4},
+    //     {5, 6},
+    //     {7, 8},
+    //     {9, 10}
+    // }};
+    // std::vector<ulint> permutation = {6,7,8,3,4,1,2,5,0};
+    // std::cout << "Permutation: ";
+    // for (size_t i = 0; i < permutation.size(); ++i) {
+    //     std::cout << permutation[i] << " ";
+    // }
+    // std::cout << std::endl;
+    // auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
+    // RunPerm<RunData> run_perm(lengths, interval_permutation, run_data);
+    // run_perm.first();
+    // std::cout << "Size: " << run_perm.size() << std::endl;
+    // std::cout << "Domain: " << run_perm.domain() << std::endl;
+    // std::cout << "Intervals: " << run_perm.intervals() << std::endl;
+    // using Position = typename RunPerm<RunData>::Position;
+    // Position pos = run_perm.get_position();
+    // for (size_t i = 0; i < run_perm.size(); ++i) {
+    //     std::cout << "Position: " << pos.interval << ", " << pos.offset << std::endl;
+    //     run_perm.next();
+    //     pos = run_perm.get_position();
+    // }
+    
+    // std::cout << "=== MovePerm Tests ===" << endl << endl;
+    // std::cout << "Permutation: ";
+    // for (size_t i = 0; i < permutation.size(); ++i) {
+    //     std::cout << permutation[i] << " ";
+    // }
+    // std::cout << std::endl;
+    // MovePerm<> move_perm(permutation);
+    // move_perm.first();
+    // std::cout << "Size: " << move_perm.size() << std::endl;
+    // std::cout << "Domain: " << move_perm.domain() << std::endl;
+    // std::cout << "Intervals: " << move_perm.intervals() << std::endl;
+    // pos = move_perm.get_position();
+    // for (size_t i = 0; i < move_perm.size(); ++i) {
+    //     std::cout << "Position: " << pos.interval << ", " << pos.offset << std::endl;
+    //     move_perm.next();
+    //     pos = move_perm.get_position();
+    // }
     return 0;
 }

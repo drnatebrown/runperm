@@ -3,6 +3,11 @@
 
 #include "move/move_columns.hpp"
 
+// Special empty run columns type for when no run data is needed
+enum class EmptyRunCols {
+    COUNT // Helper to get the number of columns
+};
+
 template<typename RunColsType, typename BaseColumns = MoveCols>
 struct RunColsWrapper {
     using RunCols = RunColsType;
@@ -15,7 +20,7 @@ struct RunColsWrapper {
     
     // "trick" to pass a columns type that has everything needed for the move structure
     // even if it doesn't explicitly have them. Importantly, the count is correct.
-    enum class E {
+    enum class E : size_t {
         PRIMARY = static_cast<size_t>(BaseTraits::PRIMARY),
         POINTER = static_cast<size_t>(BaseTraits::POINTER),
         OFFSET = static_cast<size_t>(BaseTraits::OFFSET),
@@ -42,8 +47,8 @@ struct ResolveColsTraits<C, true> {
         static constexpr size_t NUM_COLS = static_cast<size_t>(Parent::NUM_COLS);
 
         template<RunCols RunDataCol>
-        static constexpr RunCols run_column() { 
-            return static_cast<RunCols>(Parent::NUM_BASE_COLS + static_cast<size_t>(RunDataCol)); 
+        static constexpr C run_column() { 
+            return static_cast<C>(Parent::NUM_BASE_COLS + static_cast<size_t>(RunDataCol)); 
         }
     };
 };

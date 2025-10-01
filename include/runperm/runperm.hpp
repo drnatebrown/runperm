@@ -55,12 +55,16 @@ public:
 
     RunPerm() = default;
 
-    RunPerm(std::vector<ulint> &permutation, const std::vector<std::array<ulint, NumRunCols>> &run_data) {
-        auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
-        RunPerm(lengths, interval_permutation, run_data);
-    }
+    // Why would you know the run data but not the lengths and interval permutation?
+    // RunPerm(std::vector<ulint> &permutation, const std::vector<std::array<ulint, NumRunCols>> &run_data) {
+    //     auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
+    //     *this RunPerm(lengths, interval_permutation, run_data);
+    // }
 
     RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const std::vector<std::array<ulint, NumRunCols>> &run_data) {
+        assert(lengths.size() == interval_permutation.size());
+        assert(lengths.size() == run_data.size());
+        orig_intervals = lengths.size();
         position = Position(); // should start at 0
         auto run_cols_widths = get_run_cols_widths(run_data);
         PermutationStats stats(lengths);
@@ -100,6 +104,8 @@ public:
     void next() { position = move_structure.move(position); }
     // PREVIOUS IF INVERSE SUPPORTED
 
+    // need to add succ/pred and up, down
+
     void first() { position = move_structure.first(); }
     void last() { position = move_structure.last(); }
 
@@ -121,7 +127,7 @@ public:
     size_t serialize(std::ostream& os) {
         size_t written_bytes = 0;
         written_bytes += move_structure.serialize(os);
-        if constexpr (IntegratedMoveStructure) {
+        if constexpr (!IntegratedMoveStructure) {
             written_bytes += this->run_cols_data.serialize(os);
         }
         return written_bytes;
@@ -129,7 +135,7 @@ public:
 
     void load(std::istream& is) {
         move_structure.load(is);
-        if constexpr (IntegratedMoveStructure) {
+        if constexpr (!IntegratedMoveStructure) {
             this->run_cols_data.load(is);
         }
     }
@@ -149,8 +155,8 @@ private:
     }
 
     std::array<uchar, NumRunCols> get_run_cols_widths(const std::vector<std::array<ulint, NumRunCols>> &run_data) {
-        std::array<ulint, NumRunCols> max_value = {0};
-        std::array<uchar, NumRunCols> run_cols_widths = {0};
+        std::array<ulint, NumRunCols> max_value = {};
+        std::array<uchar, NumRunCols> run_cols_widths = {};
         for (size_t i = 0; i < NumRunCols; ++i) {
             for (size_t j = 0; j < run_data.size(); ++j) {
                 max_value[i] = std::max(max_value[i], run_data[j][i]);
@@ -184,7 +190,7 @@ template<bool SplitIntervals = DEFAULT_SPLIT_INTERVALS, bool StoreAbsolutePositi
     typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector, template<typename> class PackedType = PackedVector>
 class MovePerm {
 private:
-    using RunPermType = RunPerm<void, false, SplitIntervals, StoreAbsolutePositions, BaseColumns, TableType, PackedType>;
+    using RunPermType = RunPerm<EmptyRunCols, false, SplitIntervals, StoreAbsolutePositions, BaseColumns, TableType, PackedType>;
     RunPermType run_perm;
     
 public:
@@ -206,9 +212,9 @@ public:
     }
     
     // Delegate all RunPerm methods
-    Position first() const { return run_perm.first(); }
-    Position last() const { return run_perm.last(); }
-    Position move(Position pos) const { return run_perm.move(pos); }
+    void first() { run_perm.first(); }
+    void last() { run_perm.last(); }
+    void move(Position pos) const { run_perm.move(pos); }
     Position get_position() const { return run_perm.get_position(); }
     void next() { run_perm.next(); }
     

@@ -54,7 +54,8 @@ constexpr bool verify_enum() {
 #define MOVE_CLASS_TRAITS(ColumnsParam) \
     using Columns = ColumnsParam; \
     using ColsTraits = typename ResolveColsTraits<Columns>::type;  \
-    static constexpr size_t NumCols = ColsTraits::NUM_COLS;
+    static constexpr size_t NumCols = ColsTraits::NUM_COLS; \
+    template<typename E> static constexpr Columns to_cols(E e) { return static_cast<Columns>(e); }
 
 /* PERMUTATION UTILITIES */
 inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_intervals(const std::vector<ulint> &permutation) {
