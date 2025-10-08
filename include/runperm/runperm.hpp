@@ -6,8 +6,8 @@
 #include "runperm/run_columns.hpp"
 
 constexpr bool DEFAULT_INTEGRATED_MOVE_STRUCTURE = true;
-constexpr bool DEFAULT_SPLIT_INTERVALS = true;
-constexpr bool DEFAULT_STORE_ABSOLUTE_POSITIONS = true;
+constexpr bool DEFAULT_STORE_ABSOLUTE_POSITIONS = false;
+constexpr bool DEFAULT_FIND_OPTIMAL_LENGTH = true;
 
 // If we're integrating the run data alongside the move structure, we don't need to store it separately
 template <typename RunColsType, bool IntegratedMoveStructure>
@@ -20,8 +20,8 @@ struct SeperatedDataHolder<RunColsType, true> { /* empty */ };
 // TODO InversePermutation, which builds both the forward and inverse move structures if needed
 template<typename RunColsType, // Fields to be stored alongside the move structure representing a runny permutation
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE, // Whether to pack the run data alongside the move structure
-         bool SplitIntervals = DEFAULT_SPLIT_INTERVALS, // Whether to split intervals if it minimizes table size
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, // Whether to store absolute positions instead of interval/offset
+         bool FindOptimalLength = DEFAULT_FIND_OPTIMAL_LENGTH, // Whether to find the optimal max length for the move structure to minimize table size
          typename BaseColumns = MoveCols,
          template<typename> class TableType = MoveVector,
          template<typename> class StructureType = MoveStructure,
@@ -55,12 +55,6 @@ public:
 
 
     RunPerm() = default;
-
-    // Why would you know the run data but not the lengths and interval permutation?
-    // RunPerm(std::vector<ulint> &permutation, const std::vector<std::array<ulint, NumRunCols>> &run_data) {
-    //     auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
-    //     *this RunPerm(lengths, interval_permutation, run_data);
-    // }
 
     RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const std::vector<std::array<ulint, NumRunCols>> &run_data) {
         assert(lengths.size() == interval_permutation.size());
@@ -224,11 +218,11 @@ private:
 };
 
 // A wrapper around RunPerm without any run data, essentially just a MoveStructure
-template<bool SplitIntervals = DEFAULT_SPLIT_INTERVALS, bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, 
+template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, bool FindOptimalLength = DEFAULT_FIND_OPTIMAL_LENGTH,  
     typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector, template<typename> class StructureType = MoveStructure, template<typename> class PackedType = PackedVector>
 class MovePerm {
 private:
-    using RunPermType = RunPerm<EmptyRunCols, false, SplitIntervals, StoreAbsolutePositions, BaseColumns, TableType, StructureType, PackedType>;
+    using RunPermType = RunPerm<EmptyRunCols, false, StoreAbsolutePositions, FindOptimalLength, BaseColumns, TableType, StructureType, PackedType>;
     RunPermType run_perm;
     
 public:
