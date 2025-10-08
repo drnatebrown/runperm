@@ -53,6 +53,8 @@ constexpr bool verify_enum() {
 
 #define MOVE_CLASS_TRAITS(ColumnsParam) \
     using Columns = ColumnsParam; \
+    template<typename C> \
+    using ColsTraitsFor = typename ResolveColsTraits<C>::type;  \
     using ColsTraits = typename ResolveColsTraits<Columns>::type;  \
     static constexpr size_t NumCols = ColsTraits::NUM_COLS; \
     template<typename E> static constexpr Columns to_cols(E e) { return static_cast<Columns>(e); }

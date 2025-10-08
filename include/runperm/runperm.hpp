@@ -7,7 +7,7 @@
 
 constexpr bool DEFAULT_INTEGRATED_MOVE_STRUCTURE = true;
 constexpr bool DEFAULT_SPLIT_INTERVALS = true;
-constexpr bool DEFAULT_STORE_ABSOLUTE_POSITIONS = false;
+constexpr bool DEFAULT_STORE_ABSOLUTE_POSITIONS = true;
 
 // If we're integrating the run data alongside the move structure, we don't need to store it separately
 template <typename RunColsType, bool IntegratedMoveStructure>

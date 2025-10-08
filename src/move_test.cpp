@@ -370,7 +370,7 @@ int main() {
     // using Position = typename RunPerm<RunData>::Position;
     // Position pos = run_perm.get_position();
     // for (size_t i = 0; i <= run_perm.size(); ++i) {
-    //     std::cout << "Position: " << pos.interval << ", " << pos.offset << " --> ";
+    //     std::cout << "Position: " << pos.interval << ", " << pos.offset << ", " << pos.idx << " --> ";
     //     run_perm.next();
     //     pos = run_perm.get_position();
 

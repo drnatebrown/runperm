@@ -97,13 +97,13 @@ public:
     }
 
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::HAS_START, ulint>
+    std::enable_if_t<ColsTraitsFor<C>::HAS_START, ulint>
     get_start(size_t i) const {
         assert(i <= table.size());
         return (i == table.size()) ? n : table.get_start(i);
     }
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::HAS_START, ulint>
+    std::enable_if_t<ColsTraitsFor<C>::HAS_START, ulint>
     inline get_start(Position pos) const {
         return get_start(pos.interval);
     }

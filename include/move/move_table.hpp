@@ -13,23 +13,23 @@ struct MoveTableInterface {
 
     template <typename C = Columns>
     void set_primary(size_t i, ulint start, ulint length) {
-        if constexpr (MoveColsTraits<C>::RELATIVE) {
-            static_cast<Derived*>(this)->template set<to_cols(MoveColsTraits<C>::PRIMARY)>(i, length);
+        if constexpr (ColsTraitsFor<C>::RELATIVE) {
+            static_cast<Derived*>(this)->template set<to_cols(ColsTraitsFor<C>::PRIMARY)>(i, length);
         } else {
-            static_cast<Derived*>(this)->template set<to_cols(MoveColsTraits<C>::PRIMARY)>(i, start);
+            static_cast<Derived*>(this)->template set<to_cols(ColsTraitsFor<C>::PRIMARY)>(i, start);
         }
     }
 
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::HAS_LENGTH, void>
+    std::enable_if_t<ColsTraitsFor<C>::HAS_LENGTH, void>
     set_length(size_t i, ulint l) {
-        static_cast<Derived*>(this)->template set<to_cols(MoveColsTraits<C>::LENGTH)>(i, l);
+        static_cast<Derived*>(this)->template set<to_cols(ColsTraitsFor<C>::LENGTH)>(i, l);
     }
     
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::HAS_START, void>
+    std::enable_if_t<ColsTraitsFor<C>::HAS_START, void>
     set_start(size_t i, ulint s) {
-        static_cast<Derived*>(this)->template set<to_cols(MoveColsTraits<C>::START)>(i, s);
+        static_cast<Derived*>(this)->template set<to_cols(ColsTraitsFor<C>::START)>(i, s);
     }
     
     void set_pointer(size_t i, ulint p) {
@@ -45,15 +45,15 @@ struct MoveTableInterface {
     }
 
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::HAS_LENGTH, ulint>
+    std::enable_if_t<ColsTraitsFor<C>::HAS_LENGTH, ulint>
     get_length(size_t i) const {
-        return static_cast<const Derived*>(this)->template get<to_cols(MoveColsTraits<C>::LENGTH)>(i);
+        return static_cast<const Derived*>(this)->template get<to_cols(ColsTraitsFor<C>::LENGTH)>(i);
     }
     
     template <typename C = Columns>
-    std::enable_if_t<MoveColsTraits<C>::HAS_START, ulint>
+    std::enable_if_t<ColsTraitsFor<C>::HAS_START, ulint>
     get_start(size_t i) const {
-        return static_cast<const Derived*>(this)->template get<to_cols(MoveColsTraits<C>::START)>(i);
+        return static_cast<const Derived*>(this)->template get<to_cols(ColsTraitsFor<C>::START)>(i);
     }
     
     ulint get_pointer(size_t i) const {
