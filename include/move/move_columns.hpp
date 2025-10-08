@@ -58,13 +58,11 @@ template <>
 struct MoveColsTraits<MoveCols> {
     static constexpr bool RELATIVE = true;
     static constexpr MoveCols PRIMARY = MoveCols::LENGTH;
+
+    static constexpr MoveCols LENGTH = MoveCols::LENGTH;
     static constexpr MoveCols POINTER = MoveCols::POINTER;
     static constexpr MoveCols OFFSET = MoveCols::OFFSET;
     static constexpr size_t NUM_COLS = static_cast<size_t>(MoveCols::COUNT);
-
-    static constexpr bool HAS_LENGTH = true;
-    static constexpr bool HAS_START = false;
-    static constexpr MoveCols LENGTH = MoveCols::LENGTH;
 
     using Position = MovePosition<RELATIVE>::type;
 };
@@ -73,14 +71,12 @@ template <>
 struct MoveColsTraits<MoveColsIdx> {
     static constexpr bool RELATIVE = false;
     static constexpr MoveColsIdx PRIMARY = MoveColsIdx::START;
+
+    static constexpr MoveColsIdx START = MoveColsIdx::START;
     static constexpr MoveColsIdx POINTER = MoveColsIdx::POINTER;
     static constexpr MoveColsIdx OFFSET = MoveColsIdx::OFFSET;
     static constexpr size_t NUM_COLS = static_cast<size_t>(MoveColsIdx::COUNT);
-
-    static constexpr bool HAS_LENGTH = false;
-    static constexpr bool HAS_START = true;
-    static constexpr MoveColsIdx START = MoveColsIdx::START;
-
+    
     using Position = MovePosition<RELATIVE>::type;
 };
 

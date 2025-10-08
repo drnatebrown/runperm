@@ -21,10 +21,7 @@ struct RunColsWrapper {
     // "trick" to pass a columns type that has everything needed for the move structure
     // even if it doesn't explicitly have them. Importantly, the count is correct.
     enum class E : size_t {
-        PRIMARY = static_cast<size_t>(BaseTraits::PRIMARY),
-        POINTER = static_cast<size_t>(BaseTraits::POINTER),
-        OFFSET = static_cast<size_t>(BaseTraits::OFFSET),
-        /* other unlisted base columns here*/
+        /* all columns unlisted here */
         // total columns = base + user fields
         COUNT = NUM_COLS
     };

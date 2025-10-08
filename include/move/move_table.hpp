@@ -21,13 +21,13 @@ struct MoveTableInterface {
     }
 
     template <typename C = Columns>
-    std::enable_if_t<ColsTraitsFor<C>::HAS_LENGTH, void>
+    std::enable_if_t<ColsTraitsFor<C>::RELATIVE, void>
     set_length(size_t i, ulint l) {
         static_cast<Derived*>(this)->template set<to_cols(ColsTraitsFor<C>::LENGTH)>(i, l);
     }
     
     template <typename C = Columns>
-    std::enable_if_t<ColsTraitsFor<C>::HAS_START, void>
+    std::enable_if_t<!ColsTraitsFor<C>::RELATIVE, void>
     set_start(size_t i, ulint s) {
         static_cast<Derived*>(this)->template set<to_cols(ColsTraitsFor<C>::START)>(i, s);
     }
@@ -45,13 +45,13 @@ struct MoveTableInterface {
     }
 
     template <typename C = Columns>
-    std::enable_if_t<ColsTraitsFor<C>::HAS_LENGTH, ulint>
+    std::enable_if_t<ColsTraitsFor<C>::RELATIVE, ulint>
     get_length(size_t i) const {
         return static_cast<const Derived*>(this)->template get<to_cols(ColsTraitsFor<C>::LENGTH)>(i);
     }
     
     template <typename C = Columns>
-    std::enable_if_t<ColsTraitsFor<C>::HAS_START, ulint>
+    std::enable_if_t<!ColsTraitsFor<C>::RELATIVE, ulint>
     get_start(size_t i) const {
         return static_cast<const Derived*>(this)->template get<to_cols(ColsTraitsFor<C>::START)>(i);
     }

@@ -5,7 +5,7 @@
 #include "move/move_structure.hpp"
 #include "runperm/run_columns.hpp"
 
-constexpr bool DEFAULT_INTEGRATED_MOVE_STRUCTURE = true;
+constexpr bool DEFAULT_INTEGRATED_MOVE_STRUCTURE = false;
 constexpr bool DEFAULT_STORE_ABSOLUTE_POSITIONS = false;
 constexpr bool DEFAULT_FIND_OPTIMAL_LENGTH = true;
 

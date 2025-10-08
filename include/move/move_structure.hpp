@@ -82,30 +82,30 @@ public:
     MoveStructure(PackedVector<Columns>& move_permutation, size_t n, size_t r) 
         : table(move_permutation), n(n), r(r) {}
 
-    ulint get_length(size_t i) const {
-        assert(i < table.size());
-        if constexpr (ColsTraits::RELATIVE) {
-            return table.template get<to_cols(ColsTraits::PRIMARY)>(i);
-        } else {
-            return (i == table.size() - 1)
-                ? n - table.template get<to_cols(ColsTraits::PRIMARY)>(i)
-                : table.template get<to_cols(ColsTraits::PRIMARY)>(i + 1) - table.template get<to_cols(ColsTraits::PRIMARY)>(i);
-        }
-    }
-    inline ulint get_length(Position pos) const {
-        return get_length(pos.interval);
-    }
-
     template <typename C = Columns>
-    std::enable_if_t<ColsTraitsFor<C>::HAS_START, ulint>
+    std::enable_if_t<!ColsTraitsFor<C>::RELATIVE, ulint>
     get_start(size_t i) const {
         assert(i <= table.size());
         return (i == table.size()) ? n : table.get_start(i);
     }
     template <typename C = Columns>
-    std::enable_if_t<ColsTraitsFor<C>::HAS_START, ulint>
+    std::enable_if_t<!ColsTraitsFor<C>::RELATIVE, ulint>
     inline get_start(Position pos) const {
         return get_start(pos.interval);
+    }
+
+    ulint get_length(size_t i) const {
+        assert(i < table.size());
+        if constexpr (ColsTraits::RELATIVE) {
+            return table.get_length(i);
+        } else {
+            return (i == table.size() - 1)
+                ? n - get_start(i)
+                : get_start(i + 1) - get_start(i);
+        }
+    }
+    inline ulint get_length(Position pos) const {
+        return get_length(pos.interval);
     }
 
     ulint get_pointer(size_t i) const {
