@@ -10,30 +10,6 @@
 #include <array>
 #include <iostream>
 
-// Implemented below, packed vector wraps it to use columns enum
-template<size_t NumCols>
-class PackedMatrix;
-
-template<class Columns>
-class PackedVector : public PackedMatrix<static_cast<size_t>(Columns::COUNT)> {
-    using Base = PackedMatrix<static_cast<size_t>(Columns::COUNT)>;
-
-public:
-    PackedVector() = default;
-    PackedVector(size_t rows, const std::array<uchar, static_cast<size_t>(Columns::COUNT)>& widths)
-        : Base(rows, widths) {}
-
-    template<Columns Col>
-    ulint get(size_t row) const {
-        return Base::template get<static_cast<size_t>(Col)>(row);
-    }
-
-    template<Columns Col>
-    void set(size_t row, ulint val) {
-        Base::template set<static_cast<size_t>(Col)>(row, val);
-    }
-};
-
 template <size_t NumCols>
 class PackedMatrix {
 public:
@@ -186,6 +162,41 @@ private:
         bits |= (val << start);
     }
 
+};
+
+template<class Columns>
+class PackedVector : public PackedMatrix<static_cast<size_t>(Columns::COUNT)> {
+    using Base = PackedMatrix<static_cast<size_t>(Columns::COUNT)>;
+
+public:
+    PackedVector() = default;
+    PackedVector(size_t rows, const std::array<uchar, static_cast<size_t>(Columns::COUNT)>& widths)
+        : Base(rows, widths) {}
+
+    template<Columns Col>
+    ulint get(size_t row) const {
+        return Base::template get<static_cast<size_t>(Col)>(row);
+    }
+
+    template<Columns Col>
+    void set(size_t row, ulint val) {
+        Base::template set<static_cast<size_t>(Col)>(row, val);
+    }
+};
+
+class IntVector : public PackedMatrix<1> {
+    using Base = PackedMatrix<1>;
+public:
+    IntVector() = default;
+    IntVector(size_t rows, uchar width) : Base(rows, {width}) {}
+    
+    ulint get(size_t row) const {
+        return Base::template get<0>(row);
+    }
+
+    void set(size_t row, ulint val) {
+        Base::template set<0>(row, val);
+    }
 };
 
 #endif // end of include guard: _PACKED_VECTOR_HPP

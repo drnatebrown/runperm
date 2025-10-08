@@ -10,30 +10,6 @@
 #include <array>
 #include <iostream>
 
-// Implemented below, packed vector aligned wraps it to use columns enum
-template<size_t NumCols>
-class PackedMatrixAligned;
-
-template<class Columns>
-class PackedVectorAligned : public PackedMatrixAligned<static_cast<size_t>(Columns::NUM_COLS)> {
-    using Base = PackedMatrixAligned<static_cast<size_t>(Columns::COUNT)>;
-
-public:
-    PackedVectorAligned() = default;
-    PackedVectorAligned(size_t rows, const std::array<uchar, static_cast<size_t>(Columns::COUNT)>& widths)
-        : Base(rows, widths) {}
-
-    template<Columns Col>
-    ulint get(size_t row) const {
-        return Base::template get<static_cast<size_t>(Col)>(row);
-    }
-
-    template<Columns Col>
-    void set(size_t row, ulint val) {
-        Base::template set<static_cast<size_t>(Col)>(row, val);
-    }
-};
-
 // Column values are rounded to the nearest byte
 // TODO this would be better if definitely fast, using SIMD to unpack entire rows?
 template <size_t NumCols>
@@ -184,6 +160,41 @@ private:
         bits &= mask;
         // set new bits
         bits |= val;
+    }
+};
+
+template<class Columns>
+class PackedVectorAligned : public PackedMatrixAligned<static_cast<size_t>(Columns::NUM_COLS)> {
+    using Base = PackedMatrixAligned<static_cast<size_t>(Columns::COUNT)>;
+
+public:
+    PackedVectorAligned() = default;
+    PackedVectorAligned(size_t rows, const std::array<uchar, static_cast<size_t>(Columns::COUNT)>& widths)
+        : Base(rows, widths) {}
+
+    template<Columns Col>
+    ulint get(size_t row) const {
+        return Base::template get<static_cast<size_t>(Col)>(row);
+    }
+
+    template<Columns Col>
+    void set(size_t row, ulint val) {
+        Base::template set<static_cast<size_t>(Col)>(row, val);
+    }
+};
+
+class IntVectorAligned : public PackedMatrixAligned<1> {
+    using Base = PackedMatrixAligned<1>;
+public:
+    IntVectorAligned() = default;
+    IntVectorAligned(size_t rows, uchar width) : Base(rows, {width}) {}
+
+    ulint get(size_t row) const {
+        return Base::template get<0>(row);
+    }
+
+    void set(size_t row, ulint val) {
+        Base::template set<0>(row, val);
     }
 };
 
