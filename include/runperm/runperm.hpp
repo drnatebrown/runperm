@@ -24,6 +24,7 @@ template<typename RunColsType, // Fields to be stored alongside the move structu
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, // Whether to store absolute positions instead of interval/offset
          typename BaseColumns = MoveCols,
          template<typename> class TableType = MoveVector,
+         template<typename> class StructureType = MoveStructure,
          template<typename> class PackedType = PackedVector>
 class RunPerm : SeperatedDataHolder<RunColsType, IntegratedMoveStructure> {
 private:
@@ -36,7 +37,7 @@ private:
         SwitchedColumns>;
     MOVE_CLASS_TRAITS(ColumnsType)
     using Table = TableType<ColumnsType>;
-    using MoveStructureType = MoveStructure<Table>;
+    using MoveStructureType = StructureType<Table>;
 
 public:
     using RunCols = RunColsType;
@@ -84,22 +85,7 @@ public:
                 this->run_cols_data.template set_row(i, run_data[i]);
             }
         }
-        // std::optional<ulint> optimal_length_max = std::nullopt;
-        // constrexpr if (SplitIntervals) {
-        //     optimal_length_max = find_optimal_length_max(lengths, interval_permutation, optimal_length_max);
-        // }
     }
-            
-    // TODO METADATA TO RECTIFY SPLITS?
-    // template<auto RunDataField>
-    // void set_data(size_t run_id, ulint value) {
-    //     storage.template set_data<UserField>(run_id, value);
-    // }
-    
-    // template<auto RunDataField>
-    // ulint get_data(size_t run_id) const {
-    //     return storage.template get_data<UserField>(run_id);
-    // }
     
     void next() { position = move_structure.move(position); }
     // PREVIOUS IF INVERSE SUPPORTED
@@ -174,15 +160,6 @@ private:
                             std::index_sequence<I...>) {
         ((widths[static_cast<size_t>(ColsTraits::template run_column<static_cast<RunCols>(I)>())] = fw[I]), ...);
     }
-
-    // Find the optimal length max for the intervals
-    // std::optional<ulint> find_optimal_length_max(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation) {
-    //     if constexpr (is_move_table_type()) {
-    //         return MAX_VAL(Table::Row::OFFSET_BITS);
-    //     } else {
-    //         std::array<
-    //     }
-    // }
 };
 
 // A wrapper around RunPerm without any run data, essentially just a MoveStructure

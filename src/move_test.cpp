@@ -114,6 +114,21 @@ std::string get_type_name() {
     }
 }
 
+template<typename RunData, typename RunPermType>
+std::string get_runperm_type_name() {
+    if constexpr (std::is_same_v<RunPermType, RunPerm<RunData, true, true>>) {
+        return "RunPerm<RunData, true, true>";
+    } else if constexpr (std::is_same_v<RunPermType, RunPerm<RunData, true, false>>) {
+        return "RunPerm<RunData, true, false>";
+    } else if constexpr (std::is_same_v<RunPermType, RunPerm<RunData, false, true>>) {
+        return "RunPerm<RunData, false, true>";
+    } else if constexpr (std::is_same_v<RunPermType, RunPerm<RunData, false, false>>) {
+        return "RunPerm<RunData, false, false>";
+    } else {
+        return "Unknown";
+    }
+}
+
 // Test function template
 template<typename MoveStructType>
 void test_move_structure(const std::vector<ulint>& lengths, 
@@ -198,12 +213,11 @@ void test_move_structure(const std::vector<ulint>& lengths,
     std::cout << "    Size: " << move_structure.serialize(ss) << std::endl;
 }
 
-template<typename RunData>
+template<typename RunData, typename RunPermType>
 void test_runperm(const std::vector<ulint>& lengths, 
                   const std::vector<ulint>& interval_permutation, 
                   const std::vector<std::array<ulint, 2>>& run_data, 
                   size_t n) {
-    using RunPermType = RunPerm<RunData, true, false>;
     
     auto start_time = high_resolution_clock::now();
     auto runperm = RunPermType(lengths, interval_permutation, run_data);
@@ -223,7 +237,7 @@ void test_runperm(const std::vector<ulint>& lengths,
     auto move_duration = duration_cast<microseconds>(move_time - creation_time);
     auto total_duration = duration_cast<microseconds>(move_time - start_time);
 
-    std::cout << "  " << "RunPerm<RunData, false, false>" << ":" << std::endl;
+    std::cout << "  " << get_runperm_type_name<RunData, RunPermType>() << ":" << std::endl;
     std::cout << "    Creation: " << creation_duration.count() << "μs" << std::endl;
     std::cout << "    Moves: " << move_duration.count() << "μs" << std::endl;
     std::cout << "    Total: " << total_duration.count() << "μs" << std::endl;
@@ -317,7 +331,11 @@ void tests() {
 
             std::cout << "Testing n=" << n << ", r=" << r << " (n/r=" << n/r << "):" << std::endl;
 
-            test_runperm<RunData>(lengths, interval_permutation, run_data, n);
+            test_runperm<RunData, RunPerm<RunData, true, true>>(lengths, interval_permutation, run_data, n);
+            test_runperm<RunData, RunPerm<RunData, true, false>>(lengths, interval_permutation, run_data, n);
+            test_runperm<RunData, RunPerm<RunData, false, true>>(lengths, interval_permutation, run_data, n);
+            test_runperm<RunData, RunPerm<RunData, false, false>>(lengths, interval_permutation, run_data, n);
+            std::cout << std::endl;
         }
     }
 }

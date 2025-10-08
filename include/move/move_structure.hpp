@@ -58,6 +58,7 @@ template<typename RunData,
          bool StoreAbsolutePositions,
          typename BaseColumns,
          template<typename> class TableType,
+         template<typename> class StructureType,
          template<typename> class PackedType>
 class RunPerm;
 
@@ -236,6 +237,7 @@ private:
          bool StoreAbsolutePositions,
          typename BaseColumns,
          template<typename> class TableType,
+         template<typename> class StructureType,
          template<typename> class PackedType>
     friend class RunPerm;
 
@@ -344,17 +346,6 @@ private:
                 structure.template set<to_cols(ColsTraits::PRIMARY)>(tbl_idx, start_val);
             }
 
-            // if constexpr (ColsTraits::HAS_LENGTH) {
-            //     if constexpr (ColsTraits::PRIMARY != ColsTraits::LENGTH) {
-            //         structure.template set<ColsTraits::LENGTH>(tbl_idx, start_val);
-            //     }
-            // }
-            // if constexpr (ColsTraits::HAS_START) {
-            //     if constexpr (ColsTraits::PRIMARY != ColsTraits::START) {
-            //         structure.template set<ColsTraits::START>(tbl_idx, start_val);
-            //     }
-            // }
-
             if constexpr (!std::is_same_v<OnRowSetCallback, std::nullptr_t>) {
                 /* Callback with: structure (for setting extra columns), original interval row index (before splitting), 
                 row index (in final structure, with splitting) */
@@ -412,13 +403,6 @@ private:
         } else {
             widths[static_cast<size_t>(ColsTraits::PRIMARY)] = bit_width(stats.permutation_size);
         }
-
-        // if constexpr (ColsTraits::HAS_LENGTH) {
-        //     if constexpr (ColsTraits::PRIMARY != ColsTraits::LENGTH) { widths[static_cast<size_t>(ColsTraits::LENGTH)] = bit_width(stats.max_observed_length); }
-        // }
-        // if constexpr (ColsTraits::HAS_START) {
-        //     if constexpr (ColsTraits::PRIMARY != ColsTraits::START) { widths[static_cast<size_t>(ColsTraits::START)] = bit_width(stats.permutation_size); }
-        // }
 
         widths[static_cast<size_t>(ColsTraits::POINTER)] = bit_width(stats.split_num_rows);
         widths[static_cast<size_t>(ColsTraits::OFFSET)] = bit_width(stats.max_observed_length);
