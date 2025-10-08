@@ -225,10 +225,10 @@ private:
 
 // A wrapper around RunPerm without any run data, essentially just a MoveStructure
 template<bool SplitIntervals = DEFAULT_SPLIT_INTERVALS, bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, 
-    typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector, template<typename> class PackedType = PackedVector>
+    typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector, template<typename> class StructureType = MoveStructure, template<typename> class PackedType = PackedVector>
 class MovePerm {
 private:
-    using RunPermType = RunPerm<EmptyRunCols, false, SplitIntervals, StoreAbsolutePositions, BaseColumns, TableType, PackedType>;
+    using RunPermType = RunPerm<EmptyRunCols, false, SplitIntervals, StoreAbsolutePositions, BaseColumns, TableType, StructureType, PackedType>;
     RunPermType run_perm;
     
 public:
@@ -257,8 +257,8 @@ public:
     void next() { run_perm.next(); }
     
     ulint size() const { return run_perm.size(); }
-    ulint intervals() const { return run_perm.intervals(); }
-    ulint domain() const { return run_perm.domain(); }
+    ulint move_runs() const { return run_perm.move_runs(); }
+    ulint permutation_runs() const { return run_perm.permutation_runs(); }
     
     size_t serialize(std::ostream& out) { return run_perm.serialize(out); }
     void load(std::istream& in) { run_perm.load(in); }

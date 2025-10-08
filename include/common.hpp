@@ -72,5 +72,4 @@ inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_interva
     return {lengths, interval_permutation};
 }
 
-
 #endif /* end of include guard: _COMMON_HPP */
