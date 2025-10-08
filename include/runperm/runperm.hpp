@@ -88,18 +88,79 @@ public:
     }
     
     void next() { position = move_structure.move(position); }
-    // PREVIOUS IF INVERSE SUPPORTED
+    void next(ulint steps) {
+        for (ulint i = 0; i < steps; ++i) {
+            next();
+        }
+    }
 
-    // need to add succ/pred and up, down
+    // Set position to interval above in underlying move structure, returns false if already at top
+    bool up() {
+        if (position.interval == 0)
+        {
+            return false;
+        }
+        --position.interval;
+        position.offset = move_structure.get_length(position.interval) - 1;
+        if constexpr (StoreAbsolutePositions) {
+            position.idx = move_structure.get_start(position.interval) + position.offset;
+        }
+        return true;
+    }
+
+    // Set position to interval below in underlying move structure, returns false if already at bottom
+    bool down() {
+        if (position.interval == move_structure.runs() - 1)
+        {
+            return false;
+        }
+        ++position.interval;
+        position.offset = 0;
+        if constexpr (StoreAbsolutePositions) {
+            position.idx = move_structure.get_start(position.interval);
+        }
+        return true;
+    }
+
+    // Returns row/offset of largest idx before or at position run with matching run data value
+    template<RunCols Col>
+    std::optional<Position> pred(ulint val) {
+        while (get<Col>() != val) 
+        {
+            if (position.interval == 0) return std::nullopt;
+            --position.interval;
+        }
+        position.offset = move_structure.get_length(position.interval) - 1;
+        if constexpr (StoreAbsolutePositions) {
+            position.idx = move_structure.get_start(position.interval) + position.offset;
+        }
+        return position;
+    }
+
+    // Returns row/offset of smallest idx after or at position run with matching run data value
+    template<RunCols Col>
+    std::optional<Position> succ(ulint val) {
+        while (get<Col>() != val) 
+        {
+            if (position.interval == move_structure.runs() - 1) return std::nullopt;
+            ++position.interval;
+        }
+        position.offset = move_structure.get_length(position.interval) - 1;
+        if constexpr (StoreAbsolutePositions) {
+            position.idx = move_structure.get_start(position.interval) + position.offset;
+        }
+        return position;
+    }
 
     void first() { position = move_structure.first(); }
     void last() { position = move_structure.last(); }
 
     Position get_position() const { return position; }
+    void set_position(Position pos) { position = pos; }
 
-    ulint size() const { return move_structure.runs(); }
-    ulint intervals() const { return orig_intervals; }
-    ulint domain() const { return move_structure.size(); }
+    ulint size() const { return move_structure.size(); }
+    ulint move_runs() const { return move_structure.runs(); }
+    ulint permutation_runs() const { return orig_intervals; }
 
     template<RunCols Col>
     ulint get() const {
