@@ -323,13 +323,13 @@ private:
 };
 
 template<typename RunColsType>
-using RunPermDefault = RunPerm<RunColsType, DEFAULT_INTEGRATED_MOVE_STRUCTURE, DEFAULT_STORE_ABSOLUTE_POSITIONS, MoveCols, MoveVector, MoveStructure, PackedVector>;
+using RunPermIntegrated = RunPerm<RunColsType, true, false, MoveCols, MoveVector, MoveStructure, PackedVector>;
+template<typename RunColsType>
+using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true, MoveCols, MoveVector, MoveStructure, PackedVector>;
 template<typename RunColsType>
 using RunPermSeperated = RunPerm<RunColsType, false, false, MoveCols, MoveVector, MoveStructure, PackedVector>;
 template<typename RunColsType>
 using RunPermSeperatedAbsolute = RunPerm<RunColsType, false, true, MoveCols, MoveVector, MoveStructure, PackedVector>;
-template<typename RunColsType>
-using RunPermAbsolute = RunPerm<RunColsType, true, true, MoveCols, MoveVector, MoveStructure, PackedVector>;
 
 // A wrapper around RunPerm without any run data, essentially just a MoveStructure
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector, template<typename> class StructureType = MoveStructure, template<typename> class PackedType = PackedVector>
