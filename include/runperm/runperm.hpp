@@ -7,7 +7,6 @@
 
 constexpr bool DEFAULT_INTEGRATED_MOVE_STRUCTURE = false;
 constexpr bool DEFAULT_STORE_ABSOLUTE_POSITIONS = false;
-constexpr bool DEFAULT_FIND_OPTIMAL_LENGTH = true;
 
 // If we're integrating the run data alongside the move structure, we don't need to store it separately
 template <typename RunColsType, bool IntegratedMoveStructure>
@@ -21,7 +20,6 @@ struct SeperatedDataHolder<RunColsType, true> { /* empty */ };
 template<typename RunColsType, // Fields to be stored alongside the move structure representing a runny permutation
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE, // Whether to pack the run data alongside the move structure
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, // Whether to store absolute positions instead of interval/offset
-         bool FindOptimalLength = DEFAULT_FIND_OPTIMAL_LENGTH, // Whether to find the optimal max length for the move structure to minimize table size
          typename BaseColumns = MoveCols,
          template<typename> class TableType = MoveVector,
          template<typename> class StructureType = MoveStructure,
@@ -285,11 +283,10 @@ private:
 };
 
 // A wrapper around RunPerm without any run data, essentially just a MoveStructure
-template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, bool FindOptimalLength = DEFAULT_FIND_OPTIMAL_LENGTH,  
-    typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector, template<typename> class StructureType = MoveStructure, template<typename> class PackedType = PackedVector>
+template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector, template<typename> class StructureType = MoveStructure, template<typename> class PackedType = PackedVector>
 class MovePerm {
 private:
-    using RunPermType = RunPerm<EmptyRunCols, false, StoreAbsolutePositions, FindOptimalLength, BaseColumns, TableType, StructureType, PackedType>;
+    using RunPermType = RunPerm<EmptyRunCols, false, StoreAbsolutePositions, BaseColumns, TableType, StructureType, PackedType>;
     RunPermType run_perm;
     
 public:
