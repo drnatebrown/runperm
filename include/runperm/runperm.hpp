@@ -29,6 +29,8 @@ template<typename RunColsType, // Fields to be stored alongside the move structu
 class RunPerm : SeperatedDataHolder<RunColsType, IntegratedMoveStructure> {
 private:
     static constexpr size_t NumRunCols = static_cast<size_t>(RunColsType::COUNT);
+    static constexpr size_t NumBaseCols = static_cast<size_t>(BaseColumns::COUNT);
+    // SwitchedColumns is the base colunns using the correct relative/absolute indexing
     using SwitchedColumns = SwitchColumns<BaseColumns, StoreAbsolutePositions>;
     // Use RunDataColumns if integrating user data alongside the move structure, otherwise just use the switched columns
     // Use the "fake" enum from RunDataColumns to get the correct columns type for integrated move structure
@@ -38,6 +40,7 @@ private:
     MOVE_CLASS_TRAITS(ColumnsType)
     using Table = TableType<ColumnsType>;
     using MoveStructureType = StructureType<Table>;
+    using MoveStructureBase = StructureType<TableType<SwitchedColumns>>;
 
 public:
     using RunCols = RunColsType;
@@ -56,27 +59,51 @@ public:
 
     RunPerm() = default;
 
-    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const std::vector<std::array<ulint, NumRunCols>> &run_data) {
+    // By default, just copy the run data for the original interval if the move structure intervals have been split
+    /**
+     * lengths -> length of each interval which permutes contiguously
+     * interval_permutation -> permutation position of the first position of each interval
+     * domain -> domain of the permutation, i.e. a permutatation over 1..n has domain n
+     * run_data -> run data for each interval, the size of this vector should be the same as the number of intervals
+     */
+    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const std::vector<std::array<ulint, NumRunCols>> &run_data)
+        : RunPerm(lengths, interval_permutation, domain,
+            [&run_data](ulint orig_interval, ulint orig_interval_length, ulint new_offset_from_orig_start, ulint new_length) {
+                return run_data[orig_interval];
+            }
+        ){}
+
+    // Advanced constructor for users who want to specify how to set the run data for each column type by passing a function which is called with:
+    // the original interval index, the original interval length, the absolute offset of the first element in the new interval, and the new interval length
+    // and returns the values to be stored in the new interval (run data)
+    // TODO add skip if no skipping happened
+    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, std::function<std::array<ulint, NumRunCols>(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(lengths.size() == interval_permutation.size());
-        assert(lengths.size() == run_data.size());
         orig_intervals = lengths.size();
         position = Position(); // should start at 0
-        auto run_cols_widths = get_run_cols_widths(run_data);
-        PermutationStats stats(lengths);
         
+        PackedVector<SwitchedColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain);
+        std::vector<std::array<ulint, NumRunCols>> final_run_data = extend_run_data(lengths, domain, base_structure, get_run_cols_data);
+        auto run_cols_widths = get_run_cols_widths(final_run_data);
+
         if constexpr (IntegratedMoveStructure) {
-            auto base_widths = MoveStructureType::get_move_widths(stats);
-            auto widths = base_widths;
-            set_run_cols_widths(widths, run_cols_widths, std::make_index_sequence<NumRunCols>{});
-            move_structure = MoveStructureType::construct_with_extended_columns(lengths, interval_permutation, stats, widths, [&] (auto &structure, size_t interval_idx, size_t tbl_idx) {
-                set_run_cols_fields(structure, tbl_idx, run_data[interval_idx],
-                        std::make_index_sequence<NumRunCols>{});
-            });
+            auto base_widths = base_structure.get_widths();
+            auto widths = get_widths(base_widths, run_cols_widths);
+
+            PackedVector<Columns> final_structure(base_structure.size(), widths);
+            for (size_t i = 0; i < final_structure.size(); ++i) {
+                auto base_row = base_structure.template get_row(i);
+                auto run_row = final_run_data[i];
+                auto row = get_row(base_row, run_row);
+                final_structure.set_row(i, row);
+            }
+            move_structure = MoveStructureType(std::move(final_structure), domain);
         } else {
-            move_structure = MoveStructureType(lengths, interval_permutation, stats);
-            this->run_cols_data = PackedVector<RunCols>(run_data.size(), run_cols_widths);
-            for (size_t i = 0; i < run_data.size(); ++i) {
-                this->run_cols_data.template set_row(i, run_data[i]);
+            move_structure = MoveStructureType(std::move(base_structure), domain);
+            
+            this->run_cols_data = PackedVector<RunCols>(lengths.size(), run_cols_widths);
+            for (size_t i = 0; i < final_run_data.size(); ++i) {
+                this->run_cols_data.template set_row(i, final_run_data[i]);
             }
         }
     }
@@ -186,13 +213,38 @@ private:
     Position position;
     size_t orig_intervals; // before splitting, underlying move structure may be larger
 
-    template<typename S, size_t... I>
-    static void set_run_cols_fields(S& structure, size_t tbl_idx,
-                                const std::array<ulint, NumRunCols>& row,
-                                std::index_sequence<I...>) {
-        (structure.template set<
-            ColsTraits::template run_column<static_cast<RunCols>(I)>()
-        >(tbl_idx, row[I]), ...);
+
+    std::vector<std::array<ulint, NumRunCols>> extend_run_data(const std::vector<ulint>& lengths, const ulint domain, const PackedVector<SwitchedColumns>& structure, std::function<std::array<ulint, NumRunCols>(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+        std::vector<std::array<ulint, NumRunCols>> final_run_data(structure.size());
+        auto get_structure_length = [&](size_t idx) {
+            if constexpr (StoreAbsolutePositions) {
+                return (idx == structure.size() - 1) 
+                    ? domain - structure.template get<ColsTraits::PRIMARY>(idx)
+                    : structure.template get<ColsTraits::PRIMARY>(idx + 1) - structure.template get<ColsTraits::PRIMARY>(idx);
+            } else {
+                return structure.template get<ColsTraits::PRIMARY>(idx);
+            }
+        };
+
+        size_t orig_start = 0;
+        size_t new_idx = 0;
+        size_t new_start = 0;
+        for (size_t i = 0; i < lengths.size(); ++i) {
+            ulint orig_interval = i;
+            ulint orig_interval_length = lengths[i];
+
+            while (new_idx < structure.size() && new_start < orig_start + orig_interval_length) {
+                size_t new_offset_from_orig_start = new_start - orig_start;
+                size_t new_length = get_structure_length(new_idx);
+                final_run_data[new_idx] = get_run_cols_data(orig_interval, orig_interval_length, new_offset_from_orig_start, new_length);
+                ++new_idx;
+                new_start += new_length;
+            } 
+            orig_start += orig_interval_length;
+        }
+        assert(new_idx == final_run_data.size());
+
+        return final_run_data;
     }
 
     std::array<uchar, NumRunCols> get_run_cols_widths(const std::vector<std::array<ulint, NumRunCols>> &run_data) {
@@ -209,11 +261,26 @@ private:
         return run_cols_widths;
     }
 
-    template<size_t... I>
-    static void set_run_cols_widths(std::array<uchar, ColsTraits::NUM_COLS>& widths,
-                            const std::array<uchar, NumRunCols>& fw,
-                            std::index_sequence<I...>) {
-        ((widths[static_cast<size_t>(ColsTraits::template run_column<static_cast<RunCols>(I)>())] = fw[I]), ...);
+    static std::array<uchar, NumCols> get_widths(const std::array<uchar, NumBaseCols>& base_widths, const std::array<uchar, NumRunCols>& run_cols_widths) {
+        std::array<uchar, NumCols> widths;
+        for (size_t i = 0; i < NumBaseCols; ++i) {
+            widths[i] = base_widths[i];
+        }
+        for (size_t i = 0; i < NumRunCols; ++i) {
+            widths[NumBaseCols + i] = run_cols_widths[i];
+        }
+        return widths;
+    }
+
+    std::array<ulint, NumCols> get_row(const std::array<ulint, NumBaseCols>& base_row, const std::array<ulint, NumRunCols>& run_row) {
+        std::array<ulint, NumCols> row;
+        for (size_t i = 0; i < NumBaseCols; ++i) {
+            row[i] = base_row[i];
+        }
+        for (size_t i = 0; i < NumRunCols; ++i) {
+            row[NumBaseCols + i] = run_row[i];
+        }
+        return row;
     }
 };
 

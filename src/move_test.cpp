@@ -142,7 +142,7 @@ void test_move_structure(const std::vector<ulint>& lengths,
     auto start_time = high_resolution_clock::now();
     
     // Create move structure
-    auto move_structure = MoveStructType(lengths, interval_permutation, max_allowed_length);
+    auto move_structure = MoveStructType(lengths, interval_permutation, n);
     
     auto creation_time = high_resolution_clock::now();
     
@@ -220,7 +220,7 @@ void test_runperm(const std::vector<ulint>& lengths,
                   size_t n) {
     
     auto start_time = high_resolution_clock::now();
-    auto runperm = RunPermType(lengths, interval_permutation, run_data);
+    auto runperm = RunPermType(lengths, interval_permutation, n, run_data);
     auto creation_time = high_resolution_clock::now();
 
     runperm.first();

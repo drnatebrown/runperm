@@ -73,7 +73,7 @@ struct MoveTable : public MoveTableInterface<MoveTable<Row>, typename Row::Colum
     std::vector<Row> table;
 
     MoveTable() = default;
-    MoveTable(PackedVector<Columns> &vec) {
+    MoveTable(PackedVector<Columns> &&vec) {
         Row::assert_widths(vec.get_widths());
         
         table = std::vector<Row>(vec.size());
@@ -142,9 +142,7 @@ struct MoveVector : public MoveTableInterface<MoveVector<ColumnsType>, ColumnsTy
     PackedVector<Columns> vec;
 
     MoveVector() = default;
-    MoveVector(PackedVector<Columns> &vec) {
-        this->vec = vec;
-    }
+    MoveVector(PackedVector<Columns> &&vec) : vec(std::move(vec)) {}
 
     size_t size() const { return vec.size(); }
 

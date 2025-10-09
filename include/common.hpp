@@ -36,9 +36,6 @@ constexpr uchar bit_width(ulint value) {
 template<class E>
 constexpr size_t to_index(E e) noexcept { return static_cast<size_t>(e); }
 template<class E>
-constexpr E to_enum(size_t index) noexcept { return static_cast<E>(index); }
-
-template<class E>
 constexpr size_t enum_size() noexcept { return static_cast<size_t>(E::COUNT); }
 
 // Ensures enum is contiguous from 0 to count-1
