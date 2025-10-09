@@ -344,16 +344,16 @@ public:
     MovePerm() = default;
     
     // Constructor from permutation vector
-    MovePerm(std::vector<ulint>& permutation) {
+    MovePerm(std::vector<ulint>& permutation, SplitParams split_params = SplitParams()) {
         auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
         std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
-        run_perm = RunPermType(lengths, interval_permutation, empty_run_data);
+        run_perm = RunPermType(lengths, interval_permutation, permutation.size(), split_params, empty_run_data);
     }
     
     // Constructor from lengths and interval permutation
-    MovePerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation) {
+    MovePerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, SplitParams split_params = SplitParams()) {
         std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
-        run_perm = RunPermType(lengths, interval_permutation, empty_run_data);
+        run_perm = RunPermType(lengths, interval_permutation, domain, split_params, empty_run_data);
     }
     
     // Delegate all RunPerm methods
