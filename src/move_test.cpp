@@ -117,13 +117,13 @@ std::string get_type_name() {
 template<typename RunData, typename RunPermType>
 std::string get_runperm_type_name() {
     if constexpr (std::is_same_v<RunPermType, RunPerm<RunData, true, true>>) {
-        return "RunPerm<RunData, true, true>";
+        return "RunPermIntegratedAbsolute";
     } else if constexpr (std::is_same_v<RunPermType, RunPerm<RunData, true, false>>) {
-        return "RunPerm<RunData, true, false>";
+        return "RunPermIntegratedRelative";
     } else if constexpr (std::is_same_v<RunPermType, RunPerm<RunData, false, true>>) {
-        return "RunPerm<RunData, false, true>";
+        return "RunPermSeperatedAbsolute";
     } else if constexpr (std::is_same_v<RunPermType, RunPerm<RunData, false, false>>) {
-        return "RunPerm<RunData, false, false>";
+        return "RunPermSeperatedRelative";
     } else {
         return "Unknown";
     }
@@ -145,31 +145,31 @@ void test_move_structure(const std::vector<ulint>& lengths,
     split_params.max_allowed_length = max_allowed_length;
 
     // Create move structure
-    auto move_structure = MoveStructType(lengths, interval_permutation, n, split_params);
+    auto move_structure = MoveStructType(lengths, interval_permutation, n);
     
     auto creation_time = high_resolution_clock::now();
     
     // Test getters
     for (size_t i = 0; i < lengths.size(); ++i) {
-        // assert(move_structure.get_pointer(i) == pointers[i]);
-        // assert(move_structure.get_offset(i) == offsets[i]);
+        assert(move_structure.get_pointer(i) == pointers[i]);
+        assert(move_structure.get_offset(i) == offsets[i]);
         
-        // if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
-        //               std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
-        //     assert(move_structure.get_start(i) == starts[i]);
-        // }
-        // else {
-        //     assert(move_structure.get_length(i) == lengths[i]);
-        // }
-        ulint pointer = move_structure.get_pointer(i);
-        ulint offset = move_structure.get_offset(i);
         if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
                       std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
-            ulint start = move_structure.get_start(i);
+            assert(move_structure.get_start(i) == starts[i]);
         }
         else {
-            ulint length = move_structure.get_length(i);
+            assert(move_structure.get_length(i) == lengths[i]);
         }
+        // ulint pointer = move_structure.get_pointer(i);
+        // ulint offset = move_structure.get_offset(i);
+        // if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
+        //               std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
+        //     ulint start = move_structure.get_start(i);
+        // }
+        // else {
+        //     ulint length = move_structure.get_length(i);
+        // }
     }
     
     auto getter_time = high_resolution_clock::now();
@@ -226,7 +226,7 @@ void test_runperm(const std::vector<ulint>& lengths,
     split_params.max_allowed_length = max_allowed_length;
 
     auto start_time = high_resolution_clock::now();
-    auto runperm = RunPermType(lengths, interval_permutation, n, split_params, run_data);
+    auto runperm = RunPermType(lengths, interval_permutation, n, run_data);
     auto creation_time = high_resolution_clock::now();
 
     runperm.first();

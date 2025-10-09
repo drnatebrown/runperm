@@ -56,13 +56,23 @@ public:
 
     RunPerm() = default;
 
-    // By default, just copy the run data for the original interval if the move structure intervals have been split
     /**
      * lengths -> length of each interval which permutes contiguously
      * interval_permutation -> permutation position of the first position of each interval
      * domain -> domain of the permutation, i.e. a permutatation over 1..n has domain n
      * run_data -> run data for each interval, the size of this vector should be the same as the number of intervals
      */
+    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const std::vector<std::array<ulint, NumRunCols>> &run_data) {
+        assert(lengths.size() == interval_permutation.size());
+        orig_intervals = lengths.size();
+        position = Position(); // should start at 0
+
+        // Find the base structure (move structure without run data)
+        PackedVector<SwitchedColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain);
+        populate_structure(std::move(base_structure), run_data, domain);
+    }
+
+    // When Splitting, by default just copy the run data for the original interval if the move structure intervals have been split
     RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, const std::vector<std::array<ulint, NumRunCols>> &run_data)
         : RunPerm(lengths, interval_permutation, domain, split_params,
             [&run_data](ulint orig_interval, ulint orig_interval_length, ulint new_offset_from_orig_start, ulint new_length) {
@@ -70,39 +80,35 @@ public:
             }
         ){}
 
-    // Advanced constructor for users who want to specify how to set the run data for each column type by passing a function which is called with:
-    // the original interval index, the original interval length, the absolute offset of the first element in the new interval, and the new interval length
-    // and returns the values to be stored in the new interval (run data)
-    // TODO add skip if no skipping happened
+    // Advanced constructor for users who want to specify how to set the run data for each column type by passing a function:
+    /** Function Signature:
+     * std::array<ulint, NumRunCols>(ulint, ulint, ulint, ulint)
+     * - the original interval index
+     * - the original interval length
+     * - the absolute offset of the first element in the new interval
+     * - the new interval length
+     * and returns the values to be stored in the new interval (run data) for that new row
+     */
     RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, std::function<std::array<ulint, NumRunCols>(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(lengths.size() == interval_permutation.size());
         orig_intervals = lengths.size();
         position = Position(); // should start at 0
         
+        // Find the base structure (move structure without run data)
         PackedVector<SwitchedColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain, split_params);
         std::vector<std::array<ulint, NumRunCols>> final_run_data = extend_run_data(lengths, domain, base_structure, get_run_cols_data);
-        auto run_cols_widths = get_run_cols_widths(final_run_data);
+        populate_structure(std::move(base_structure), final_run_data, domain);
+    }
 
-        if constexpr (IntegratedMoveStructure) {
-            auto base_widths = base_structure.get_widths();
-            auto widths = get_widths(base_widths, run_cols_widths);
+    // Constructor from pre-computed table (move semantics) for advanced users with integrated move structure
+    RunPerm(PackedVector<Columns> &&structure, const ulint domain) : move_structure(std::move(structure)), position(Position()), orig_intervals(structure.size()) {
+        static_assert(IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed table if not integrating user data with move structure");
+    }
 
-            PackedVector<Columns> final_structure(base_structure.size(), widths);
-            for (size_t i = 0; i < final_structure.size(); ++i) {
-                auto base_row = base_structure.template get_row(i);
-                auto run_row = final_run_data[i];
-                auto row = get_row(base_row, run_row);
-                final_structure.set_row(i, row);
-            }
-            move_structure = MoveStructureType(std::move(final_structure), domain);
-        } else {
-            move_structure = MoveStructureType(std::move(base_structure), domain);
-            
-            this->run_cols_data = PackedVector<RunCols>(final_run_data.size(), run_cols_widths);
-            for (size_t i = 0; i < final_run_data.size(); ++i) {
-                this->run_cols_data.template set_row(i, final_run_data[i]);
-            }
-        }
+    // Constructor from pre-computed table (move semantics) for advanced users without integrated move structure
+    RunPerm(PackedVector<SwitchedColumns> &&structure, std::vector<std::array<ulint, NumRunCols>> &run_data, const ulint domain) : move_structure(std::move(structure)), position(Position()), orig_intervals(structure.size()) {
+        static_assert(!IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed table if integrating user data with move structure");
+        populate_run_data(std::move(structure), run_data, domain);
     }
     
     void next() { position = move_structure.move(position); }
@@ -210,7 +216,6 @@ private:
     Position position;
     size_t orig_intervals; // before splitting, underlying move structure may be larger
 
-
     std::vector<std::array<ulint, NumRunCols>> extend_run_data(const std::vector<ulint>& lengths, const ulint domain, const PackedVector<SwitchedColumns>& structure, std::function<std::array<ulint, NumRunCols>(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         std::vector<std::array<ulint, NumRunCols>> final_run_data(structure.size());
         auto get_structure_length = [&](size_t idx) {
@@ -278,6 +283,31 @@ private:
             row[NumBaseCols + i] = run_row[i];
         }
         return row;
+    }
+
+    // Sets move structure and run data from the base structure and run data
+    void populate_structure(PackedVector<SwitchedColumns>&& base_structure, const std::vector<std::array<ulint, NumRunCols>>& run_data, const ulint domain) {
+        auto run_cols_widths = get_run_cols_widths(run_data);
+        if constexpr (IntegratedMoveStructure) {
+            auto base_widths = base_structure.get_widths();
+            auto widths = get_widths(base_widths, run_cols_widths);
+
+            PackedVector<Columns> final_structure(base_structure.size(), widths);
+            for (size_t i = 0; i < final_structure.size(); ++i) {
+                auto base_row = base_structure.template get_row(i);
+                auto run_row = run_data[i];
+                auto row = get_row(base_row, run_row);
+                final_structure.set_row(i, row);
+            }
+            move_structure = MoveStructureType(std::move(final_structure), domain);
+        } else {
+            move_structure = MoveStructureType(std::move(base_structure), domain);
+            
+            this->run_cols_data = PackedVector<RunCols>(run_data.size(), run_cols_widths);
+            for (size_t i = 0; i < run_data.size(); ++i) {
+                this->run_cols_data.template set_row(i, run_data[i]);
+            }
+        }
     }
 };
 
