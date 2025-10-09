@@ -28,15 +28,13 @@ struct LengthSplitResult {
     ulint max_length;
 };
 
+// TODO see if double scan is faster
 LengthSplitResult split_by_max_allowed_length(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint max_allowed_length) {
     assert(lengths.size() == interval_permutation.size());
 
     LengthSplitResult result;
     result.lengths.reserve(static_cast<size_t>(1.5*lengths.size()));
     result.interval_permutations.reserve(static_cast<size_t>(1.5*interval_permutation.size()));
-
-    std::vector<ulint> new_lengths;
-    std::vector<ulint> new_interval_permutations;
     result.max_length = 0;
 
     for (size_t i = 0; i < lengths.size(); ++i) {
@@ -45,20 +43,20 @@ LengthSplitResult split_by_max_allowed_length(const std::vector<ulint>& lengths,
             size_t sum_to_curr_chunk = 0;
             while (remaining > 0) {
                 ulint chunk = std::min(remaining, max_allowed_length);
-                new_lengths.push_back(chunk);
-                new_interval_permutations.push_back(interval_permutation[i] + sum_to_curr_chunk);
+                result.lengths.push_back(chunk);
+                result.interval_permutations.push_back(interval_permutation[i] + sum_to_curr_chunk);
                 remaining -= chunk;
                 sum_to_curr_chunk += chunk;
             }
             result.max_length = max_allowed_length;
         } else {
-            new_lengths.push_back(lengths[i]);
-            new_interval_permutations.push_back(interval_permutation[i]);
+            result.lengths.push_back(lengths[i]);
+            result.interval_permutations.push_back(interval_permutation[i]);
             result.max_length = std::max(result.max_length, lengths[i]);
         }
     }
-    new_lengths.shrink_to_fit();
-    new_interval_permutations.shrink_to_fit();
+    result.lengths.shrink_to_fit();
+    result.interval_permutations.shrink_to_fit();
     return result;
 }
 

@@ -54,7 +54,6 @@ public:
     "Cannot integrate user data with MoveTable. Use MoveVector or set IntegratedMoveStructure=false."
     "MoveTable for integrated data requires specialized implementation!");
 
-
     RunPerm() = default;
 
     // By default, just copy the run data for the original interval if the move structure intervals have been split
@@ -64,8 +63,8 @@ public:
      * domain -> domain of the permutation, i.e. a permutatation over 1..n has domain n
      * run_data -> run data for each interval, the size of this vector should be the same as the number of intervals
      */
-    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const std::vector<std::array<ulint, NumRunCols>> &run_data)
-        : RunPerm(lengths, interval_permutation, domain,
+    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, const std::vector<std::array<ulint, NumRunCols>> &run_data)
+        : RunPerm(lengths, interval_permutation, domain, split_params,
             [&run_data](ulint orig_interval, ulint orig_interval_length, ulint new_offset_from_orig_start, ulint new_length) {
                 return run_data[orig_interval];
             }
@@ -75,12 +74,12 @@ public:
     // the original interval index, the original interval length, the absolute offset of the first element in the new interval, and the new interval length
     // and returns the values to be stored in the new interval (run data)
     // TODO add skip if no skipping happened
-    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, std::function<std::array<ulint, NumRunCols>(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, std::function<std::array<ulint, NumRunCols>(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(lengths.size() == interval_permutation.size());
         orig_intervals = lengths.size();
         position = Position(); // should start at 0
         
-        PackedVector<SwitchedColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain);
+        PackedVector<SwitchedColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain, split_params);
         std::vector<std::array<ulint, NumRunCols>> final_run_data = extend_run_data(lengths, domain, base_structure, get_run_cols_data);
         auto run_cols_widths = get_run_cols_widths(final_run_data);
 
@@ -99,7 +98,7 @@ public:
         } else {
             move_structure = MoveStructureType(std::move(base_structure), domain);
             
-            this->run_cols_data = PackedVector<RunCols>(lengths.size(), run_cols_widths);
+            this->run_cols_data = PackedVector<RunCols>(final_run_data.size(), run_cols_widths);
             for (size_t i = 0; i < final_run_data.size(); ++i) {
                 this->run_cols_data.template set_row(i, final_run_data[i]);
             }
