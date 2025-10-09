@@ -20,25 +20,30 @@ struct SeperatedDataHolder<RunColsType, true> { /* empty */ };
 template<typename RunColsType, // Fields to be stored alongside the move structure representing a runny permutation
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE, // Whether to pack the run data alongside the move structure
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, // Whether to store absolute positions instead of interval/offset
-         typename BaseColumns = MoveCols,
+         typename BaseColumnsType = MoveCols,
          template<typename> class TableType = MoveVector,
          template<typename> class StructureType = MoveStructure,
          template<typename> class PackedType = PackedVector>
 class RunPerm : SeperatedDataHolder<RunColsType, IntegratedMoveStructure> {
 private:
+    // Helpful constants for number of base (move permutation information) columns and run (additional data) columns
     static constexpr size_t NumRunCols = static_cast<size_t>(RunColsType::COUNT);
-    static constexpr size_t NumBaseCols = static_cast<size_t>(BaseColumns::COUNT);
-    // SwitchedColumns is the base colunns using the correct relative/absolute indexing
-    using SwitchedColumns = SwitchColumns<BaseColumns, StoreAbsolutePositions>;
+    static constexpr size_t NumBaseCols = static_cast<size_t>(BaseColumnsType::COUNT);
+
+    // Switch the base columns to use the correct relative/absolute indexing if needed
+    using BaseColumns = SwitchColumns<BaseColumnsType, StoreAbsolutePositions>;
     // Use RunDataColumns if integrating user data alongside the move structure, otherwise just use the switched columns
-    // Use the "fake" enum from RunDataColumns to get the correct columns type for integrated move structure
+    // RunColsWrapper extends the BaseColumns traits to include the run data columns
     using ColumnsType = std::conditional_t<IntegratedMoveStructure, 
-        typename RunColsWrapper<RunColsType, SwitchedColumns>::E, 
-        SwitchedColumns>;
+        typename RunColsWrapper<RunColsType, BaseColumns>::E, 
+        BaseColumns>;
+
+    // Sets NumCols, Columns, and ColsTraits
     MOVE_CLASS_TRAITS(ColumnsType)
-    using Table = TableType<ColumnsType>;
-    using MoveStructureType = StructureType<Table>;
-    using MoveStructureBase = StructureType<TableType<SwitchedColumns>>;
+
+    // Base structure type is the move structure without run data
+    using MoveStructureBase = StructureType<TableType<BaseColumns>>;
+    using MoveStructureType = StructureType<TableType<Columns>>;
 
 public:
     using RunCols = RunColsType;
@@ -68,7 +73,7 @@ public:
         position = Position(); // should start at 0
 
         // Find the base structure (move structure without run data)
-        PackedVector<SwitchedColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain);
+        PackedVector<BaseColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain);
         populate_structure(std::move(base_structure), run_data, domain);
     }
 
@@ -95,7 +100,7 @@ public:
         position = Position(); // should start at 0
         
         // Find the base structure (move structure without run data)
-        PackedVector<SwitchedColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain, split_params);
+        PackedVector<BaseColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain, split_params);
         std::vector<std::array<ulint, NumRunCols>> final_run_data = extend_run_data(lengths, domain, base_structure, get_run_cols_data);
         populate_structure(std::move(base_structure), final_run_data, domain);
     }
@@ -106,7 +111,7 @@ public:
     }
 
     // Constructor from pre-computed table (move semantics) for advanced users without integrated move structure
-    RunPerm(PackedVector<SwitchedColumns> &&structure, std::vector<std::array<ulint, NumRunCols>> &run_data, const ulint domain) : move_structure(std::move(structure)), position(Position()), orig_intervals(structure.size()) {
+    RunPerm(PackedVector<BaseColumns> &&structure, std::vector<std::array<ulint, NumRunCols>> &run_data, const ulint domain) : move_structure(std::move(structure)), position(Position()), orig_intervals(structure.size()) {
         static_assert(!IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed table if integrating user data with move structure");
         populate_run_data(std::move(structure), run_data, domain);
     }
@@ -197,6 +202,10 @@ public:
 
     size_t serialize(std::ostream& os) {
         size_t written_bytes = 0;
+
+        os.write((char *)&orig_intervals, sizeof(orig_intervals));
+        written_bytes += sizeof(orig_intervals);
+
         written_bytes += move_structure.serialize(os);
         if constexpr (!IntegratedMoveStructure) {
             written_bytes += this->run_cols_data.serialize(os);
@@ -205,6 +214,8 @@ public:
     }
 
     void load(std::istream& is) {
+        is.read((char *)&orig_intervals, sizeof(orig_intervals));
+
         move_structure.load(is);
         if constexpr (!IntegratedMoveStructure) {
             this->run_cols_data.load(is);
@@ -216,7 +227,7 @@ private:
     Position position;
     size_t orig_intervals; // before splitting, underlying move structure may be larger
 
-    std::vector<std::array<ulint, NumRunCols>> extend_run_data(const std::vector<ulint>& lengths, const ulint domain, const PackedVector<SwitchedColumns>& structure, std::function<std::array<ulint, NumRunCols>(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+    std::vector<std::array<ulint, NumRunCols>> extend_run_data(const std::vector<ulint>& lengths, const ulint domain, const PackedVector<BaseColumns>& structure, std::function<std::array<ulint, NumRunCols>(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         std::vector<std::array<ulint, NumRunCols>> final_run_data(structure.size());
         auto get_structure_length = [&](size_t idx) {
             if constexpr (StoreAbsolutePositions) {
@@ -286,7 +297,7 @@ private:
     }
 
     // Sets move structure and run data from the base structure and run data
-    void populate_structure(PackedVector<SwitchedColumns>&& base_structure, const std::vector<std::array<ulint, NumRunCols>>& run_data, const ulint domain) {
+    void populate_structure(PackedVector<BaseColumns>&& base_structure, const std::vector<std::array<ulint, NumRunCols>>& run_data, const ulint domain) {
         auto run_cols_widths = get_run_cols_widths(run_data);
         if constexpr (IntegratedMoveStructure) {
             auto base_widths = base_structure.get_widths();
@@ -310,6 +321,15 @@ private:
         }
     }
 };
+
+template<typename RunColsType>
+using RunPermDefault = RunPerm<RunColsType, DEFAULT_INTEGRATED_MOVE_STRUCTURE, DEFAULT_STORE_ABSOLUTE_POSITIONS, MoveCols, MoveVector, MoveStructure, PackedVector>;
+template<typename RunColsType>
+using RunPermSeperated = RunPerm<RunColsType, false, false, MoveCols, MoveVector, MoveStructure, PackedVector>;
+template<typename RunColsType>
+using RunPermSeperatedAbsolute = RunPerm<RunColsType, false, true, MoveCols, MoveVector, MoveStructure, PackedVector>;
+template<typename RunColsType>
+using RunPermAbsolute = RunPerm<RunColsType, true, true, MoveCols, MoveVector, MoveStructure, PackedVector>;
 
 // A wrapper around RunPerm without any run data, essentially just a MoveStructure
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector, template<typename> class StructureType = MoveStructure, template<typename> class PackedType = PackedVector>
