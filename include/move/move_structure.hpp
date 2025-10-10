@@ -44,22 +44,7 @@ public:
         
         // Split the lengths and interval permutations if needed, using length/balancing splitting
         SplitResult split_result;
-        auto set_by_split_result = [&](SplitResult& split_result) {
-            final_lengths = &split_result.lengths;
-            final_interval_permutation = &split_result.interval_permutations;
-            max_length = split_result.max_length;
-        };
-        if (split_params.max_allowed_length) {
-            split_by_max_allowed_length(*final_lengths, *final_interval_permutation, *split_params.max_allowed_length, split_result);
-            set_by_split_result(split_result);
-        }
-        if (split_params.balancing_factor) {
-            split_by_balancing_factor(*final_lengths, *final_interval_permutation, *split_params.balancing_factor, split_result);
-            set_by_split_result(split_result);
-        }
-        if (!split_params.max_allowed_length && !split_params.balancing_factor) {
-            max_length = *std::max_element(final_lengths->begin(), final_lengths->end());
-        }
+        apply_splitting(final_lengths, final_interval_permutation, max_length, split_params, split_result);
         
         // Initialize the structure with the final lengths and interval permutations
         PackedVector<Columns> structure(final_lengths->size(), get_move_widths(domain, final_lengths->size(), max_length));
@@ -207,6 +192,25 @@ private:
     ulint r;
 
     // === Structure Building Helpers ===
+    static void apply_splitting(const std::vector<ulint>*& final_lengths, const std::vector<ulint>*& final_interval_permutation, ulint& max_length, const SplitParams& split_params, SplitResult& split_result) {
+        auto set_by_split_result = [&](SplitResult& split_result) {
+            final_lengths = &split_result.lengths;
+            final_interval_permutation = &split_result.interval_permutations;
+            max_length = split_result.max_length;
+        };
+        if (split_params.max_allowed_length) {
+            split_by_max_allowed_length(*final_lengths, *final_interval_permutation, *split_params.max_allowed_length, split_result);
+            set_by_split_result(split_result);
+        }
+        if (split_params.balancing_factor) {
+            split_by_balancing_factor(*final_lengths, *final_interval_permutation, *split_params.balancing_factor, split_result);
+            set_by_split_result(split_result);
+        }
+        if (!split_params.max_allowed_length && !split_params.balancing_factor) {
+            max_length = *std::max_element(final_lengths->begin(), final_lengths->end());
+        }
+    }
+    
     static std::array<uchar, NumCols> get_move_widths(const ulint domain, const ulint runs, const ulint max_length) {
         std::array<uchar, NumCols> widths = {0};
         for (size_t i = 0; i < NumCols; ++i) {
