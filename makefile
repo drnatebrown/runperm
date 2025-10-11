@@ -1,10 +1,10 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Iinclude -O3
 
-HEADERS = $(wildcard include/*.hpp) $(wildcard include/ds/*.hpp) $(wildcard include/move/*.hpp) $(wildcard include/runperm/*.hpp)
+HEADERS = $(wildcard include/*.hpp) $(wildcard include/ds/*.hpp) $(wildcard include/move/*.hpp) $(wildcard include/runperm/*.hpp) $(wildcard include/rlbwt/*.hpp)
 
 # all: build invert move_build
-all: move_test
+all: move_test rlbwt_test
 
 # Target to build the executable for build.cpp
 # build: src/build.cpp $(HEADERS)
@@ -17,6 +17,9 @@ all: move_test
 # Target to build the test executable for move_build.cpp
 move_test: src/move_test.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -o move_test src/move_test.cpp
+
+rlbwt_test: src/rlbwt_test.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -o rlbwt_test src/rlbwt_test.cpp
 
 .PHONY: debug
 debug: CXXFLAGS += -g -O0

@@ -5,12 +5,15 @@
 #include <cctype>
 #include <cassert>
 
+static constexpr uchar UNMAPPED = MAX_VAL(BYTES_TO_BITS(sizeof(uchar)));
+
 class Alphabet
 {
 public:
-    static constexpr uchar UNMAPPED = MAX_VAL(BYTES_TO_BITS(uchar));
 
-    AlphabetMap(std::vector<ulint> &char_counts) {
+    Alphabet() = default;
+
+    Alphabet(const std::vector<ulint> &char_counts) {
         assert(char_counts.size() == MAX_ALPHABET_SIZE);
 
         alphabet_map.resize(MAX_ALPHABET_SIZE, UNMAPPED);
@@ -35,10 +38,10 @@ public:
 
     uchar unmap_char(uchar c) {
         assert(c < reverse_alphabet_map.size());
-        return reverse_alphabet_map.at(c);
+        return reverse_alphabet_map[c];
     }
 
-    static constexpr uchar size() {
+    uchar size() {
         return reverse_alphabet_map.size();
     }
 
@@ -47,12 +50,13 @@ private:
     std::vector<uchar> reverse_alphabet_map;
 };
 
-class Nucletotide {
+class Nucleotide {
     public:
-    static constexpr uchar UNMAPPED = MAX_VAL(BYTES_TO_BITS(uchar));
     static constexpr uchar SIGMA = 8;
 
-    Nucletotide(std::vector<ulint> &char_counts) {
+    Nucleotide() = default;
+
+    Nucleotide(const std::vector<ulint> &char_counts) {
         for (size_t i = 0; i < char_counts.size(); i++) {
             if (char_counts[i] > 0) {
                 if(map_char(i) == NUL) {
@@ -68,8 +72,8 @@ class Nucletotide {
     }
 
     static constexpr uchar unmap_char(uchar c) {
-        assert(c < reverse_alphabet_map.size());
-        return reverse_alphabet_map.at(c);
+        assert(c < size());
+        return reverse_alphabet_map[c];
     }
 
     static constexpr uchar size() {
@@ -93,7 +97,7 @@ class Nucletotide {
         NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,
         NUL, A ,NUL, C ,NUL,NUL,NUL, G ,NUL,NUL,NUL,NUL,NUL,NUL, N ,NUL, 
         NUL,NUL,NUL,NUL, T ,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,  
-        NUL, A ,NUL, C ,NUL,NUL,NUL, G ,NUL,NUL,NUL,NUL,NUL,NUL, N,NUL,  
+        NUL, A ,NUL, C ,NUL,NUL,NUL, G ,NUL,NUL,NUL,NUL,NUL,NUL, N ,NUL,  
         NUL,NUL,NUL,NUL, T ,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,  
         NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,  
         NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,NUL,
@@ -106,8 +110,8 @@ class Nucletotide {
     };
 
     static constexpr uchar reverse_alphabet_map[SIGMA] = {
-    TER,SEP, A , C , G , T , N ,NUL
+    TER,SEP,'A','C','G','T','N',NUL
     };
-}
+};
 
 #endif
