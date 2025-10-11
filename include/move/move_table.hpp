@@ -65,10 +65,11 @@ struct MoveTableInterface {
     }
 };
 
-template<typename Row = MoveRow<>>
-struct MoveTable : public MoveTableInterface<MoveTable<Row>, typename Row::Columns> {
+template<typename ColumnsType = MoveCols>
+struct MoveTable : public MoveTableInterface<MoveTable<ColumnsType>, ColumnsType> {
+    using Row = MoveRow<ColumnsType>;
     // Sets NumCols, Columns, and ColsTraits
-    MOVE_CLASS_TRAITS(typename Row::Columns)
+    MOVE_CLASS_TRAITS(ColumnsType)
     
     std::vector<Row> table;
 
@@ -181,13 +182,5 @@ struct MoveVector : public MoveTableInterface<MoveVector<ColumnsType>, ColumnsTy
         return total_width * num_rows;
     }
 };
-
-template<typename Columns>
-using MoveTableFor = MoveTable<MoveRow<Columns>>;
-template<typename Columns>
-using MoveVectorFor = MoveVector<Columns>;
-
-using MoveTableIdx = MoveTableFor<MoveColsIdx>;
-using MoveVectorIdx = MoveVectorFor<MoveColsIdx>;
 
 #endif // _MOVE_TABLE_HH

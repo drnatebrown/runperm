@@ -16,10 +16,11 @@
 #include "move/move_splitting.hpp"
 #include "ds/packed_vector.hpp"
 
-template <typename Table = MoveTable<>>
+template <typename ColumnsType = MoveCols, template<typename> class TableType = MoveTable>
 class MoveStructure
 {
 public:
+    using Table = TableType<ColumnsType>;
     // Sets NumCols, Columns, and ColsTraits
     MOVE_CLASS_TRAITS(typename Table::Columns)
     using Position = typename ColsTraits::Position;
@@ -287,9 +288,9 @@ private:
     }
 };
 
-using MoveStructureTbl = MoveStructure<MoveTable<>>;
-using MoveStructureTblIdx = MoveStructure<MoveTableIdx>;
-using MoveStructureVec = MoveStructure<MoveVector<>>;
-using MoveStructureVecIdx = MoveStructure<MoveVectorIdx>;
+using MoveStructureTbl = MoveStructure<MoveCols, MoveTable>;
+using MoveStructureTblIdx = MoveStructure<MoveColsIdx, MoveTable>;
+using MoveStructureVec = MoveStructure<MoveCols, MoveVector>;
+using MoveStructureVecIdx = MoveStructure<MoveColsIdx, MoveVector>;
 
 #endif /* end of include guard: _Move_HPP */

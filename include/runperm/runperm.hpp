@@ -21,9 +21,8 @@ template<typename RunColsType, // Fields to be stored alongside the move structu
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE, // Whether to pack the run data alongside the move structure
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, // Whether to store absolute positions instead of interval/offset
          typename BaseColumnsType = MoveCols,
-         template<typename> class TableType = MoveVector,
-         template<typename> class StructureType = MoveStructure,
-         template<typename> class PackedType = PackedVector>
+         template<typename> class TableType = MoveVector>
+         // TODO need PackedType option?
 class RunPerm : SeperatedDataHolder<RunColsType, IntegratedMoveStructure> {
 private:
     // Helpful constants for number of base (move permutation information) columns and run (additional data) columns
@@ -42,8 +41,8 @@ private:
     MOVE_CLASS_TRAITS(ColumnsType)
 
     // Base structure type is the move structure without run data
-    using MoveStructureBase = StructureType<TableType<BaseColumns>>;
-    using MoveStructureType = StructureType<TableType<Columns>>;
+    using MoveStructureBase = MoveStructure<BaseColumns, TableType>;
+    using MoveStructureType = MoveStructure<Columns, TableType>;
 
 public:
     using RunCols = RunColsType;
@@ -337,19 +336,19 @@ private:
 };
 
 template<typename RunColsType>
-using RunPermIntegrated = RunPerm<RunColsType, true, false, MoveCols, MoveVector, MoveStructure, PackedVector>;
+using RunPermIntegrated = RunPerm<RunColsType, true, false, MoveCols, MoveVector>;
 template<typename RunColsType>
-using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true, MoveCols, MoveVector, MoveStructure, PackedVector>;
+using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true, MoveCols, MoveVector>;
 template<typename RunColsType>
-using RunPermSeperated = RunPerm<RunColsType, false, false, MoveCols, MoveVector, MoveStructure, PackedVector>;
+using RunPermSeperated = RunPerm<RunColsType, false, false, MoveCols, MoveVector>;
 template<typename RunColsType>
-using RunPermSeperatedAbsolute = RunPerm<RunColsType, false, true, MoveCols, MoveVector, MoveStructure, PackedVector>;
+using RunPermSeperatedAbsolute = RunPerm<RunColsType, false, true, MoveCols, MoveVector>;
 
 // A wrapper around RunPerm without any run data, essentially just a MoveStructure
-template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector, template<typename> class StructureType = MoveStructure, template<typename> class PackedType = PackedVector>
+template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector>
 class MovePerm {
 private:
-    using RunPermType = RunPerm<EmptyRunCols, false, StoreAbsolutePositions, BaseColumns, TableType, StructureType, PackedType>;
+    using RunPermType = RunPerm<EmptyRunCols, false, StoreAbsolutePositions, BaseColumns, TableType>;
     RunPermType run_perm;
     
 public:
