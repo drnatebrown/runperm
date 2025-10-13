@@ -1,5 +1,5 @@
-#ifndef _RLBWT_LF_HPP
-#define _RLBWT_LF_HPP
+#ifndef _RLBWT_FL_HPP
+#define _RLBWT_FL_HPP
 
 #include "internal/common.hpp"
 #include "internal/rlbwt/specializations/runperm_rlbwt.hpp"
@@ -8,13 +8,15 @@
 template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
-         typename BaseColumnsType = RLBWTCols,
          typename AlphabetType = Nucleotide,
          template<typename> class TableType = MoveVector>
-class RunPermFL : public RunPermRLBWT<RunPermFL<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, BaseColumnsType, AlphabetType, TableType>,
-                         RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, BaseColumnsType, AlphabetType, TableType> {
-    using Base = RunPermRLBWT<RunPermFL, RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, BaseColumnsType, AlphabetType, TableType>;
+class RunPermFLImpl : public RunPermRLBWT<RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, TableType>,
+                         RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, TableType> {
+    using Base = RunPermRLBWT<RunPermFLImpl, RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, TableType>;
+    using BaseColumns = typename Base::BaseColumns;
 public:
+    using Base::Base;
+    using Base::operator=;
 
     void find_permutation_and_alphabet(
         const std::vector<uchar>& rlbwt_heads,
@@ -27,21 +29,21 @@ public:
         num_chars = bwt_length;
         auto [F_heads, F_lens, interval_permutation] = get_F_runs(rlbwt_heads.size(), F_lens_and_origins);
         alphabet = AlphabetType(char_count);
-        std::vector<uchar> alphabet_characters = Base::apply_alphabet(F_heads);
-        base_structure = Base::MoveStructureBase::find_structure(alphabet_characters, F_lens, interval_permutation, num_chars, alphabet.size());
+        auto mapped_F_heads = alphabet.map_sequence(F_heads);
+        base_structure = Base::MoveStructureBase::find_structure(mapped_F_heads, F_lens, interval_permutation, num_chars, alphabet.size());
     }
 
     void FL() {
-        Base::move();
+        Base::next();
     }
 
     void FL(ulint steps) {
-        Base::move(steps);
+        Base::next(steps);
     }
 
 private:
     // === Constructor Helpers ===
-    static std::tuple<std::vector<size_t>, std::vector<size_t>, ulint> get_char_counts(const std::vector<uchar> &rlbwt_heads, const std::vector<ulint> &rlbwt_run_lengths) {
+    static std::tuple<std::vector<size_t>, std::vector<std::vector<std::pair<size_t, size_t>>>, ulint> get_char_counts(const std::vector<uchar> &rlbwt_heads, const std::vector<ulint> &rlbwt_run_lengths) {
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
 
         std::vector<size_t> char_count(MAX_ALPHABET_SIZE, 0);
@@ -62,17 +64,17 @@ private:
         return {char_count, F_lens_and_origins, bwt_length};
     }
 
-    std::vector<ulint> get_F_runs(const size_t runs, const std::vector<std::vector<std::pair<size_t, size_t>>> &F_lens_and_origins) {
+    std::tuple<std::vector<uchar>, std::vector<ulint>, std::vector<ulint>> get_F_runs(const size_t runs, const std::vector<std::vector<std::pair<size_t, size_t>>> &F_lens_and_origins) {
         std::vector<uchar> F_heads(runs);
         std::vector<ulint> F_lens(runs);
-        std::vector<ulint> interval_permutation(runs));
+        std::vector<ulint> interval_permutation(runs);
 
         size_t curr_run = 0;
-        for (size_t i = 0; i < F_lens_and_origins.size(); i++) {
-            for (size_t j = 0; j < F_lens_and_origins[i].size(); j++) {
-                F_heads[curr_run] = j;
-                F_lens[curr_run] = F_lens_and_origins[i][j].first;
-                interval_permutation[curr_run] = F_lens_and_origins[i][j].second;
+        for (size_t c = 0; c < F_lens_and_origins.size(); ++c) {
+            for (size_t j = 0; j < F_lens_and_origins[c].size(); ++j) {
+                F_heads[curr_run] = c;
+                F_lens[curr_run] = F_lens_and_origins[c][j].first;
+                interval_permutation[curr_run] = F_lens_and_origins[c][j].second;
                 curr_run++;
             }
         }
@@ -80,22 +82,16 @@ private:
     }
 };
 
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermFLIntegrated = RunPermFL<RunColsType, true, DEFAULT_STORE_ABSOLUTE_POSITIONS, RLBWTCols, AlphabetType, MoveVector>;
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermFLIntegratedAbsolute = RunPermFL<RunColsType, true, true, RLBWTCols, AlphabetType, MoveVector>;
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermFLSeperated = RunPermFL<RunColsType, false, DEFAULT_STORE_ABSOLUTE_POSITIONS, RLBWTCols, AlphabetType, MoveVector>;
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermFLSeperatedAbsolute = RunPermFL<RunColsType, false, true, RLBWTCols, AlphabetType, MoveVector>;
-
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
-         typename BaseColumns = RLBWTCols, 
          typename AlphabetType = Nucleotide,
          template<typename> class TableType = MoveVector>
-class MoveFL : public MovePermRLBWT<RunPermFL, StoreAbsolutePositions, BaseColumns, AlphabetType, TableType> {
+class MoveFLImpl : public MovePermRLBWT<RunPermFLImpl<EmptyRunCols, false, StoreAbsolutePositions, AlphabetType, TableType>, 
+                StoreAbsolutePositions, AlphabetType, TableType> {
+    using Base = MovePermRLBWT<RunPermFLImpl<EmptyRunCols, false, StoreAbsolutePositions, AlphabetType, TableType>,
+    StoreAbsolutePositions, AlphabetType, TableType>;
 public:
-    using Base = MovePermRLBWT<RunPermFL, StoreAbsolutePositions, BaseColumns, AlphabetType, TableType>;
+    using Base::Base;
+    using Base::operator=;
 
     void FL() {
         Base::FL();
@@ -106,4 +102,4 @@ public:
     }
 };
 
-#endif /* end of include guard: _RLBWT_LF_HPP */
+#endif /* end of include guard: _RLBWT_FL_HPP */

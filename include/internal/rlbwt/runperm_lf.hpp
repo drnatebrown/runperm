@@ -15,6 +15,8 @@ class RunPermLFImpl : public RunPermRLBWT<RunPermLFImpl<RunColsType, IntegratedM
     using Base = RunPermRLBWT<RunPermLFImpl, RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, TableType>;
     using BaseColumns = typename Base::BaseColumns;
 public:
+    using Base::Base;
+    using Base::operator=;
 
     void find_permutation_and_alphabet(
         const std::vector<uchar>& rlbwt_heads,
@@ -27,16 +29,16 @@ public:
         num_chars = bwt_length;
         std::vector<ulint> interval_permutation = get_rlbwt_head_permutations(rlbwt_heads, char_count, head_ranks);
         alphabet = AlphabetType(char_count);
-        std::vector<uchar> alphabet_characters = Base::apply_alphabet(rlbwt_heads);
-        base_structure = Base::MoveStructureBase::find_structure(alphabet_characters, rlbwt_run_lengths, interval_permutation, num_chars, alphabet.size());
+        auto mapped_rlbwt_heads = alphabet.map_sequence(rlbwt_heads);
+        base_structure = Base::MoveStructureBase::find_structure(mapped_rlbwt_heads, rlbwt_run_lengths, interval_permutation, num_chars, alphabet.size());
     }
 
     void LF() {
-        Base::move();
+        Base::next();
     }
 
     void LF(ulint steps) {
-        Base::move(steps);
+        Base::next(steps);
     }
 
 private:
@@ -83,11 +85,10 @@ template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          template<typename> class TableType = MoveVector>
 class MoveLFImpl : public MovePermRLBWT<RunPermLFImpl<EmptyRunCols, false, StoreAbsolutePositions, AlphabetType, TableType>, 
                       StoreAbsolutePositions, AlphabetType, TableType> {
-public:
     using Base = MovePermRLBWT<RunPermLFImpl<EmptyRunCols, false, StoreAbsolutePositions, AlphabetType, TableType>,
                  StoreAbsolutePositions, AlphabetType, TableType>;
-
-    Base::Base;
+public:
+    using Base::Base;
     using Base::operator=;
 
     void LF() {

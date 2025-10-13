@@ -252,13 +252,13 @@ protected:
     
     std::vector<RunData> extend_run_data(const std::vector<ulint>& lengths, const ulint domain, const PackedVector<BaseColumns>& structure, std::function<RunData(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         std::vector<RunData> final_run_data(structure.size());
-        auto get_structure_length = [&](size_t idx) {
+        auto get_structure_length = [&](size_t row) {
             if constexpr (StoreAbsolutePositions) {
-                return (idx == structure.size() - 1) 
-                    ? domain - structure.template get<ColsTraits::PRIMARY>(idx)
-                    : structure.template get<ColsTraits::PRIMARY>(idx + 1) - structure.template get<ColsTraits::PRIMARY>(idx);
+                return (row == structure.size() - 1) 
+                    ? domain - structure.template get<ColsTraits::PRIMARY>(row)
+                    : structure.template get<ColsTraits::PRIMARY>(row + 1) - structure.template get<ColsTraits::PRIMARY>(row);
             } else {
-                return structure.template get<ColsTraits::PRIMARY>(idx);
+                return structure.template get<ColsTraits::PRIMARY>(row);
             }
         };
 

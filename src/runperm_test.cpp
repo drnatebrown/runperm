@@ -127,8 +127,6 @@
         runperm.first();
         for (size_t i = 0; i < n; ++i) {
             typename RunPermType::Position pos = runperm.get_position();
-            // assert(runperm.template get<RunData::VAL_1>() == run_data[pos.interval][0]);
-            // assert(runperm.template get<RunData::VAL_2>() == run_data[pos.interval][1]);
             runperm.next();
         }
         auto move_time = high_resolution_clock::now();

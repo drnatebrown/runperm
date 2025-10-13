@@ -45,6 +45,22 @@ public:
         return reverse_alphabet_map.size();
     }
 
+    std::vector<uchar> map_sequence(const std::vector<uchar>& sequence) {
+        std::vector<uchar> mapped_sequence(sequence.size());
+        for (size_t i = 0; i < sequence.size(); i++) {
+            mapped_sequence[i] = map_char(sequence[i]);
+        }
+        return mapped_sequence;
+    }   
+
+    std::vector<uchar> unmap_sequence(const std::vector<uchar>& sequence) {
+        std::vector<uchar> unmapped_sequence(sequence.size());
+        for (size_t i = 0; i < sequence.size(); i++) {
+            unmapped_sequence[i] = unmap_char(sequence[i]);
+        }
+        return unmapped_sequence;
+    }
+
     size_t serialize(std::ostream& out) {
         size_t written_bytes = 0;
 
@@ -91,7 +107,7 @@ private:
 
 class Nucleotide {
     public:
-    static constexpr uchar SIGMA = 8;
+    static constexpr uchar SIGMA = 7;
 
     Nucleotide() = default;
 
@@ -117,6 +133,22 @@ class Nucleotide {
 
     static constexpr uchar size() {
         return SIGMA;
+    }
+
+    static std::vector<uchar> map_sequence(const std::vector<uchar>& sequence) {
+        std::vector<uchar> mapped_sequence(sequence.size());
+        for (size_t i = 0; i < sequence.size(); i++) {
+            mapped_sequence[i] = map_char(sequence[i]);
+        }
+        return mapped_sequence;
+    }   
+
+    static std::vector<uchar> unmap_sequence(const std::vector<uchar>& sequence) {
+        std::vector<uchar> unmapped_sequence(sequence.size());
+        for (size_t i = 0; i < sequence.size(); i++) {
+            unmapped_sequence[i] = unmap_char(sequence[i]);
+        }
+        return unmapped_sequence;
     }
 
     // Dummy methods, nothing to serialize or load
@@ -153,7 +185,7 @@ private:
     };
 
     static constexpr uchar reverse_alphabet_map[SIGMA] = {
-    TER,SEP,'A','C','G','T','N',NUL
+    TER,SEP,'A','C','G','T','N'
     };
 };
 

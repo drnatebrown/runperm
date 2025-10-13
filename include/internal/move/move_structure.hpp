@@ -243,24 +243,22 @@ protected:
         const std::vector<ulint>& interval_permutation,
         const std::vector<size_t>& sorted_indices
     ) {
-        size_t tbl_idx = 0;
         size_t start_val = 0;
         auto sort_itr = sorted_indices.begin();
         for (size_t i = 0; i < lengths.size(); ++i) {
             size_t length = lengths[i];
             if constexpr (ColsTraits::RELATIVE) {
-                structure.template set<to_cols(ColsTraits::PRIMARY)>(tbl_idx, length);
+                structure.template set<to_cols(ColsTraits::PRIMARY)>(i, length);
             }
             else {
-                structure.template set<to_cols(ColsTraits::PRIMARY)>(tbl_idx, start_val);
+                structure.template set<to_cols(ColsTraits::PRIMARY)>(i, start_val);
             }
 
             while (sort_itr != sorted_indices.end() && interval_permutation[*sort_itr] < start_val + length) {
-                structure.template set<to_cols(ColsTraits::POINTER)>(*sort_itr, tbl_idx);
+                structure.template set<to_cols(ColsTraits::POINTER)>(*sort_itr, i);
                 structure.template set<to_cols(ColsTraits::OFFSET)>(*sort_itr, interval_permutation[*sort_itr] - start_val);
                 ++sort_itr;
             }
-            ++tbl_idx;
             start_val += length;
         }
     }

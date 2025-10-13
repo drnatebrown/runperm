@@ -34,11 +34,12 @@ public:
         Base::orig_intervals = rlbwt_heads.size();
         Base::position = Position();
 
-        PackedVector<BaseColumns> base_structure;
+        alphabet = AlphabetType();
         ulint num_chars;
+        PackedVector<BaseColumns> base_structure;
         find_permutation_and_alphabet(rlbwt_heads, rlbwt_run_lengths, alphabet, num_chars, base_structure);
 
-        populate_structure(std::move(base_structure), run_data, num_chars);
+        Base::populate_structure(std::move(base_structure), run_data, num_chars);
     }
 
     RunPermRLBWT(const std::vector<uchar> &rlbwt_heads, const std::vector<ulint> &rlbwt_run_lengths, const SplitParams &split_params, const std::vector<RunData> &run_data)
@@ -53,8 +54,9 @@ public:
         Base::orig_intervals = rlbwt_heads.size();
         Base::position = Position();
 
+        alphabet = AlphabetType();
+        ulint num_chars;
         PackedVector<BaseColumns> base_structure;
-        size_t num_chars;
         find_permutation_and_alphabet(rlbwt_heads, rlbwt_run_lengths, alphabet, num_chars, base_structure);
 
         std::vector<RunData> final_run_data = Base::extend_run_data(rlbwt_run_lengths, num_chars, base_structure, get_run_cols_data);
@@ -106,14 +108,6 @@ protected:
     ) {
         return static_cast<Derived*>(this)->find_permutation_and_alphabet(
             rlbwt_heads, rlbwt_run_lengths, alphabet, num_chars, base_structure);
-    }
-
-    std::vector<uchar> apply_alphabet(const std::vector<uchar> &characters) {
-        std::vector<uchar> transformed_characters(characters.size());
-        for (size_t i = 0; i < characters.size(); i++) {
-            transformed_characters[i] = alphabet.map_char(characters[i]);
-        }
-        return transformed_characters;
     }
 };
 

@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Iinclude -O3
 
-HEADERS = $(wildcard include/**/*.hpp)
+HEADERS = $(shell find include -name "*.hpp")
 
 # all: build invert move_build
 all: move_test rlbwt_test runperm_test
