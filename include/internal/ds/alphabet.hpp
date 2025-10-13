@@ -1,7 +1,7 @@
 #ifndef _ALPHABET_MAP_HPP
 #define _ALPHABET_MAP_HPP
 
-#include "common.hpp"
+#include "internal/common.hpp"
 #include <cctype>
 #include <cassert>
 
@@ -45,6 +45,45 @@ public:
         return reverse_alphabet_map.size();
     }
 
+    size_t serialize(std::ostream& out) {
+        size_t written_bytes = 0;
+
+        size_t size = alphabet_map.size();
+        out.write((char *)&size, sizeof(size));
+        written_bytes += sizeof(size);
+
+        char* data = reinterpret_cast<char*>(alphabet_map.data());
+        size = alphabet_map.size() * sizeof(uchar);
+        out.write(data, size);
+        written_bytes += size;
+
+        size = reverse_alphabet_map.size();
+        out.write((char *)&size, sizeof(size));
+        written_bytes += sizeof(size);
+
+        data = reinterpret_cast<char*>(reverse_alphabet_map.data());
+        size = reverse_alphabet_map.size() * sizeof(uchar);
+        out.write(data, size);
+        written_bytes += size;
+
+        return written_bytes;
+    }
+
+    void load(std::istream& in) {
+        size_t size;
+        in.read((char *)&size, sizeof(size));
+        alphabet_map = std::vector<uchar>(size);
+        char* data = reinterpret_cast<char*>(alphabet_map.data());
+        size_t bytes = alphabet_map.size() * sizeof(uchar);
+        in.read(data, bytes);
+
+        in.read((char *)&size, sizeof(size));
+        reverse_alphabet_map = std::vector<uchar>(size);
+        data = reinterpret_cast<char*>(reverse_alphabet_map.data());
+        bytes = reverse_alphabet_map.size() * sizeof(uchar);
+        in.read(data, bytes);
+    }
+
 private:
     std::vector<uchar> alphabet_map;
     std::vector<uchar> reverse_alphabet_map;
@@ -80,7 +119,11 @@ class Nucleotide {
         return SIGMA;
     }
 
-    private:
+    // Dummy methods, nothing to serialize or load
+    size_t serialize(std::ostream& out) { return 0; }
+    void load(std::istream& in) { }
+
+private:
     static constexpr uchar TER = 0;
     static constexpr uchar SEP = 1;
     static constexpr uchar A = 2;

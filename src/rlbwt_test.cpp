@@ -6,11 +6,11 @@
 #include <chrono>
 #include <functional>
 
-#include "rlbwt/move_rlbwt.hpp"
-#include "common.hpp"
+#include "rlbwt.hpp"
 
 int main() {
-    // BWT: TTTTTCCCGGGAAAT$ATTTTAAAAAA
+    // TEXT: GATTACATGATTACATAGATTACATT$
+    // BWT:  TTTTTCCCGGGAAAT$ATTTTAAAAAA
     // RLBWT: TCGAT$ATA
     std::vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
     std::vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };

@@ -1,7 +1,7 @@
 #ifndef _PACKED_VECTOR_ALIGNED_HPP
 #define _PACKED_VECTOR_ALIGNED_HPP
 
-#include "common.hpp"
+#include "internal/common.hpp"
 #include <cassert>
 #include <cstring>
 #include <cstdint>

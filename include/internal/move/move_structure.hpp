@@ -1,5 +1,5 @@
-#ifndef _Move_HH
-#define _Move_HH
+#ifndef _INTERNAL_MOVE_STRUCTURE_HPP
+#define _INTERNAL_MOVE_STRUCTURE_HPP
 
 #include <fstream>
 #include <iostream>
@@ -11,12 +11,12 @@
 #include <algorithm>
 #include <numeric>
 
-#include "common.hpp"
-#include "move/move_table.hpp"
-#include "move/move_splitting.hpp"
-#include "ds/packed_vector.hpp"
+#include "internal/common.hpp"
+#include "internal/move/move_table.hpp"
+#include "internal/move/move_splitting.hpp"
+#include "internal/ds/packed_vector.hpp"
 
-template <typename ColumnsType = MoveCols, template<typename> class TableType = MoveTable>
+template <typename ColumnsType = MoveCols, template<typename> class TableType = MoveVector>
 class MoveStructure
 {
 public:
@@ -187,7 +187,7 @@ public:
         table.load(in);
     }
 
-private:
+protected:
     Table table;
     ulint n;
     ulint r;
@@ -288,9 +288,4 @@ private:
     }
 };
 
-using MoveStructureTbl = MoveStructure<MoveCols, MoveTable>;
-using MoveStructureTblIdx = MoveStructure<MoveColsIdx, MoveTable>;
-using MoveStructureVec = MoveStructure<MoveCols, MoveVector>;
-using MoveStructureVecIdx = MoveStructure<MoveColsIdx, MoveVector>;
-
-#endif /* end of include guard: _Move_HPP */
+#endif /* end of include guard: _INTERNAL_MOVE_STRUCTURE_HPP */

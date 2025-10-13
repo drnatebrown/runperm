@@ -1,12 +1,14 @@
-#ifndef _RUNPERM_HPP
-#define _RUNPERM_HPP
+#ifndef _INTERNAL_RUNPERM_HPP
+#define _INTERNAL_RUNPERM_HPP
 
-#include "common.hpp"
-#include "move/move_structure.hpp"
-#include "runperm/run_columns.hpp"
+#include "internal/common.hpp"
+#include "internal/move/move_structure.hpp"
+#include "internal/runperm/run_columns.hpp"
 
 constexpr bool DEFAULT_INTEGRATED_MOVE_STRUCTURE = false;
 constexpr bool DEFAULT_STORE_ABSOLUTE_POSITIONS = false;
+
+/* ============================================= Advanced Implemenation ============================================= */
 
 // If we're integrating the run data alongside the move structure, we don't need to store it separately
 template <typename RunColsType, bool IntegratedMoveStructure>
@@ -21,10 +23,11 @@ template<typename RunColsType, // Fields to be stored alongside the move structu
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE, // Whether to pack the run data alongside the move structure
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, // Whether to store absolute positions instead of interval/offset
          typename BaseColumnsType = MoveCols,
+         template<typename, template<typename> class> class MoveStructureType = MoveStructure,
          template<typename> class TableType = MoveVector>
          // TODO need PackedType option?
-class RunPerm : SeperatedDataHolder<RunColsType, IntegratedMoveStructure> {
-private:
+class RunPermImpl : SeperatedDataHolder<RunColsType, IntegratedMoveStructure> {
+protected:
     // Helpful constants for number of base (move permutation information) columns and run (additional data) columns
     static constexpr size_t NumRunCols = static_cast<size_t>(RunColsType::COUNT);
     static constexpr size_t NumBaseCols = static_cast<size_t>(BaseColumnsType::COUNT);
@@ -41,13 +44,13 @@ private:
     MOVE_CLASS_TRAITS(ColumnsType)
 
     // Base structure type is the move structure without run data
-    using MoveStructureBase = MoveStructure<BaseColumns, TableType>;
-    using MoveStructureType = MoveStructure<Columns, TableType>;
+    using MoveStructureBase = MoveStructureType<BaseColumns, TableType>;
+    using MoveStructurePerm = MoveStructureType<Columns, TableType>;
 
 public:
     using RunCols = RunColsType;
     using RunData = std::array<ulint, NumRunCols>;
-    using Position = typename MoveStructureType::Position;
+    using Position = typename MoveStructurePerm::Position;
 
     // check if we're using MoveTable
     static constexpr bool is_move_table_type() {
@@ -59,7 +62,7 @@ public:
     "Cannot integrate user data with MoveTable. Use MoveVector or set IntegratedMoveStructure=false."
     "MoveTable for integrated data requires specialized implementation!");
 
-    RunPerm() = default;
+    RunPermImpl() = default;
 
     /**
      * lengths -> length of each interval which permutes contiguously
@@ -67,8 +70,9 @@ public:
      * domain -> domain of the permutation, i.e. a permutatation over 1..n has domain n
      * run_data -> run data for each interval, the size of this vector should be the same as the number of intervals
      */
-    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const std::vector<RunData> &run_data) {
+    RunPermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const std::vector<RunData> &run_data) {
         assert(lengths.size() == interval_permutation.size());
+        assert(run_data.size() == lengths.size());
         orig_intervals = lengths.size();
         position = Position(); // should start at 0
 
@@ -78,8 +82,8 @@ public:
     }
 
     // When Splitting, by default just copy the run data for the original interval if the move structure intervals have been split
-    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, const std::vector<RunData> &run_data)
-        : RunPerm(lengths, interval_permutation, domain, split_params,
+    RunPermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, const std::vector<RunData> &run_data)
+        : RunPermImpl(lengths, interval_permutation, domain, split_params,
             [&run_data](ulint orig_interval, ulint orig_interval_length, ulint new_offset_from_orig_start, ulint new_length) {
                 return run_data[orig_interval];
             }
@@ -94,7 +98,7 @@ public:
      * - the new interval length
      * and returns the values to be stored in the new interval (run data) for that new row
      */
-    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, std::function<RunData(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+    RunPermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, std::function<RunData(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(lengths.size() == interval_permutation.size());
         orig_intervals = lengths.size();
         position = Position(); // should start at 0
@@ -106,21 +110,21 @@ public:
     }
 
     // Constructor from pre-computed table (move semantics) for advanced users with integrated move structure
-    RunPerm(PackedVector<Columns> &&structure, const ulint domain) : move_structure(MoveStructureType(std::move(structure), domain)), position(Position()), orig_intervals(structure.size()) {
+    RunPermImpl(PackedVector<Columns> &&structure, const ulint domain) : move_structure(MoveStructurePerm(std::move(structure), domain)), position(Position()), orig_intervals(structure.size()) {
         static_assert(IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed permutation structure if not integrating user data with move structure");
     }
 
     // Constructor from pre-computed table (move semantics) for advanced users without integrated move structure
-    RunPerm(PackedVector<BaseColumns> &&structure, std::vector<RunData> &run_data, const ulint domain) : move_structure(MoveStructureType(std::move(structure), domain)), position(Position()), orig_intervals(structure.size()) {
+    RunPermImpl(PackedVector<BaseColumns> &&structure, std::vector<RunData> &run_data, const ulint domain) : move_structure(MoveStructurePerm(std::move(structure), domain)), position(Position()), orig_intervals(structure.size()) {
         static_assert(!IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed permutation structure if integrating user data with move structure");
         populate_run_data(std::move(structure), run_data, domain);
     }
 
-    RunPerm(MoveStructureType &&ms, const ulint domain) : move_structure(std::move(ms)), position(Position()), orig_intervals(move_structure.size()) {
+    RunPermImpl(MoveStructurePerm &&ms, const ulint domain) : move_structure(std::move(ms)), position(Position()), orig_intervals(move_structure.size()) {
         static_assert(IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed move structure if not integrating user data with move structure");
     }
 
-    RunPerm(MoveStructureType &&ms, std::vector<RunData> &run_data, const ulint domain) : move_structure(std::move(ms)), position(Position()), orig_intervals(move_structure.size()) {
+    RunPermImpl(MoveStructurePerm &&ms, std::vector<RunData> &run_data, const ulint domain) : move_structure(std::move(ms)), position(Position()), orig_intervals(move_structure.size()) {
         static_assert(!IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed move structure if integrating user data with move structure");
         auto run_cols_widths = get_run_cols_widths(run_data);
         fill_seperated_data(run_data, run_cols_widths);
@@ -210,6 +214,10 @@ public:
         }
     }
 
+    ulint get_length() const {
+        return move_structure.get_length(position.interval);
+    }
+
     size_t serialize(std::ostream& os) {
         size_t written_bytes = 0;
 
@@ -232,11 +240,16 @@ public:
         }
     }
 
-private:
-    MoveStructureType move_structure;
+protected:
+    MoveStructurePerm move_structure;
     Position position;
     size_t orig_intervals; // before splitting, underlying move structure may be larger
 
+    template<BaseColumns Col>
+    ulint get_base_column() const {
+        return move_structure.template get<Col>(position.interval);
+    }
+    
     std::vector<RunData> extend_run_data(const std::vector<ulint>& lengths, const ulint domain, const PackedVector<BaseColumns>& structure, std::function<RunData(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         std::vector<RunData> final_run_data(structure.size());
         auto get_structure_length = [&](size_t idx) {
@@ -327,44 +340,35 @@ private:
                 auto row = get_row(base_row, run_row);
                 final_structure.set_row(i, row);
             }
-            move_structure = MoveStructureType(std::move(final_structure), domain);
+            move_structure = MoveStructurePerm(std::move(final_structure), domain);
         } else {
-            move_structure = MoveStructureType(std::move(base_structure), domain);
+            move_structure = MoveStructurePerm(std::move(base_structure), domain);
             fill_seperated_data(run_data, run_cols_widths);
         }
     }
 };
 
-template<typename RunColsType>
-using RunPermIntegrated = RunPerm<RunColsType, true, false, MoveCols, MoveVector>;
-template<typename RunColsType>
-using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true, MoveCols, MoveVector>;
-template<typename RunColsType>
-using RunPermSeperated = RunPerm<RunColsType, false, false, MoveCols, MoveVector>;
-template<typename RunColsType>
-using RunPermSeperatedAbsolute = RunPerm<RunColsType, false, true, MoveCols, MoveVector>;
-
 // A wrapper around RunPerm without any run data, essentially just a MoveStructure
-template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, typename BaseColumns = MoveCols, template<typename> class TableType = MoveVector>
-class MovePerm {
-private:
-    using RunPermType = RunPerm<EmptyRunCols, false, StoreAbsolutePositions, BaseColumns, TableType>;
+template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, typename BaseColumns = MoveCols, template<typename, template<typename> class> class MoveStructureType = MoveStructure, template<typename> class TableType = MoveVector>
+class MovePermImpl {
+protected:
+    using RunPermType = RunPermImpl<EmptyRunCols, false, StoreAbsolutePositions, BaseColumns, MoveStructureType, TableType>;
     RunPermType run_perm;
     
 public:
     using Position = typename RunPermType::Position;
     
-    MovePerm() = default;
+    MovePermImpl() = default;
     
     // Constructor from permutation vector
-    MovePerm(std::vector<ulint>& permutation, SplitParams split_params = SplitParams()) {
+    MovePermImpl(std::vector<ulint>& permutation, SplitParams split_params = SplitParams()) {
         auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
         std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
         run_perm = RunPermType(lengths, interval_permutation, permutation.size(), split_params, empty_run_data);
     }
     
     // Constructor from lengths and interval permutation
-    MovePerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, SplitParams split_params = SplitParams()) {
+    MovePermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, SplitParams split_params = SplitParams()) {
         std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
         run_perm = RunPermType(lengths, interval_permutation, domain, split_params, empty_run_data);
     }
@@ -372,9 +376,12 @@ public:
     // Delegate all RunPerm methods
     void first() { run_perm.first(); }
     void last() { run_perm.last(); }
-    void move(Position pos) const { run_perm.move(pos); }
     Position get_position() const { return run_perm.get_position(); }
     void next() { run_perm.next(); }
+    void next(ulint steps) { run_perm.next(steps); }
+    bool up() { return run_perm.up(); }
+    bool down() { return run_perm.down(); }
+    ulint get_length() const { return run_perm.get_length(); }
     
     ulint size() const { return run_perm.size(); }
     ulint move_runs() const { return run_perm.move_runs(); }
@@ -384,4 +391,4 @@ public:
     void load(std::istream& in) { run_perm.load(in); }
 };
 
-#endif /* end of include guard: _RUNPERM_HPP */
+#endif /* end of include guard: _INTERNAL_RUNPERM_HPP */

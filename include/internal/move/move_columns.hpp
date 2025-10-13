@@ -1,7 +1,7 @@
 #ifndef _MOVE_COLUMNS_HPP
 #define _MOVE_COLUMNS_HPP
 
-#include "common.hpp"
+#include "internal/common.hpp"
 
 /* ALL MOVE STRUCTURE MUST REPRESENT AT LEAST ONE OF THESE COLUMNS DEFS */
 
@@ -78,22 +78,6 @@ struct MoveColsTraits<MoveColsIdx> {
     static constexpr size_t NUM_COLS = static_cast<size_t>(MoveColsIdx::COUNT);
     
     using Position = MovePosition<RELATIVE>::type;
-};
-
-/* Useful if a specialized move column just extends the existing MoveCols enum, i.e.
-   enum class MoreCols {
-     LENGTH,
-     POINTER,
-     OFFSET,
-     NEW_VAL1,
-     NEW_VAL2,
-     COUNT
-   };
-   
-   Just resets the NUM_COLS to the new value */
-template <typename Columns, typename BaseColumns>
-struct ExtendTraits : public MoveColsTraits<BaseColumns> {
-    static constexpr size_t NUM_COLS = static_cast<size_t>(Columns::COUNT);
 };
 
 /* Allows for switching between Length and Start columns, if passed one type but want relative or absolute positions.

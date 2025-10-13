@@ -1,7 +1,7 @@
 #ifndef _RUN_DATA_HPP
 #define _RUN_DATA_HPP
 
-#include "move/move_columns.hpp"
+#include "internal/move/move_columns.hpp"
 
 // Special empty run columns type for when no run data is needed
 enum class EmptyRunCols {

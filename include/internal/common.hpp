@@ -1,5 +1,8 @@
 #ifndef _COMMON_HPP
 #define _COMMON_HPP
+#include <stddef.h>
+#include <utility>
+#include <vector>
 
 // LEAVE UNCHANGED
 #define MAX_ALPHABET_SIZE 256
@@ -13,6 +16,7 @@
 #define LENGTH_BYTES 2
 #define POINTER_BYTES 4
 #define OFFSET_BYTES 2
+#define CHARACTER_BYTES 1
 #define DEFAULT_BYTES 4
 
 #define BYTES_TO_BITS(bytes) ((bytes) * 8)
@@ -35,18 +39,6 @@ constexpr uchar bit_width(ulint value) {
 // ENUM REPRESENTS COLUMNS, USE ENUM HELPERS TO ENFORCE STRUCTURE
 template<class E>
 constexpr size_t to_index(E e) noexcept { return static_cast<size_t>(e); }
-template<class E>
-constexpr size_t enum_size() noexcept { return static_cast<size_t>(E::COUNT); }
-
-// Ensures enum is contiguous from 0 to count-1
-template<class E, size_t... I>
-constexpr bool verify_enum_impl(std::index_sequence<I...>) {
-    return ((to_index(static_cast<E>(I)) == I) && ...);
-}
-template<class E>
-constexpr bool verify_enum() {
-    return verify_enum_impl<E>(std::make_index_sequence<enum_size<E>()>{});
-}
 
 #define MOVE_CLASS_TRAITS(ColumnsParam) \
     using Columns = ColumnsParam; \
@@ -69,6 +61,20 @@ inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_interva
         }
     }
     return {lengths, interval_permutation};
+}
+
+inline std::pair<std::vector<uchar>, std::vector<ulint>> bwt_to_rlbwt(const std::vector<uchar> &bwt_chars) {
+    std::vector<uchar> rlbwt_chars;
+    std::vector<ulint> rlbwt_run_lengths;
+    for (size_t i = 0; i < bwt_chars.size(); ++i) {
+        if (i == 0 || bwt_chars[i] != bwt_chars[i - 1]) {
+            rlbwt_chars.push_back(bwt_chars[i]);
+            rlbwt_run_lengths.push_back(1);
+        } else {
+            ++rlbwt_run_lengths.back();
+        }
+    }
+    return {rlbwt_chars, rlbwt_run_lengths};
 }
 
 #endif /* end of include guard: _COMMON_HPP */

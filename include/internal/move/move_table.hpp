@@ -1,10 +1,10 @@
 #ifndef _MOVE_TABLE_HH
 #define _MOVE_TABLE_HH
 
-#include "common.hpp"
-#include "move/move_row.hpp"
-#include "move/move_columns.hpp"
-#include "ds/packed_vector.hpp"
+#include "internal/common.hpp"
+#include "internal/move/move_row.hpp"
+#include "internal/move/move_columns.hpp"
+#include "internal/ds/packed_vector.hpp"
 
 template<typename Derived, typename ColumnsType>
 struct MoveTableInterface {

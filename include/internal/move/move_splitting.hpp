@@ -1,7 +1,7 @@
 #ifndef _MOVE_SPLITTING_HH
 #define _MOVE_SPLITTING_HH
 
-#include "common.hpp"
+#include "internal/common.hpp"
 
 struct SplitParams {
     std::optional<ulint> max_allowed_length;
