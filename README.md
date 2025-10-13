@@ -94,7 +94,7 @@ MoveFL<> move_fl(bwt_heads, bwt_run_lengths);
 ...
 ```
 
-#### RLBWT: Phi/InvPhi and SA sampling
+#### RLBWT: Phi/InvPhi
 
 ```cpp
 #include "rlbwt.hpp"
@@ -107,15 +107,6 @@ enum class PhiCols { VAL_1, VAL_2, COUNT };
 using PhiRunData = std::array<ulint, (size_t)PhiCols::COUNT>;
 std::vector<PhiRunData> phi_run_data(phi_lengths.size());
 RunPermPhi<PhiCols> phi(phi_lengths, phi_interval_perm, domain, phi_run_data);
-
-// Iterate Phi and read SA samples
-phi.last();
-phi.Phi();
-std::vector<ulint> sa(domain);
-for (size_t i = 0; i < domain; ++i) {
-    sa[domain - i - 1] = phi.SA();
-    phi.Phi();
-}
 
 // Move-only Phi
 auto [phi_lens2, phi_perm2, domain2] = rlbwt_to_phi(bwt_heads, bwt_run_lengths);
