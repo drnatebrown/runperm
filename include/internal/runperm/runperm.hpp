@@ -206,16 +206,23 @@ public:
     ulint permutation_runs() const { return orig_intervals; }
 
     template<RunCols Col>
-    ulint get() const {
+    ulint get(size_t row) const {
         if constexpr (IntegratedMoveStructure) {
-            return move_structure.template get<ColsTraits::template run_column<Col>()>(position.interval);
+            return move_structure.template get<ColsTraits::template run_column<Col>()>(row);
         } else {
-            return this->run_cols_data.template get<Col>(position.interval);
+            return this->run_cols_data.template get<Col>(row);
         }
     }
+    template<RunCols Col>
+    ulint get() const {
+        return get<Col>(position.interval);
+    }
 
+    ulint get_length(size_t row) const {
+        return move_structure.get_length(row);
+    }
     ulint get_length() const {
-        return move_structure.get_length(position.interval);
+        return get_length(position.interval);
     }
 
     size_t serialize(std::ostream& os) {
@@ -246,8 +253,12 @@ protected:
     size_t orig_intervals; // before splitting, underlying move structure may be larger
 
     template<BaseColumns Col>
+    ulint get_base_column(size_t row) const {
+        return move_structure.template get<Col>(row);
+    }
+    template<BaseColumns Col>
     ulint get_base_column() const {
-        return move_structure.template get<Col>(position.interval);
+        return get_base_column<Col>(position.interval);
     }
     
     std::vector<RunData> extend_run_data(const std::vector<ulint>& lengths, const ulint domain, const PackedVector<BaseColumns>& structure, std::function<RunData(ulint, ulint, ulint, ulint)> get_run_cols_data) {
@@ -381,6 +392,7 @@ public:
     void next(ulint steps) { run_perm.next(steps); }
     bool up() { return run_perm.up(); }
     bool down() { return run_perm.down(); }
+    ulint get_length(size_t i) const { return run_perm.get_length(i); }
     ulint get_length() const { return run_perm.get_length(); }
     
     ulint size() const { return run_perm.size(); }

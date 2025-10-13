@@ -128,9 +128,9 @@ public:
         size_t interval = table.size() - 1;
         size_t offset = get_length(interval) - 1;
         if constexpr (ColsTraits::RELATIVE) {
-            return Position(interval, offset);
+            return Position{interval, offset};
         } else {
-            return Position(interval, offset, n - 1);
+            return Position{interval, offset, n - 1};
         }
     }
 

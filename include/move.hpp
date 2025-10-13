@@ -5,7 +5,7 @@
 #include "internal/common.hpp"
 #include "internal/move/move_structure.hpp"
 
-// No simplified interface for MoveStructure, just use the internal one
+// No simplified interface for MoveStructure, see documentation in include/internal/move/move_structure.hpp
 
 using MoveStructureTbl = MoveStructure<MoveCols, MoveTable>;
 using MoveStructureTblIdx = MoveStructure<MoveColsIdx, MoveTable>;

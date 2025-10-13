@@ -4,6 +4,9 @@
 
 #include "internal/common.hpp"
 #include "internal/rlbwt/runperm_lf.hpp"
+#include "internal/rlbwt/runperm_fl.hpp"
+#include "internal/rlbwt/runperm_phi.hpp"
+#include "internal/rlbwt/runperm_invphi.hpp"
 
 // === RunPermLF ===
 template<typename RunColsType,
@@ -16,6 +19,10 @@ public:
     using Base::Base;
     using Base::operator=;
 };
+
+// Takes std::vector<uchar> bwt_and std::vector<ulint> as bwt_heads and bwt_run_lengths as input in place of lengths and interval permutations
+// Otherwise, same as RunPerm
+// Also implements LF, LF(steps), get_character(), get_character(row)
 
 template<typename RunColsType, typename AlphabetType = Nucleotide>
 using RunPermLFSeperated = RunPermLF<RunColsType, false, false, AlphabetType>; // Default
@@ -36,7 +43,7 @@ public:
     using Base::operator=;
 };
 
-#include "internal/rlbwt/runperm_fl.hpp"
+// See above
 
 // === RunPermFL ===
 template<typename RunColsType,
@@ -49,6 +56,10 @@ public:
     using Base::Base;
     using Base::operator=;
 };
+
+// Takes std::vector<uchar> bwt_and std::vector<ulint> as bwt_heads and bwt_run_lengths as input in place of lengths and interval permutations
+// Otherwise, same as RunPerm
+// Also implements FL, FL(steps), get_character(), get_character(row)
 
 template<typename RunColsType, typename AlphabetType = Nucleotide>
 using RunPermFLSeperated = RunPermFL<RunColsType, false, false, AlphabetType>; // Default
@@ -68,5 +79,25 @@ public:
     using Base::Base;
     using Base::operator=;
 };
+
+// See above
+
+// === RunPermPhi ===
+// Need to call rlbwt_to_phi(rlbwt_heads, rlbwt_run_lengths) to get lengths and interval permutations
+// Otherwise, same as RunPerm
+// RunPhiPerm is just a named specilization which sets StoreAbsolutePositions to true
+// Also implements Phi, Phi(steps), SA()
+
+// === MovePhi ===
+// See above
+
+// === RunPermInvPhi ===
+// Need to call rlbwt_to_invphi(rlbwt_heads, rlbwt_run_lengths) to get lengths and interval permutations
+// Otherwise, same as RunPerm -->
+// RunInvPhiPerm is just a named specilization which sets StoreAbsolutePositions to true
+// Also implements InvPhi, InvPhi(steps), SA()
+
+// === MoveInvPhi ===
+// See above
 
 #endif /* end of include guard: _PUBLIC_RUNPERM_RLBWT_HPP */

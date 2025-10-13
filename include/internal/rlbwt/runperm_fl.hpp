@@ -94,11 +94,11 @@ public:
     using Base::operator=;
 
     void FL() {
-        Base::FL();
+        Base::next();
     }
 
     void FL(ulint steps) {
-        Base::FL(steps);
+        Base::next(steps);
     }
 };
 

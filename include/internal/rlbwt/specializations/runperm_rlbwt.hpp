@@ -82,6 +82,10 @@ public:
         fill_seperated_data(run_data, run_cols_widths);
     }
 
+
+    uchar get_character(size_t row) {
+        return alphabet.unmap_char(Base::template get_base_column<BaseColumns::CHARACTER>(row));
+    }
     uchar get_character() {
         return alphabet.unmap_char(Base::template get_base_column<BaseColumns::CHARACTER>());
     }
@@ -144,6 +148,8 @@ public:
     void last() { run_perm_rlbwt.last(); }
     void move(Position pos) const { run_perm_rlbwt.move(pos); }
     Position get_position() const { return run_perm_rlbwt.get_position(); }
+    ulint get_length(size_t i) const { return run_perm_rlbwt.get_length(i); }
+    ulint get_length() const { return run_perm_rlbwt.get_length(); }
     void next() { run_perm_rlbwt.next(); }
     
     ulint size() const { return run_perm_rlbwt.size(); }
@@ -151,6 +157,7 @@ public:
     ulint permutation_runs() const { return run_perm_rlbwt.permutation_runs(); }
     
     // RLBWT-specific method
+    uchar get_character(size_t i) { return run_perm_rlbwt.get_character(i); }
     uchar get_character() { return run_perm_rlbwt.get_character(); }
     
     size_t serialize(std::ostream& out) { return run_perm_rlbwt.serialize(out); }

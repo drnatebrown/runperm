@@ -95,7 +95,10 @@ using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true>;
 *    // === Run data access ===
 *    template<RunColsType Col>
 *    ulint get() const; // Get value of run data column
+*    template<RunColsType Col>
+*    ulint get(size_t i) const; // Get value of run data column for interval i
 *    ulint get_length() const; // Get length of current interval
+*    ulint get_length(size_t i) const; // Get length of interval i
 *
 *    // === Search methods ===
 *    template<RunColsType Col>
@@ -152,6 +155,10 @@ using MovePermRelative = MovePerm<false>; // Same as MovePerm<>, the default
 *    ulint size() const; // Get size of permutation
 *    ulint move_runs() const; // Get number of runs/intervals in move structure
 *    ulint permutation_runs() const; // Get number of runs/intervals in original permutation
+*
+*    // === Run data access ===
+*    ulint get_length() const; // Get length of current interval
+*    ulint get_length(size_t i) const; // Get length of interval i
 *
 *    // === Serialization ===
 *    size_t serialize(std::ostream& os); // Serialize data structure to ostream
