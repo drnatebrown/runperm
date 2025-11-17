@@ -91,8 +91,8 @@ public:
         written_bytes += sizeof(num_rows);
 
         size_t size = widths.size() * sizeof(uchar);
-        out.write((char *)widths.data(), widths_size);
-        written_bytes += widths_size;
+        out.write((char *)widths.data(), size);
+        written_bytes += size;
 
         size = data.size() * sizeof(word_t);
         out.write((char *)data.data(), size);
