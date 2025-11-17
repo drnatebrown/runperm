@@ -53,8 +53,6 @@ private:
         {
             uchar c = rlbwt_heads[i];
             ulint length = rlbwt_run_lengths[i];
-            if (c <= TERMINATOR) c = TERMINATOR;
-            else if (c > TERMINATOR && c <= SEPARATOR) c = SEPARATOR;
             head_ranks[i] = char_count[c];
             char_count[c] += length;
             bwt_length+=length;
