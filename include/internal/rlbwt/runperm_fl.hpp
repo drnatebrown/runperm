@@ -54,9 +54,6 @@ private:
         {
             uchar c = rlbwt_heads[i];
             ulint length = rlbwt_run_lengths[i];
-            if (c <= TERMINATOR) c = TERMINATOR;
-            else if (c > TERMINATOR && c <= SEPARATOR) c = SEPARATOR;
-
             F_lens_and_origins[c].push_back({length, bwt_length});
             char_count[c] += length;
             bwt_length+=length;

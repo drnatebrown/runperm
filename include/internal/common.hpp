@@ -9,8 +9,8 @@
 #define RW_BYTES 5
 
 // CONFIGURABLE
-#define TERMINATOR 1
-#define SEPARATOR 2
+#define TERMINATOR 0
+#define SEPARATOR 1
 
 #define START_BYTES 5
 #define LENGTH_BYTES 2

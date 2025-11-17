@@ -90,13 +90,12 @@ public:
         out.write((char *)&num_rows, sizeof(num_rows));
         written_bytes += sizeof(num_rows);
 
-        out.write((char *)widths.data(), sizeof(widths));
-        written_bytes += sizeof(widths);
+        size_t size = widths.size() * sizeof(uchar);
+        out.write((char *)widths.data(), widths_size);
+        written_bytes += widths_size;
 
-        
-        const char* data_mem = reinterpret_cast<const char*>(data.data());
-        size_t size = data.size() * sizeof(word_t);
-        out.write(data_mem, size);
+        size = data.size() * sizeof(word_t);
+        out.write((char *)data.data(), size);
         written_bytes += size;
 
         return written_bytes;

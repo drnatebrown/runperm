@@ -7,6 +7,7 @@
 #include <functional>
 
 #include "rlbwt.hpp"
+#include "runperm.hpp"
 
 void print_vector(std::vector<ulint> vec) {
     std::cout << "[";
