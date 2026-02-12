@@ -1,5 +1,5 @@
-#ifndef _RUN_DATA_HPP
-#define _RUN_DATA_HPP
+#ifndef _RUN_COLUMNS_HPP
+#define _RUN_COLUMNS_HPP
 
 #include "internal/move/move_columns.hpp"
 
@@ -50,4 +50,4 @@ struct ResolveColsTraits<C, true> {
     };
 };
 
-#endif /* end of include guard: _RUN_DATA_HPP */
+#endif /* end of include guard: _RUN_COLUMNS_HPP */

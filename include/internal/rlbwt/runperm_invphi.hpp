@@ -97,5 +97,4 @@ public:
     }
 };
 
-
 #endif /* end of include guard: _RUNPERM_INVPHI_HPP */

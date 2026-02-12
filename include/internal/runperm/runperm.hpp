@@ -27,6 +27,9 @@ template<typename RunColsType, // Fields to be stored alongside the move structu
          template<typename> class TableType = MoveVector>
          // TODO need PackedType option?
 class RunPermImpl : SeperatedDataHolder<RunColsType, IntegratedMoveStructure> {
+
+template<bool S, typename B, template<typename, template<typename> class> class MST, template<typename> class TT>
+friend class MovePermImpl;
 protected:
     // Helpful constants for number of base (move permutation information) columns and run (additional data) columns
     static constexpr size_t NumRunCols = static_cast<size_t>(RunColsType::COUNT);
@@ -129,45 +132,58 @@ public:
         auto run_cols_widths = get_run_cols_widths(run_data);
         fill_seperated_data(run_data, run_cols_widths);
     }
-    
-    void next() { position = move_structure.move(position); }
-    void next(ulint steps) {
-        for (ulint i = 0; i < steps; ++i) {
-            next();
-        }
+
+    RunPermImpl(const MovePermImpl<StoreAbsolutePositions, BaseColumns, MoveStructureType, TableType> &move_perm, const std::vector<RunData> &run_data) {
+        assert(run_data.size() == move_perm.move_runs());
+        const auto& base = mp.run_perm;
+        PackedVector<BaseColumns> base_structure = base.move_structure.table.vec;
+        orig_intervals = base.orig_intervals;
+        domain = base.domain();
+        populate_structure(std::move(base_structure), run_data, domain);
     }
 
-    // Set position to interval above in underlying move structure, returns false if already at top
-    bool up() {
+    Position first() { return move_structure.first(); }
+    Position last() { return move_structure.last(); }
+
+    Position next(Position position) { return move_structure.move(position); }
+    Position next(Position position, ulint steps) {
+        for (ulint i = 0; i < steps; ++i) {
+            position = move_structure.move(position);
+        }
+        return position;
+    }
+
+    // Set position to interval above in underlying move structure, or circularly wrap to bottom if already at top
+    Position up(Position position) {
         if (position.interval == 0)
         {
-            return false;
+            return last();
         }
         --position.interval;
         position.offset = move_structure.get_length(position.interval) - 1;
         if constexpr (StoreAbsolutePositions) {
             position.idx = move_structure.get_start(position.interval) + position.offset;
         }
-        return true;
+        return position;
     }
 
-    // Set position to interval below in underlying move structure, returns false if already at bottom
-    bool down() {
+    // Set position to interval below in underlying move structure, or nothing if already at bottom
+    Position down(Position position) {
         if (position.interval == move_structure.runs() - 1)
         {
-            return false;
+            return first();
         }
         ++position.interval;
         position.offset = 0;
         if constexpr (StoreAbsolutePositions) {
             position.idx = move_structure.get_start(position.interval);
         }
-        return true;
+        return position;
     }
 
     // Returns row/offset of largest idx before or at position run with matching run data value
     template<RunCols Col>
-    std::optional<Position> pred(ulint val) {
+    std::optional<Position> pred(Position position, ulint val) {
         while (get<Col>() != val) 
         {
             if (position.interval == 0) return std::nullopt;
@@ -182,7 +198,7 @@ public:
 
     // Returns row/offset of smallest idx after or at position run with matching run data value
     template<RunCols Col>
-    std::optional<Position> succ(ulint val) {
+    std::optional<Position> succ(Position position, ulint val) {
         while (get<Col>() != val) 
         {
             if (position.interval == move_structure.runs() - 1) return std::nullopt;
@@ -195,16 +211,6 @@ public:
         return position;
     }
 
-    void first() { position = move_structure.first(); }
-    void last() { position = move_structure.last(); }
-
-    Position get_position() const { return position; }
-    void set_position(Position pos) { position = pos; }
-
-    ulint size() const { return move_structure.size(); }
-    ulint move_runs() const { return move_structure.runs(); }
-    ulint permutation_runs() const { return orig_intervals; }
-
     template<RunCols Col>
     ulint get(size_t row) const {
         if constexpr (IntegratedMoveStructure) {
@@ -214,16 +220,20 @@ public:
         }
     }
     template<RunCols Col>
-    ulint get() const {
+    ulint get(Position position) const {
         return get<Col>(position.interval);
     }
 
-    ulint get_length(size_t row) const {
-        return move_structure.get_length(row);
+    ulint get_length(ulint interval) const {
+        return move_structure.get_length(interval);
     }
-    ulint get_length() const {
+    ulint get_length(Position position) const {
         return get_length(position.interval);
     }
+
+    ulint domain() const { return move_structure.size(); }
+    ulint move_runs() const { return move_structure.runs(); }
+    ulint permutation_runs() const { return orig_intervals; }
 
     size_t serialize(std::ostream& os) {
         size_t written_bytes = 0;
@@ -383,17 +393,20 @@ public:
         std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
         run_perm = RunPermType(lengths, interval_permutation, domain, split_params, empty_run_data);
     }
+
+    // Expose wrapped instance for RunPerm construction
+    const RunPermType& get_base() const { return run_perm; }
+    RunPermType& get_base() { return run_perm; }
     
     // Delegate all RunPerm methods
-    void first() { run_perm.first(); }
-    void last() { run_perm.last(); }
-    Position get_position() const { return run_perm.get_position(); }
-    void next() { run_perm.next(); }
-    void next(ulint steps) { run_perm.next(steps); }
-    bool up() { return run_perm.up(); }
-    bool down() { return run_perm.down(); }
-    ulint get_length(size_t i) const { return run_perm.get_length(i); }
-    ulint get_length() const { return run_perm.get_length(); }
+    Position first() { return run_perm.first(); }
+    Position last() { return run_perm.last(); }
+    Position next(Position position) { return run_perm.next(position); }
+    Position next(Position position, ulint steps) { return run_perm.next(position, steps); }
+    Position up(Position position) { return run_perm.up(position); }
+    Position down(Position position) { return run_perm.down(position); }
+    ulint get_length(ulint interval) const { return run_perm.get_length(interval); }
+    ulint get_length(Position position) const { return run_perm.get_length(position); }
     
     ulint size() const { return run_perm.size(); }
     ulint move_runs() const { return run_perm.move_runs(); }
