@@ -205,6 +205,23 @@ for (size_t i = 0; i < n; ++i) {
 }
 ```
 
+### LF Permutation using RunPerm without RunPermLF
+```cpp
+// TEXT: GATTACATGATTACATAGATTACATT$
+// BWT:  TTTTTCCCGGGAAAT$ATTTTAAAAAA
+// RLBWT: TCGAT$ATA
+std::vector<std::array<ulint, 1>> bwt_heads = {{'T'},{'C'},{'G'},{'A'},{'T'},{ 0 },{'A'},{'T'},{'A'}};
+std::vector<ulint> bwt_run_lengths =          {  5  ,  3  ,  3  ,  3  ,  1  ,  1  ,  1  ,  4  ,  6  };
+std::vector<ulint> lf_permutations =          { 17  , 11  , 14  ,  1  , 22  ,  0  ,  4  , 23  ,  5  };
+size_t domain = 27;
+
+enum class RunData {
+  BWT_CHAR,
+  COUNT
+};
+RunPerm<RunData> rp(bwt_run_lengths, lf_permutations, domain, bwt_heads);
+```
+
 ## Performance Considerations
 
 - **Integrated vs Separated**: Integrating user data alongside the move structure offer better cache locality but may cause slower move queries since navigating the data structure requires loading larger entries.
