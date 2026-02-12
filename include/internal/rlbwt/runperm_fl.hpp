@@ -8,11 +8,12 @@
 template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
+         bool ExponentialSearch = DEFAULT_EXPONENTIAL_SEARCH,
          typename AlphabetType = Nucleotide,
          template<typename> class TableType = MoveVector>
-class RunPermFLImpl : public RunPermRLBWT<RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, TableType>,
-                         RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, TableType> {
-    using Base = RunPermRLBWT<RunPermFLImpl, RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, TableType>;
+class RunPermFLImpl : public RunPermRLBWT<RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>,
+                         RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType> {
+    using Base = RunPermRLBWT<RunPermFLImpl, RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>;
     using BaseColumns = typename Base::BaseColumns;
 public:
     using Base::Base;
@@ -81,12 +82,13 @@ private:
 };
 
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
+         bool ExponentialSearch = DEFAULT_EXPONENTIAL_SEARCH,
          typename AlphabetType = Nucleotide,
          template<typename> class TableType = MoveVector>
-class MoveFLImpl : public MovePermRLBWT<RunPermFLImpl<EmptyRunCols, false, StoreAbsolutePositions, AlphabetType, TableType>, 
-                StoreAbsolutePositions, AlphabetType, TableType> {
-    using Base = MovePermRLBWT<RunPermFLImpl<EmptyRunCols, false, StoreAbsolutePositions, AlphabetType, TableType>,
-    StoreAbsolutePositions, AlphabetType, TableType>;
+class MoveFLImpl : public MovePermRLBWT<RunPermFLImpl<EmptyRunCols, false, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>, 
+                StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType> {
+    using Base = MovePermRLBWT<RunPermFLImpl<EmptyRunCols, false, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>,
+    StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>;
 public:
     using Base::Base;
     using Base::operator=;

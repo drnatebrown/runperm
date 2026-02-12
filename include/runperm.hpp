@@ -14,8 +14,8 @@
 template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS>
-class RunPerm : public RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, MoveCols, MoveStructure, MoveVector> {
-    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, MoveCols, MoveStructure, MoveVector>;
+class RunPerm : public RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector> {
+    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector>;
 public:
     using Base::RunData;
     using Base::MoveStructurePerm;
@@ -105,8 +105,8 @@ using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true>;
 // Actual implementation, see documentation below
 // Advanced users can use the full implementation in include/internal/runperm/runperm.hpp
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS>
-class MovePerm : public MovePermImpl<StoreAbsolutePositions, MoveCols, MoveStructure, MoveVector> {
-    using Base = MovePermImpl<StoreAbsolutePositions, MoveCols, MoveStructure, MoveVector>;
+class MovePerm : public MovePermImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector> {
+    using Base = MovePermImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
@@ -118,7 +118,7 @@ using MovePermRelative = MovePerm<false>; // Same as MovePerm<>, the default
 
 /* === Simplified interface for basic users, see full MovePermImpl in include/internal/runperm/runperm.hpp for more template parameters ===
 /* NOTE: All methods here share the documentation above for RunPerm
-* template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS>
+* template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS> // Whether to store absolute positions instead of interval/offset to support idx lookups, default is false
 * class MovePerm {
 *
 * public:

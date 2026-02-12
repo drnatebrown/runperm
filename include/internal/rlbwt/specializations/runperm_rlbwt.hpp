@@ -12,10 +12,11 @@ template<typename Derived,
          typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
+         bool ExponentialSearch = DEFAULT_EXPONENTIAL_SEARCH,
          typename AlphabetType = Nucleotide,
          template<typename> class TableType = MoveVector>
-class RunPermRLBWT : public RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, RLBWTCols, RLBWTMoveStructure, TableType> {
-    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, RLBWTCols, RLBWTMoveStructure, TableType>;
+class RunPermRLBWT : public RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, ExponentialSearch, RLBWTCols, RLBWTMoveStructure, TableType> {
+    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, ExponentialSearch, RLBWTCols, RLBWTMoveStructure, TableType>;
 protected:
     using BaseColumns = typename Base::BaseColumns;
     using MoveStructurePerm = typename Base::MoveStructurePerm;
@@ -51,7 +52,6 @@ public:
     RunPermRLBWT(const std::vector<uchar> &rlbwt_heads, const std::vector<ulint> &rlbwt_run_lengths, const SplitParams &split_params, std::function<RunData(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
         Base::orig_intervals = rlbwt_heads.size();
-        Base::position = Position();
 
         alphabet = AlphabetType();
         ulint num_chars;
@@ -117,11 +117,12 @@ protected:
 // A wrapper around RunPermRLBWT without any run data, essentially just a MoveStructure for RLBWT
 template<typename Derived,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
+         bool ExponentialSearch = DEFAULT_EXPONENTIAL_SEARCH,
          typename AlphabetType = Nucleotide,
          template<typename> class TableType = MoveVector>
 class MovePermRLBWT {
 private:
-    using RunPermRLBWTType = RunPermRLBWT<Derived, EmptyRunCols, false, StoreAbsolutePositions, AlphabetType, TableType>;
+    using RunPermRLBWTType = RunPermRLBWT<Derived, EmptyRunCols, false, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>;
     RunPermRLBWTType run_perm_rlbwt;
     
 public:

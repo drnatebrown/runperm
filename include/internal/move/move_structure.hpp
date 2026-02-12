@@ -149,6 +149,19 @@ public:
         return fast_forward(pos);
     }
 
+    Position move_exponential(Position pos) const {
+        if constexpr (ColsTraits::RELATIVE) {
+            return move(pos);
+        } else {
+            assert(pos.interval < table.size());
+            assert(pos.idx < get_start(pos.interval + 1));
+            ulint next_interval = get_pointer(pos);
+            ulint next_offset = get_offset(pos) + pos.offset;
+            pos = {next_interval, next_offset, get_start(next_interval) + next_offset};
+            return fast_forward_exponential(pos);
+        }
+    }
+
     // === Utility Methods ===
     std::string get_file_extension() const
     {
@@ -283,6 +296,36 @@ protected:
             }
         }
         return pos;
+    }
+
+    inline Position fast_forward_exponential(Position pos) const {
+        if constexpr (ColsTraits::RELATIVE) {
+            return fast_forward(pos);
+        } else {
+            ulint curr_start = pos.idx - pos.offset;
+            if (pos.idx < get_start(pos.interval + 1)) return pos;
+        
+            // Exponential search to find upper bound
+            ulint hi = 1;
+            while (pos.interval + hi < table.size() && pos.idx >= get_start(pos.interval + hi)) {
+                hi *= 2;
+            }
+            if (pos.interval + hi > table.size()) hi = table.size() - pos.interval;
+        
+            // Binary search in [hi/2, hi] for largest k with pos.idx >= get_start(pos.interval + k)
+            ulint lo = hi / 2;
+            while (lo + 1 < hi) {
+                ulint mid = lo + (hi - lo) / 2;
+                if (pos.idx >= get_start(pos.interval + mid)) lo = mid;
+                else hi = mid;
+            }
+            ulint k = lo;
+        
+            ulint new_start = get_start(pos.interval + k);
+            pos.offset -= (new_start - curr_start);
+            pos.interval += k;
+            return pos;
+        }
     }
 };
 

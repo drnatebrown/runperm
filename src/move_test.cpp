@@ -170,7 +170,7 @@ void test_move_structure(const std::vector<ulint>& lengths,
     for (size_t i = 0; i < n; ++i) {
         size_t last_real_pos = real_pos;
         real_pos = test_perm[real_pos];
-        pos = move_structure.move(pos);
+        pos = move_structure.move_exponential(pos);
         // if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
         //               std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
         //     assert(pos.idx == real_pos);

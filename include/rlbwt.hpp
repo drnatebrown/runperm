@@ -13,8 +13,8 @@ template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          typename AlphabetType = Nucleotide>
-class RunPermLF : public RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, MoveVector> {
-    using Base = RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, MoveVector>;
+class RunPermLF : public RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
+    using Base = RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
@@ -36,8 +36,8 @@ using RunPermLFIntegratedAbsolute = RunPermLF<RunColsType, true, true, AlphabetT
 // === MoveLF ===
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          typename AlphabetType = Nucleotide>
-class MoveLF : public MoveLFImpl<StoreAbsolutePositions, AlphabetType, MoveVector> {
-    using Base = MoveLFImpl<StoreAbsolutePositions, AlphabetType, MoveVector>;
+class MoveLF : public MoveLFImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
+    using Base = MoveLFImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
@@ -50,8 +50,8 @@ template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          typename AlphabetType = Nucleotide>
-class RunPermFL : public RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, MoveVector> {
-    using Base = RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, MoveVector>;
+class RunPermFL : public RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
+    using Base = RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
@@ -73,8 +73,8 @@ using RunPermFLIntegratedAbsolute = RunPermFL<RunColsType, true, true, AlphabetT
 // === MoveFL ===
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          typename AlphabetType = Nucleotide>
-class MoveFL : public MoveFLImpl<StoreAbsolutePositions, AlphabetType, MoveVector> {
-    using Base = MoveFLImpl<StoreAbsolutePositions, AlphabetType, MoveVector>;
+class MoveFL : public MoveFLImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
+    using Base = MoveFLImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;

@@ -57,9 +57,10 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_phi(const st
 // Always use absolute positions for Phi
 template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
+         bool ExponentialSearch = DEFAULT_EXPONENTIAL_SEARCH,
          template<typename> class TableType = MoveVector>
-class RunPermPhi : public RunPermImpl<RunColsType, IntegratedMoveStructure, true, MoveCols, MoveStructure, TableType> {
-    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, true, MoveCols, MoveStructure, TableType>;
+class RunPermPhi : public RunPermImpl<RunColsType, IntegratedMoveStructure, true, ExponentialSearch, MoveCols, MoveStructure, TableType> {
+    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, true, ExponentialSearch, MoveCols, MoveStructure, TableType>;
 public:
     using Base::Base;
     using Base::operator=;
@@ -79,8 +80,8 @@ public:
 };
 
 // Always use absolute positions for Phi
-class MovePhi : public MovePermImpl<true, MoveCols, MoveStructure, MoveVector> {
-    using Base = MovePermImpl<true, MoveCols, MoveStructure, MoveVector>;
+class MovePhi : public MovePermImpl<true, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector> {
+    using Base = MovePermImpl<true, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
