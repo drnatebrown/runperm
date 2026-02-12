@@ -4,20 +4,22 @@
 #include "internal/common.hpp"
 #include <cmath>
 
-constexpr double DEFAULT_LENGTH_CAPPING_FACTOR = 8.0;
-constexpr ulint DEFAULT_BALANCING_FACTOR = 16;
+constexpr std::optional<double> DEFAULT_LENGTH_CAPPING_FACTOR = 8.0;
+constexpr std::optional<ulint> DEFAULT_BALANCING_FACTOR = 16;
 
 struct SplitParams {
     std::optional<double> length_capping_factor;
     std::optional<ulint> balancing_factor;
 
-    SplitParams() : length_capping_factor(std::nullopt), balancing_factor(std::nullopt) {}
-    SplitParams(double length_capping_factor, ulint balancing_factor) : length_capping_factor(length_capping_factor), balancing_factor(balancing_factor) {}
+    SplitParams() : length_capping_factor(DEFAULT_LENGTH_CAPPING_FACTOR), balancing_factor(DEFAULT_BALANCING_FACTOR) {}
+    SplitParams(std::optional<double> length_capping_factor, std::optional<ulint> balancing_factor)
+    : length_capping_factor(std::move(length_capping_factor)), balancing_factor(std::move(balancing_factor)) {}
 };
 
-SplitParams default_splitting() {
-    return SplitParams{DEFAULT_LENGTH_CAPPING_FACTOR, DEFAULT_BALANCING_FACTOR};
-}
+SplitParams NO_SPLITTING = SplitParams(std::nullopt, std::nullopt);
+SplitParams DEFAULT_SPLITTING = SplitParams(DEFAULT_LENGTH_CAPPING_FACTOR, DEFAULT_BALANCING_FACTOR);
+SplitParams DEFAULT_LENGTH_CAPPING = SplitParams(DEFAULT_LENGTH_CAPPING_FACTOR, std::nullopt);
+SplitParams DEFAULT_BALANCING = SplitParams(std::nullopt, DEFAULT_BALANCING_FACTOR);
 
 struct SplitResult {
     std::vector<ulint> lengths;
@@ -66,7 +68,7 @@ void split_by_balancing(const std::vector<ulint>& lengths, const std::vector<uli
     // TODO
     result.lengths = lengths;
     result.interval_permutations = interval_permutation;
-    result.max_length = 0;
+    // result.max_length = 0;
 }
 
 #endif
