@@ -34,7 +34,7 @@ public:
         const std::vector<ulint>* final_interval_permutation = &interval_permutation;
         ulint max_length = 0;
         SplitResult split_result;
-        Base::apply_splitting(final_lengths, final_interval_permutation, max_length, split_params, split_result);
+        Base::apply_splitting(final_lengths, final_interval_permutation, domain, max_length, split_params, split_result);
         /* === End of MoveStructure === */
 
         // Also initialize with the character width

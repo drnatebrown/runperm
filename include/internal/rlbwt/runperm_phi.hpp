@@ -15,16 +15,16 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_phi(const st
 
     // Helpers for computation
     IntVector move_run_to_phi(lf.move_runs(), bit_width(lf.move_runs())); // Map move run to its Phi interval (only set those corresponding to RLBWT runs)
-    IntVector run_tail_sa_samples(lf.move_runs(), bit_width(lf.size())); // The SA samples at the tail of each move run (only set those corresponding to RLBWT runs)
+    IntVector run_tail_sa_samples(lf.move_runs(), bit_width(lf.domain())); // The SA samples at the tail of each move run (only set those corresponding to RLBWT runs)
 
-    lf.first();
-    size_t last_sample = lf.size();
-    size_t sa = lf.size() - 1;
+    auto pos = lf.first();
+    size_t last_sample = lf.domain();
+    size_t sa = lf.domain() - 1;
     size_t curr_phi_interval = lf.move_runs() - 1;
     // Step through entire BWT to recover Phi structure and SA samples at tails
-    for (size_t i = 0; i < lf.size(); ++i) {
-        size_t interval = lf.get_position().interval;
-        size_t offset = lf.get_position().offset;
+    for (size_t i = 0; i < lf.domain(); ++i) {
+        size_t interval = pos.interval;
+        size_t offset = pos.offset;
         // If at BWT runhead
         if (offset == 0 && (interval == 0 || lf.get_character(interval - 1) != lf.get_character(interval))) {
             phi_lengths[curr_phi_interval] = last_sample - sa;
@@ -37,7 +37,7 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_phi(const st
             run_tail_sa_samples.set(interval, sa);
         }
         --sa;
-        lf.LF();
+        pos = lf.LF(pos);
     }
 
     // Step through BWT tail samples to fill in Phi interval permutations
@@ -45,7 +45,7 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_phi(const st
         phi_interval_permutations[move_run_to_phi.get((i == lf.move_runs() - 1) ? 0 : i + 1)] = run_tail_sa_samples.get(i);
     }
 
-    return {phi_lengths, phi_interval_permutations, lf.size()};
+    return {phi_lengths, phi_interval_permutations, lf.domain()};
 }
 
 std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_phi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths) {
@@ -63,17 +63,18 @@ class RunPermPhi : public RunPermImpl<RunColsType, IntegratedMoveStructure, true
 public:
     using Base::Base;
     using Base::operator=;
+    using Position = typename Base::Position;
 
-    void Phi() {
-        Base::next();
+    Position Phi(Position pos) {
+        return Base::next(pos);
     }
 
-    void Phi(ulint steps) {
-        Base::next(steps);
+    Position Phi(Position pos, ulint steps) {
+        return Base::next(pos, steps);
     }
 
-    ulint SA() {
-        return Base::get_position().idx;
+    ulint SA(Position pos) {
+        return pos.idx;
     }
 };
 
@@ -83,17 +84,18 @@ class MovePhi : public MovePermImpl<true, MoveCols, MoveStructure, MoveVector> {
 public:
     using Base::Base;
     using Base::operator=;
+    using Position = typename Base::Position;
 
-    void Phi() {
-        Base::next();
+    Position Phi(Position pos) {
+        return Base::next(pos);
     }
 
-    void Phi(ulint steps) {
-        Base::next(steps);
+    Position Phi(Position pos, ulint steps) {
+        return Base::next(pos, steps);
     }
 
-    ulint SA() {
-        return Base::get_position().idx;
+    ulint SA(Position pos) {
+        return pos.idx;
     }
 };
 

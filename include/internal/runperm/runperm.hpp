@@ -130,44 +130,45 @@ public:
         fill_seperated_data(run_data, run_cols_widths);
     }
     
-    void next() { position = move_structure.move(position); }
-    void next(ulint steps) {
+    Position next(Position position) { return move_structure.move(position); }
+    Position next(Position position, ulint steps) {
         for (ulint i = 0; i < steps; ++i) {
-            next();
+            position = move_structure.move(position);
         }
+        return position;
     }
 
-    // Set position to interval above in underlying move structure, returns false if already at top
-    bool up() {
+    // Set position to interval above in underlying move structure, or circularly wrap to the bottom if already at top
+    Position up(Position position) {
         if (position.interval == 0)
         {
-            return false;
+            return last();
         }
         --position.interval;
         position.offset = move_structure.get_length(position.interval) - 1;
         if constexpr (StoreAbsolutePositions) {
             position.idx = move_structure.get_start(position.interval) + position.offset;
         }
-        return true;
+        return position;
     }
 
-    // Set position to interval below in underlying move structure, returns false if already at bottom
-    bool down() {
+    // Set position to interval below in underlying move structure, or circularly wrap to the top if already at bottom
+    Position down(Position position) {
         if (position.interval == move_structure.runs() - 1)
         {
-            return false;
+            return first();
         }
         ++position.interval;
         position.offset = 0;
         if constexpr (StoreAbsolutePositions) {
             position.idx = move_structure.get_start(position.interval);
         }
-        return true;
+        return position;
     }
 
     // Returns row/offset of largest idx before or at position run with matching run data value
     template<RunCols Col>
-    std::optional<Position> pred(ulint val) {
+    std::optional<Position> pred(Position position, ulint val) {
         while (get<Col>() != val) 
         {
             if (position.interval == 0) return std::nullopt;
@@ -182,7 +183,7 @@ public:
 
     // Returns row/offset of smallest idx after or at position run with matching run data value
     template<RunCols Col>
-    std::optional<Position> succ(ulint val) {
+    std::optional<Position> succ(Position position, ulint val) {
         while (get<Col>() != val) 
         {
             if (position.interval == move_structure.runs() - 1) return std::nullopt;
@@ -195,33 +196,30 @@ public:
         return position;
     }
 
-    void first() { position = move_structure.first(); }
-    void last() { position = move_structure.last(); }
+    Position first() { return move_structure.first(); }
+    Position last() { return move_structure.last(); }
 
-    Position get_position() const { return position; }
-    void set_position(Position pos) { position = pos; }
-
-    ulint size() const { return move_structure.size(); }
+    ulint domain() const { return move_structure.size(); }
     ulint move_runs() const { return move_structure.runs(); }
     ulint permutation_runs() const { return orig_intervals; }
 
     template<RunCols Col>
-    ulint get(size_t row) const {
+    ulint get(ulint interval) const {
         if constexpr (IntegratedMoveStructure) {
-            return move_structure.template get<ColsTraits::template run_column<Col>()>(row);
+            return move_structure.template get<ColsTraits::template run_column<Col>()>(interval);
         } else {
-            return this->run_cols_data.template get<Col>(row);
+            return this->run_cols_data.template get<Col>(interval);
         }
     }
     template<RunCols Col>
-    ulint get() const {
+    ulint get(Position position) const {
         return get<Col>(position.interval);
     }
 
-    ulint get_length(size_t row) const {
-        return move_structure.get_length(row);
+    ulint get_length(ulint interval) const {
+        return move_structure.get_length(interval);
     }
-    ulint get_length() const {
+    ulint get_length(Position position) const {
         return get_length(position.interval);
     }
 
@@ -385,17 +383,16 @@ public:
     }
     
     // Delegate all RunPerm methods
-    void first() { run_perm.first(); }
-    void last() { run_perm.last(); }
-    Position get_position() const { return run_perm.get_position(); }
-    void next() { run_perm.next(); }
-    void next(ulint steps) { run_perm.next(steps); }
-    bool up() { return run_perm.up(); }
-    bool down() { return run_perm.down(); }
-    ulint get_length(size_t i) const { return run_perm.get_length(i); }
-    ulint get_length() const { return run_perm.get_length(); }
+    Position first() { return run_perm.first(); }
+    Position last() { return run_perm.last(); }
+    Position next(Position pos) { return run_perm.next(pos); }
+    Position next(Position pos, ulint steps) { return run_perm.next(pos, steps); }
+    Position up(Position position) { return run_perm.up(position); }
+    Position down(Position position) { return run_perm.down(position); }
+    ulint get_length(ulint interval) const { return run_perm.get_length(interval); }
+    ulint get_length(Position position) const { return run_perm.get_length(position); }
     
-    ulint size() const { return run_perm.size(); }
+    ulint domain() const { return run_perm.domain(); }
     ulint move_runs() const { return run_perm.move_runs(); }
     ulint permutation_runs() const { return run_perm.permutation_runs(); }
     

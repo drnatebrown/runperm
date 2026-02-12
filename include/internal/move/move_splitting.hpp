@@ -2,12 +2,13 @@
 #define _MOVE_SPLITTING_HH
 
 #include "internal/common.hpp"
+#include <cmath>
 
 struct SplitParams {
-    std::optional<ulint> max_allowed_length;
+    std::optional<double> length_capping_factor;
     std::optional<ulint> balancing_factor;
 
-    SplitParams() : max_allowed_length(std::nullopt), balancing_factor(std::nullopt) {}
+    SplitParams() : length_capping_factor(std::nullopt), balancing_factor(std::nullopt) {}
 };
 
 struct SplitResult {
@@ -17,8 +18,12 @@ struct SplitResult {
 };
 
 // TODO see if double scan is faster
-void split_by_max_allowed_length(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint max_allowed_length, SplitResult& result) {
+void split_by_length_capping(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const double length_capping_factor, SplitResult& result) {
     assert(lengths.size() == interval_permutation.size());
+    assert(length_capping_factor > 0.0);
+
+    double avg_run_length = static_cast<double>(domain) / static_cast<double>(lengths.size());
+    ulint max_allowed_length = static_cast<ulint>(std::ceil(avg_run_length * length_capping_factor));
 
     result.lengths.clear();
     result.interval_permutations.clear();
@@ -48,7 +53,7 @@ void split_by_max_allowed_length(const std::vector<ulint>& lengths, const std::v
     result.interval_permutations.shrink_to_fit();
 }
 
-void split_by_balancing_factor(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint balancing_factor, SplitResult& result) {
+void split_by_balancing(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const ulint balancing_factor, SplitResult& result) {
     assert(lengths.size() == interval_permutation.size());
     // TODO
     result.lengths = lengths;

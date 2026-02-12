@@ -59,7 +59,7 @@ public:
 
 // Takes std::vector<uchar> bwt_and std::vector<ulint> as bwt_heads and bwt_run_lengths as input in place of lengths and interval permutations
 // Otherwise, same as RunPerm
-// Also implements FL, FL(steps), get_character(), get_character(row)
+// Also implements FL(pos), FL(pos, steps), get_character(pos), get_character(interval)
 
 template<typename RunColsType, typename AlphabetType = Nucleotide>
 using RunPermFLSeperated = RunPermFL<RunColsType, false, false, AlphabetType>; // Default
@@ -86,7 +86,7 @@ public:
 // Need to call rlbwt_to_phi(rlbwt_heads, rlbwt_run_lengths) to get lengths and interval permutations
 // Otherwise, same as RunPerm
 // RunPhiPerm is just a named specilization which sets StoreAbsolutePositions to true
-// Also implements Phi, Phi(steps), SA()
+// Also implements Phi(pos), Phi(pos, steps), SA(pos)
 
 // === MovePhi ===
 // See above
@@ -95,7 +95,7 @@ public:
 // Need to call rlbwt_to_invphi(rlbwt_heads, rlbwt_run_lengths) to get lengths and interval permutations
 // Otherwise, same as RunPerm -->
 // RunInvPhiPerm is just a named specilization which sets StoreAbsolutePositions to true
-// Also implements InvPhi, InvPhi(steps), SA()
+// Also implements InvPhi(pos), InvPhi(pos, steps), SA(pos)
 
 // === MoveInvPhi ===
 // See above

@@ -32,7 +32,6 @@ public:
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
         assert(run_data.size() == rlbwt_heads.size());
         Base::orig_intervals = rlbwt_heads.size();
-        Base::position = Position();
 
         alphabet = AlphabetType();
         ulint num_chars;
@@ -83,11 +82,11 @@ public:
     }
 
 
-    uchar get_character(size_t row) {
-        return alphabet.unmap_char(Base::template get_base_column<BaseColumns::CHARACTER>(row));
+    uchar get_character(ulint interval) {
+        return alphabet.unmap_char(Base::template get_base_column<BaseColumns::CHARACTER>(interval));
     }
-    uchar get_character() {
-        return alphabet.unmap_char(Base::template get_base_column<BaseColumns::CHARACTER>());
+    uchar get_character(Position pos) {
+        return alphabet.unmap_char(Base::template get_base_column<BaseColumns::CHARACTER>(pos.interval));
     }
 
     size_t serialize(std::ostream& out) {
@@ -144,21 +143,20 @@ public:
         run_perm_rlbwt = RunPermRLBWTType(rlbwt_heads, rlbwt_run_lengths, split_params, empty_run_data);
     }
     
-    void first() { run_perm_rlbwt.first(); }
+    Position first() { return run_perm_rlbwt.first(); }
     void last() { run_perm_rlbwt.last(); }
-    void move(Position pos) const { run_perm_rlbwt.move(pos); }
-    Position get_position() const { return run_perm_rlbwt.get_position(); }
-    ulint get_length(size_t i) const { return run_perm_rlbwt.get_length(i); }
-    ulint get_length() const { return run_perm_rlbwt.get_length(); }
-    void next() { run_perm_rlbwt.next(); }
+    ulint get_length(ulint interval) const { return run_perm_rlbwt.get_length(interval); }
+    ulint get_length(Position pos) const { return run_perm_rlbwt.get_length(pos); }
+    Position next(Position pos) { return run_perm_rlbwt.next(pos); }
+    Position next(Position pos, ulint steps) { return run_perm_rlbwt.next(pos, steps); }
     
-    ulint size() const { return run_perm_rlbwt.size(); }
+    ulint domain() const { return run_perm_rlbwt.domain(); }
     ulint move_runs() const { return run_perm_rlbwt.move_runs(); }
     ulint permutation_runs() const { return run_perm_rlbwt.permutation_runs(); }
     
     // RLBWT-specific method
-    uchar get_character(size_t i) { return run_perm_rlbwt.get_character(i); }
-    uchar get_character() { return run_perm_rlbwt.get_character(); }
+    uchar get_character(ulint interval) { return run_perm_rlbwt.get_character(interval); }
+    uchar get_character(Position pos) { return run_perm_rlbwt.get_character(pos); }
     
     size_t serialize(std::ostream& out) { return run_perm_rlbwt.serialize(out); }
     void load(std::istream& in) { run_perm_rlbwt.load(in); }

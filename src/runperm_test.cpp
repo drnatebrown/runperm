@@ -93,8 +93,7 @@
     // std::vector<ulint> test_n = {1048576, 2097152, 4194304, 8388608};
     std::vector<ulint> test_n = {18388608};  
     std::vector<size_t> percentage_runs = {1, 2, 5, 10};
-    std::optional<ulint> max_allowed_length = 255;
-    // std::optional<ulint> max_allowed_length = std::nullopt;
+    std::optional<double> length_capping_factor = 4.0;
     
     template<typename RunData, typename RunPermType>
     std::string get_runperm_type_name() {
@@ -118,25 +117,23 @@
                       size_t n) {
         
         SplitParams split_params;
-        split_params.max_allowed_length = max_allowed_length;
+        split_params.length_capping_factor = length_capping_factor;
     
         auto start_time = high_resolution_clock::now();
         auto runperm = RunPermType(lengths, interval_permutation, n, run_data);
         auto creation_time = high_resolution_clock::now();
     
-        runperm.first();
+        auto pos = runperm.first();
         for (size_t i = 0; i < n; ++i) {
-            typename RunPermType::Position pos = runperm.get_position();
-            runperm.next();
+            pos = runperm.next(pos);
         }
         auto move_time = high_resolution_clock::now();
 
-        runperm.first();
+        pos = runperm.first();
         for (size_t i = 0; i < n; ++i) {
-            typename RunPermType::Position pos = runperm.get_position();
-            assert(runperm.template get<RunData::VAL_1>() == run_data[pos.interval][0]);
-            assert(runperm.template get<RunData::VAL_2>() == run_data[pos.interval][1]);
-            runperm.next();
+            pos = runperm.next(pos);
+            assert(runperm.template get<RunData::VAL_1>(pos) == run_data[pos.interval][0]);
+            assert(runperm.template get<RunData::VAL_2>(pos) == run_data[pos.interval][1]);
         }
         auto getter_time = high_resolution_clock::now();
     
@@ -215,17 +212,16 @@
         auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
         RunPerm<RunData> run_perm(lengths, interval_permutation, permutation.size(), run_data);
         run_perm.first();
-        std::cout << "Size: " << run_perm.size() << std::endl;
+        std::cout << "Domain: " << run_perm.domain() << std::endl;
         std::cout << "Move Runs: " << run_perm.move_runs() << std::endl;
         std::cout << "Permutation Runs: " << run_perm.permutation_runs() << std::endl;
         using Position = typename RunPerm<RunData>::Position;
-        Position pos = run_perm.get_position();
-        for (size_t i = 0; i <= run_perm.size(); ++i) {
+        Position pos = run_perm.first();
+        for (size_t i = 0; i <= run_perm.domain(); ++i) {
             std::cout << "Position: " << pos.interval << ", " << pos.offset << " --> ";
-            run_perm.next();
-            pos = run_perm.get_position();
+            pos = run_perm.next(pos);
     
-            std::cout << "Run Data: " << run_perm.template get<RunData::EASY>() << ", " << run_perm.template get<RunData::HARD>() << std::endl;
+            std::cout << "Run Data: " << run_perm.template get<RunData::EASY>(pos) << ", " << run_perm.template get<RunData::HARD>(pos) << std::endl;
         }
         
         std::cout << "=== MovePerm Tests ===" << endl << endl;
@@ -236,21 +232,19 @@
         using PositionMove = typename MovePerm<>::Position;
         std::cout << std::endl;
         MovePerm<> move_perm(permutation);
-        move_perm.first();
-        std::cout << "Size: " << move_perm.size() << std::endl;
+        std::cout << "Domain: " << move_perm.domain() << std::endl;
         std::cout << "Move Runs: " << move_perm.move_runs() << std::endl;
         std::cout << "Permutation Runs: " << move_perm.permutation_runs() << std::endl;
-        PositionMove pos2 = move_perm.get_position();
-        for (size_t i = 0; i <= move_perm.size(); ++i) {
+        PositionMove pos2 = move_perm.first();
+        for (size_t i = 0; i <= move_perm.domain(); ++i) {
             std::cout << "Position: " << pos2.interval << ", " << pos2.offset << std::endl;
-            move_perm.next();
-            pos2 = move_perm.get_position();
+            pos2 = move_perm.next(pos2);
         }
     }
     
     int main() {
         tests();
-        // small_tests();
-        // std::cout << "Tests complete" << std::endl;
+        small_tests();
+        std::cout << "Tests complete" << std::endl;
         return 0;
     }

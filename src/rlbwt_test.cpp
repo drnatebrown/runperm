@@ -24,24 +24,23 @@ void test_move_lf(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengt
     std::cout << "Testing MoveLF" << std::endl;
     MoveLF<> move_lf(bwt_heads, bwt_run_lengths);
 
-    std::cout << "Size: " << move_lf.size() << std::endl;
+    std::cout << "Domain: " << move_lf.domain() << std::endl;
     std::cout << "Move Runs: " << move_lf.move_runs() << std::endl;
     std::cout << "Permutation Runs: " << move_lf.permutation_runs() << std::endl;
     using Position = typename MoveLF<>::Position;
-    Position pos = move_lf.get_position();
-    for (size_t i = 0; i < move_lf.size(); ++i) {
-        move_lf.next();
-        pos = move_lf.get_position();
+    auto pos = move_lf.first();
+    for (size_t i = 0; i < move_lf.domain(); ++i) {
+        pos = move_lf.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     std::cout << "Successfully moved to start" << std::endl;
 
     std::string recovered_text(text.size(), '\0');
-    move_lf.first();
-    for (size_t i = 1; i < move_lf.size(); ++i) {
-        recovered_text[text.size() - i] = (char)move_lf.get_character();
-        move_lf.LF();
+    pos = move_lf.first();
+    for (size_t i = 1; i < move_lf.domain(); ++i) {
+        recovered_text[text.size() - i] = (char)move_lf.get_character(pos);
+        pos = move_lf.next(pos);
     }
     std::cout << "Recovered text: " << recovered_text << std::endl;
     std::cout << "Original text:  " << text << std::endl;
@@ -53,25 +52,24 @@ void test_move_fl(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengt
     std::cout << "Testing MoveFL" << std::endl;
     MoveFL<> move_fl(bwt_heads, bwt_run_lengths);
 
-    std::cout << "Size: " << move_fl.size() << std::endl;
+    std::cout << "Domain: " << move_fl.domain() << std::endl;
     std::cout << "Move Runs: " << move_fl.move_runs() << std::endl;
     std::cout << "Permutation Runs: " << move_fl.permutation_runs() << std::endl;
     using Position = typename MoveFL<>::Position;
-    Position pos = move_fl.get_position();
-    for (size_t i = 0; i < move_fl.size(); ++i) {
-        move_fl.next();
-        pos = move_fl.get_position();
+    Position pos = move_fl.first();
+    for (size_t i = 0; i < move_fl.domain(); ++i) {
+        pos = move_fl.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     std::cout << "Successfully moved to start" << std::endl;
 
     std::string recovered_text = "";
-    move_fl.first();
-    move_fl.FL();
-    for (size_t i = 1; i < move_fl.size(); ++i) {
-        recovered_text += (char)move_fl.get_character();
-        move_fl.FL();
+    pos = move_fl.first();
+    pos = move_fl.FL(pos);
+    for (size_t i = 1; i < move_fl.domain(); ++i) {
+        recovered_text += (char)move_fl.get_character(pos);
+        pos = move_fl.FL(pos);
     }
     std::cout << "Recovered text: " << recovered_text << std::endl;
     std::cout << "Original text:  " << text << std::endl;
@@ -100,27 +98,26 @@ void test_runperm_lf(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_le
     // Try the constructor without SplitParams
     RunPermLF<RunData> runperm_lf(bwt_heads, bwt_run_lengths, run_data);
     
-    std::cout << "Size: " << runperm_lf.size() << std::endl;
+    std::cout << "Domain: " << runperm_lf.domain() << std::endl;
     std::cout << "Move Runs: " << runperm_lf.move_runs() << std::endl;
     std::cout << "Permutation Runs: " << runperm_lf.permutation_runs() << std::endl;
     
     runperm_lf.first();
     using Position = typename RunPermLF<RunData>::Position;
-    Position pos = runperm_lf.get_position();
+    Position pos = runperm_lf.first();
     
-    for (size_t i = 0; i < runperm_lf.size(); ++i) {
-        runperm_lf.LF();
-        pos = runperm_lf.get_position();
+    for (size_t i = 0; i < runperm_lf.domain(); ++i) {
+        pos = runperm_lf.LF(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     std::cout << "Successfully moved to start" << std::endl;
 
     std::string recovered_text(text.size(), '\0');
-    runperm_lf.first();
-    for (size_t i = 1; i < runperm_lf.size(); ++i) {
-        recovered_text[text.size() - i] = (char)runperm_lf.get_character();
-        runperm_lf.LF();
+    pos = runperm_lf.first();
+    for (size_t i = 1; i < runperm_lf.domain(); ++i) {
+        recovered_text[text.size() - i] = (char)runperm_lf.get_character(pos);
+        pos = runperm_lf.LF(pos);
     }
     std::cout << "Recovered text: " << recovered_text << std::endl;
     std::cout << "Original text:  " << text << std::endl;
@@ -149,28 +146,26 @@ void test_runperm_fl(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_le
     // Try the constructor without SplitParams
     RunPermFL<RunData> runperm_fl(bwt_heads, bwt_run_lengths, run_data);
     
-    std::cout << "Size: " << runperm_fl.size() << std::endl;
+    std::cout << "Domain: " << runperm_fl.domain() << std::endl;
     std::cout << "Move Runs: " << runperm_fl.move_runs() << std::endl;
     std::cout << "Permutation Runs: " << runperm_fl.permutation_runs() << std::endl;
     
-    runperm_fl.first();
     using Position = typename RunPermFL<RunData>::Position;
-    Position pos = runperm_fl.get_position();
+    Position pos = runperm_fl.first();
     
-    for (size_t i = 0; i < runperm_fl.size(); ++i) {
-        runperm_fl.FL();
-        pos = runperm_fl.get_position();
+    for (size_t i = 0; i < runperm_fl.domain(); ++i) {
+        pos = runperm_fl.FL(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     std::cout << "Successfully moved to start" << std::endl;
 
-    runperm_fl.first();
-    runperm_fl.FL();
+    pos = runperm_fl.first();
+    pos = runperm_fl.FL(pos);
     std::string recovered_text = "";
-    for (size_t i = 1; i < runperm_fl.size(); ++i) {
-        recovered_text += (char)runperm_fl.get_character();
-        runperm_fl.FL();
+    for (size_t i = 1; i < runperm_fl.domain(); ++i) {
+        recovered_text += (char)runperm_fl.get_character(pos);
+        pos = runperm_fl.FL(pos);
     }
     std::cout << "Recovered text: " << recovered_text << std::endl;
     std::cout << "Original text:  " << text << std::endl;
@@ -198,28 +193,25 @@ void test_runperm_phi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_l
 
     auto [phi_lengths, phi_interval_permutations, domain] = rlbwt_to_phi(bwt_heads, bwt_run_lengths);
     RunPermPhi<RunData> runperm_phi(phi_lengths, phi_interval_permutations, domain, run_data);
-    std::cout << "Size: " << runperm_phi.size() << std::endl;
+    std::cout << "Domain: " << runperm_phi.domain() << std::endl;
     std::cout << "Move Runs: " << runperm_phi.move_runs() << std::endl;
     std::cout << "Permutation Runs: " << runperm_phi.permutation_runs() << std::endl;
 
-    runperm_phi.first();
     using Position = typename RunPermPhi<RunData>::Position;
-    Position pos = runperm_phi.get_position();
-    for (size_t i = 0; i < runperm_phi.size(); ++i) {
-        runperm_phi.next();
-        pos = runperm_phi.get_position();
+    Position pos = runperm_phi.first();
+    for (size_t i = 0; i < runperm_phi.domain(); ++i) {
+        pos = runperm_phi.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     std::cout << "Successfully moved to start" << std::endl;
 
-    runperm_phi.last();
-    runperm_phi.Phi();
+    pos = runperm_phi.last();
+    pos = runperm_phi.Phi(pos);
     std::vector<ulint> sa_recovered(sa.size());
     for (size_t i = 0; i < sa_recovered.size(); ++i) {
-        sa_recovered[sa.size() - i - 1] = runperm_phi.SA();
-        runperm_phi.Phi();
-        pos = runperm_phi.get_position();
+        sa_recovered[sa.size() - i - 1] = runperm_phi.SA(pos);
+        pos = runperm_phi.next(pos);
     }
     std::cout << "Recovered SA: ";
     print_vector(sa_recovered);
@@ -235,26 +227,24 @@ void test_move_phi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_leng
     std::cout << "Testing MovePhi" << std::endl;
     auto [phi_lengths, phi_interval_permutations, domain] = rlbwt_to_phi(bwt_heads, bwt_run_lengths);
     MovePhi move_phi(phi_lengths, phi_interval_permutations, domain);
-    std::cout << "Size: " << move_phi.size() << std::endl;
+    std::cout << "Domain: " << move_phi.domain() << std::endl;
     std::cout << "Move Runs: " << move_phi.move_runs() << std::endl;
     std::cout << "Permutation Runs: " << move_phi.permutation_runs() << std::endl;
     using Position = typename MovePhi::Position;
-    Position pos = move_phi.get_position();
-    for (size_t i = 0; i < move_phi.size(); ++i) {
-        move_phi.next();
-        pos = move_phi.get_position();
+    Position pos = move_phi.first();
+    for (size_t i = 0; i < move_phi.domain(); ++i) {
+        pos = move_phi.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     std::cout << "Successfully moved to start" << std::endl;
 
-    move_phi.last();
-    move_phi.Phi();
+    pos = move_phi.last();
+    pos = move_phi.Phi(pos);
     std::vector<ulint> sa_recovered(sa.size());
-    for (size_t i = 0; i < move_phi.size(); ++i) {
-        sa_recovered[sa.size() - i - 1] = move_phi.SA();
-        move_phi.Phi();
-        pos = move_phi.get_position();
+    for (size_t i = 0; i < move_phi.domain(); ++i) {
+        sa_recovered[sa.size() - i - 1] = move_phi.SA(pos);
+        pos = move_phi.Phi(pos);
     }
     std::cout << "Recovered SA: ";
     print_vector(sa_recovered);
@@ -286,27 +276,25 @@ void test_runperm_invphi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_ru
 
     auto [invphi_lengths, invphi_interval_permutations, domain] = rlbwt_to_invphi(bwt_heads, bwt_run_lengths);
     RunPermInvPhi<RunData> runperm_invphi(invphi_lengths, invphi_interval_permutations, domain, run_data);
-    std::cout << "Size: " << runperm_invphi.size() << std::endl;
+    std::cout << "Domain: " << runperm_invphi.domain() << std::endl;
     std::cout << "Move Runs: " << runperm_invphi.move_runs() << std::endl;
     std::cout << "Permutation Runs: " << runperm_invphi.permutation_runs() << std::endl;
 
     runperm_invphi.first();
     using Position = typename RunPermPhi<RunData>::Position;
-    Position pos = runperm_invphi.get_position();
-    for (size_t i = 0; i < runperm_invphi.size(); ++i) {
-        runperm_invphi.next();
-        pos = runperm_invphi.get_position();
+    Position pos = runperm_invphi.first();
+    for (size_t i = 0; i < runperm_invphi.domain(); ++i) {
+        pos = runperm_invphi.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     std::cout << "Successfully moved to start" << std::endl;
 
-    runperm_invphi.last();
+    pos = runperm_invphi.last();
     std::vector<ulint> sa_recovered(sa.size());
     for (size_t i = 0; i < sa_recovered.size(); ++i) {
-        sa_recovered[i] = runperm_invphi.SA();
-        runperm_invphi.InvPhi();
-        pos = runperm_invphi.get_position();
+        sa_recovered[i] = runperm_invphi.SA(pos);
+        pos = runperm_invphi.InvPhi(pos);
     }
     std::cout << "Recovered SA: ";
     print_vector(sa_recovered);
@@ -322,25 +310,23 @@ void test_move_invphi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_l
     std::cout << "Testing MoveInvPhi" << std::endl;
     auto [invphi_lengths, invphi_interval_permutations, domain] = rlbwt_to_invphi(bwt_heads, bwt_run_lengths);
     MoveInvPhi move_invphi(invphi_lengths, invphi_interval_permutations, domain);
-    std::cout << "Size: " << move_invphi.size() << std::endl;
+    std::cout << "Domain: " << move_invphi.domain() << std::endl;
     std::cout << "Move Runs: " << move_invphi.move_runs() << std::endl;
     std::cout << "Permutation Runs: " << move_invphi.permutation_runs() << std::endl;
     using Position = typename MoveInvPhi::Position;
-    Position pos = move_invphi.get_position();
-    for (size_t i = 0; i < move_invphi.size(); ++i) {
-        move_invphi.next();
-        pos = move_invphi.get_position();
+    Position pos = move_invphi.first();
+    for (size_t i = 0; i < move_invphi.domain(); ++i) {
+        pos = move_invphi.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     std::cout << "Successfully moved to start" << std::endl;
 
-    move_invphi.last();
+    pos = move_invphi.last();
     std::vector<ulint> sa_recovered(sa.size());
-    for (size_t i = 0; i < move_invphi.size(); ++i) {
-        sa_recovered[i] = move_invphi.SA();
-        move_invphi.InvPhi();
-        pos = move_invphi.get_position();
+    for (size_t i = 0; i < move_invphi.domain(); ++i) {
+        sa_recovered[i] = move_invphi.SA(pos);
+        pos = move_invphi.InvPhi(pos);
     }
     std::cout << "Recovered SA: ";
     print_vector(sa_recovered);

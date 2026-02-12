@@ -17,6 +17,7 @@ class RunPermLFImpl : public RunPermRLBWT<RunPermLFImpl<RunColsType, IntegratedM
 public:
     using Base::Base;
     using Base::operator=;
+    using Position = typename Base::Position;
 
     void find_permutation_and_alphabet(
         const std::vector<uchar>& rlbwt_heads,
@@ -33,12 +34,12 @@ public:
         base_structure = Base::MoveStructureBase::find_structure(mapped_rlbwt_heads, rlbwt_run_lengths, interval_permutation, num_chars, alphabet.size());
     }
 
-    void LF() {
-        Base::next();
+    Position LF(Position pos) {
+        return Base::next(pos);
     }
 
-    void LF(ulint steps) {
-        Base::next(steps);
+    Position LF(Position pos, ulint steps) {
+        return Base::next(pos, steps);
     }
 
 private:
@@ -88,13 +89,14 @@ class MoveLFImpl : public MovePermRLBWT<RunPermLFImpl<EmptyRunCols, false, Store
 public:
     using Base::Base;
     using Base::operator=;
+    using Position = typename Base::Position;
 
-    void LF() {
-        Base::next();
+    Position LF(Position pos) {
+        return Base::next(pos);
     }
 
-    void LF(ulint steps) {
-        Base::next(steps);
+    Position LF(Position pos, ulint steps) {
+        return Base::next(pos, steps);
     }
 };
 
