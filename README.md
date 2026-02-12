@@ -207,5 +207,11 @@ for (size_t i = 0; i < n; ++i) {
 
 ## Performance Considerations
 
-- **Integrated vs Separated**: Integrating user data alongside the move structure offer better cache locality but may cause slower move queries
-- **Absolute vs Relative Positions**: Absolute positions enable full permutation positional information but increase memory usage
+- **Integrated vs Separated**: Integrating user data alongside the move structure offer better cache locality but may cause slower move queries since navigating the data structure requires loading larger entries.
+- **Absolute vs Relative Positions**: Absolute positions enable full permutation positional information but increase memory usage. The space usage is, for a runny permutation of $r$ runs over domain $n$:
+  - **Absolute**: $O(r \log n)$-bits
+  - **Relative**: $O(r \log \frac{n}{r} + r \log r)$-bits
+
+## Citation
+If using RunPerm or describing length capping in an academic context, please cite:
+>Brown, N. K., & Langmead, B. (2026). Bounding the Average Move Structure Query for Faster and Smaller RLBWT Permutations. arXiv. [doi:10.1101/2024.10.29.620953](https://arxiv.org/abs/2602.11029)
