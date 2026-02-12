@@ -4,12 +4,20 @@
 #include "internal/common.hpp"
 #include <cmath>
 
+constexpr double DEFAULT_LENGTH_CAPPING_FACTOR = 8.0;
+constexpr ulint DEFAULT_BALANCING_FACTOR = 16;
+
 struct SplitParams {
     std::optional<double> length_capping_factor;
     std::optional<ulint> balancing_factor;
 
     SplitParams() : length_capping_factor(std::nullopt), balancing_factor(std::nullopt) {}
+    SplitParams(double length_capping_factor, ulint balancing_factor) : length_capping_factor(length_capping_factor), balancing_factor(balancing_factor) {}
 };
+
+SplitParams default_splitting() {
+    return SplitParams{DEFAULT_LENGTH_CAPPING_FACTOR, DEFAULT_BALANCING_FACTOR};
+}
 
 struct SplitResult {
     std::vector<ulint> lengths;
@@ -27,8 +35,8 @@ void split_by_length_capping(const std::vector<ulint>& lengths, const std::vecto
 
     result.lengths.clear();
     result.interval_permutations.clear();
-    result.lengths.reserve(static_cast<size_t>(1.5*lengths.size()));
-    result.interval_permutations.reserve(static_cast<size_t>(1.5*interval_permutation.size()));
+    result.lengths.reserve(static_cast<size_t>(lengths.size() + lengths.size()/length_capping_factor));
+    result.interval_permutations.reserve(static_cast<size_t>(interval_permutation.size() + interval_permutation.size()/length_capping_factor));
     result.max_length = 0;
 
     for (size_t i = 0; i < lengths.size(); ++i) {
