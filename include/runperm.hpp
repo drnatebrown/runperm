@@ -17,9 +17,9 @@ template<typename RunColsType,
 class RunPerm : public RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector> {
     using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector>;
 public:
-    using Base::RunData;
-    using Base::MoveStructurePerm;
-    using Base::Position;
+    using typename Base::RunData;
+    using typename Base::MoveStructurePerm;
+    using typename Base::Position;
 
     using Base::Base;
     using Base::operator=;
