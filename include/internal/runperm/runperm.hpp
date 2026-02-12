@@ -7,6 +7,7 @@
 
 constexpr bool DEFAULT_INTEGRATED_MOVE_STRUCTURE = false;
 constexpr bool DEFAULT_STORE_ABSOLUTE_POSITIONS = false;
+constexpr bool DEFAULT_EXPONENTIAL_SEARCH = false; // Whether to use exponential search for next(), only used if StoreAbsolutePositions is true
 
 /* ============================================= Advanced Implemenation ============================================= */
 
@@ -22,6 +23,7 @@ struct SeperatedDataHolder<RunColsType, true> { /* empty */ };
 template<typename RunColsType, // Fields to be stored alongside the move structure representing a runny permutation
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE, // Whether to pack the run data alongside the move structure
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, // Whether to store absolute positions instead of interval/offset
+         bool ExponentialSearch = DEFAULT_EXPONENTIAL_SEARCH, // Whether to use exponential search for next(), only used if StoreAbsolutePositions is true
          typename BaseColumnsType = MoveCols,
          template<typename, template<typename> class> class MoveStructureType = MoveStructure,
          template<typename> class TableType = MoveVector>
@@ -74,7 +76,6 @@ public:
         assert(lengths.size() == interval_permutation.size());
         assert(run_data.size() == lengths.size());
         orig_intervals = lengths.size();
-        position = Position(); // should start at 0
 
         // Find the base structure (move structure without run data)
         PackedVector<BaseColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain);
@@ -101,7 +102,6 @@ public:
     RunPermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, std::function<RunData(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(lengths.size() == interval_permutation.size());
         orig_intervals = lengths.size();
-        position = Position(); // should start at 0
         
         // Find the base structure (move structure without run data)
         PackedVector<BaseColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain, split_params);
@@ -110,64 +110,76 @@ public:
     }
 
     // Constructor from pre-computed table (move semantics) for advanced users with integrated move structure
-    RunPermImpl(PackedVector<Columns> &&structure, const ulint domain) : move_structure(MoveStructurePerm(std::move(structure), domain)), position(Position()), orig_intervals(structure.size()) {
+    RunPermImpl(PackedVector<Columns> &&structure, const ulint domain) : move_structure(MoveStructurePerm(std::move(structure), domain)), orig_intervals(structure.size()) {
         static_assert(IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed permutation structure if not integrating user data with move structure");
     }
 
     // Constructor from pre-computed table (move semantics) for advanced users without integrated move structure
-    RunPermImpl(PackedVector<BaseColumns> &&structure, std::vector<RunData> &run_data, const ulint domain) : move_structure(MoveStructurePerm(std::move(structure), domain)), position(Position()), orig_intervals(structure.size()) {
+    RunPermImpl(PackedVector<BaseColumns> &&structure, std::vector<RunData> &run_data, const ulint domain) : move_structure(MoveStructurePerm(std::move(structure), domain)), orig_intervals(structure.size()) {
         static_assert(!IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed permutation structure if integrating user data with move structure");
         populate_run_data(std::move(structure), run_data, domain);
     }
 
-    RunPermImpl(MoveStructurePerm &&ms, const ulint domain) : move_structure(std::move(ms)), position(Position()), orig_intervals(move_structure.size()) {
+    RunPermImpl(MoveStructurePerm &&ms, const ulint domain) : move_structure(std::move(ms)), orig_intervals(move_structure.size()) {
         static_assert(IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed move structure if not integrating user data with move structure");
     }
 
-    RunPermImpl(MoveStructurePerm &&ms, std::vector<RunData> &run_data, const ulint domain) : move_structure(std::move(ms)), position(Position()), orig_intervals(move_structure.size()) {
+    RunPermImpl(MoveStructurePerm &&ms, std::vector<RunData> &run_data, const ulint domain) : move_structure(std::move(ms)), orig_intervals(move_structure.size()) {
         static_assert(!IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed move structure if integrating user data with move structure");
         auto run_cols_widths = get_run_cols_widths(run_data);
         fill_seperated_data(run_data, run_cols_widths);
     }
     
-    void next() { position = move_structure.move(position); }
-    void next(ulint steps) {
-        for (ulint i = 0; i < steps; ++i) {
-            next();
+    Position next(Position position) { 
+        if constexpr (StoreAbsolutePositions && ExponentialSearch) {
+            return move_structure.move_exponential(position);
+        } else {
+            return move_structure.move(position);
         }
     }
 
-    // Set position to interval above in underlying move structure, returns false if already at top
-    bool up() {
+    Position next(Position position, ulint steps) {
+        for (ulint i = 0; i < steps; ++i) {
+            if constexpr (StoreAbsolutePositions && ExponentialSearch) {
+                position = move_structure.move_exponential(position);
+            } else {
+                position = move_structure.move(position);
+            }
+        }
+        return position;
+    }
+
+    // Set position to interval above in underlying move structure, or circularly wrap to the bottom if already at top
+    Position up(Position position) {
         if (position.interval == 0)
         {
-            return false;
+            return last();
         }
         --position.interval;
         position.offset = move_structure.get_length(position.interval) - 1;
         if constexpr (StoreAbsolutePositions) {
             position.idx = move_structure.get_start(position.interval) + position.offset;
         }
-        return true;
+        return position;
     }
 
-    // Set position to interval below in underlying move structure, returns false if already at bottom
-    bool down() {
+    // Set position to interval below in underlying move structure, or circularly wrap to the top if already at bottom
+    Position down(Position position) {
         if (position.interval == move_structure.runs() - 1)
         {
-            return false;
+            return first();
         }
         ++position.interval;
         position.offset = 0;
         if constexpr (StoreAbsolutePositions) {
             position.idx = move_structure.get_start(position.interval);
         }
-        return true;
+        return position;
     }
 
     // Returns row/offset of largest idx before or at position run with matching run data value
     template<RunCols Col>
-    std::optional<Position> pred(ulint val) {
+    std::optional<Position> pred(Position position, ulint val) {
         while (get<Col>() != val) 
         {
             if (position.interval == 0) return std::nullopt;
@@ -182,7 +194,7 @@ public:
 
     // Returns row/offset of smallest idx after or at position run with matching run data value
     template<RunCols Col>
-    std::optional<Position> succ(ulint val) {
+    std::optional<Position> succ(Position position, ulint val) {
         while (get<Col>() != val) 
         {
             if (position.interval == move_structure.runs() - 1) return std::nullopt;
@@ -195,33 +207,30 @@ public:
         return position;
     }
 
-    void first() { position = move_structure.first(); }
-    void last() { position = move_structure.last(); }
+    Position first() { return move_structure.first(); }
+    Position last() { return move_structure.last(); }
 
-    Position get_position() const { return position; }
-    void set_position(Position pos) { position = pos; }
-
-    ulint size() const { return move_structure.size(); }
+    ulint domain() const { return move_structure.size(); }
     ulint move_runs() const { return move_structure.runs(); }
     ulint permutation_runs() const { return orig_intervals; }
 
     template<RunCols Col>
-    ulint get(size_t row) const {
+    ulint get(ulint interval) const {
         if constexpr (IntegratedMoveStructure) {
-            return move_structure.template get<ColsTraits::template run_column<Col>()>(row);
+            return move_structure.template get<ColsTraits::template run_column<Col>()>(interval);
         } else {
-            return this->run_cols_data.template get<Col>(row);
+            return this->run_cols_data.template get<Col>(interval);
         }
     }
     template<RunCols Col>
-    ulint get() const {
+    ulint get(Position position) const {
         return get<Col>(position.interval);
     }
 
-    ulint get_length(size_t row) const {
-        return move_structure.get_length(row);
+    ulint get_length(ulint interval) const {
+        return move_structure.get_length(interval);
     }
-    ulint get_length() const {
+    ulint get_length(Position position) const {
         return get_length(position.interval);
     }
 
@@ -249,7 +258,6 @@ public:
 
 protected:
     MoveStructurePerm move_structure;
-    Position position;
     size_t orig_intervals; // before splitting, underlying move structure may be larger
 
     template<BaseColumns Col>
@@ -257,7 +265,7 @@ protected:
         return move_structure.template get<Col>(row);
     }
     template<BaseColumns Col>
-    ulint get_base_column() const {
+    ulint get_base_column(Position position) const {
         return get_base_column<Col>(position.interval);
     }
     
@@ -360,10 +368,10 @@ protected:
 };
 
 // A wrapper around RunPerm without any run data, essentially just a MoveStructure
-template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, typename BaseColumns = MoveCols, template<typename, template<typename> class> class MoveStructureType = MoveStructure, template<typename> class TableType = MoveVector>
+template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS, bool ExponentialSearch = DEFAULT_EXPONENTIAL_SEARCH, typename BaseColumns = MoveCols, template<typename, template<typename> class> class MoveStructureType = MoveStructure, template<typename> class TableType = MoveVector>
 class MovePermImpl {
 protected:
-    using RunPermType = RunPermImpl<EmptyRunCols, false, StoreAbsolutePositions, BaseColumns, MoveStructureType, TableType>;
+    using RunPermType = RunPermImpl<EmptyRunCols, false, StoreAbsolutePositions, ExponentialSearch, BaseColumns, MoveStructureType, TableType>;
     RunPermType run_perm;
     
 public:
@@ -385,17 +393,16 @@ public:
     }
     
     // Delegate all RunPerm methods
-    void first() { run_perm.first(); }
-    void last() { run_perm.last(); }
-    Position get_position() const { return run_perm.get_position(); }
-    void next() { run_perm.next(); }
-    void next(ulint steps) { run_perm.next(steps); }
-    bool up() { return run_perm.up(); }
-    bool down() { return run_perm.down(); }
-    ulint get_length(size_t i) const { return run_perm.get_length(i); }
-    ulint get_length() const { return run_perm.get_length(); }
+    Position first() { return run_perm.first(); }
+    Position last() { return run_perm.last(); }
+    Position next(Position pos) { return run_perm.next(pos); }
+    Position next(Position pos, ulint steps) { return run_perm.next(pos, steps); }
+    Position up(Position position) { return run_perm.up(position); }
+    Position down(Position position) { return run_perm.down(position); }
+    ulint get_length(ulint interval) const { return run_perm.get_length(interval); }
+    ulint get_length(Position position) const { return run_perm.get_length(position); }
     
-    ulint size() const { return run_perm.size(); }
+    ulint domain() const { return run_perm.domain(); }
     ulint move_runs() const { return run_perm.move_runs(); }
     ulint permutation_runs() const { return run_perm.permutation_runs(); }
     

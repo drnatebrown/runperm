@@ -93,8 +93,7 @@ bool verify_permutation(const std::vector<ulint>& perm) {
 // std::vector<ulint> test_n = {1048576, 2097152, 4194304, 8388608};
 std::vector<ulint> test_n = {18388608};  
 std::vector<size_t> percentage_runs = {1, 2, 5, 10};
-std::optional<ulint> max_allowed_length = 255;
-// std::optional<ulint> max_allowed_length = std::nullopt;
+std::optional<double> length_capping_factor = 4.0;
 
 // Helper function to get readable type name
 template<typename MoveStructType>
@@ -125,7 +124,7 @@ void test_move_structure(const std::vector<ulint>& lengths,
     auto start_time = high_resolution_clock::now();
     
     SplitParams split_params;
-    split_params.max_allowed_length = max_allowed_length;
+    split_params.length_capping_factor = length_capping_factor;
 
     // Create move structure
     auto move_structure = MoveStructType(lengths, interval_permutation, n);
@@ -171,7 +170,7 @@ void test_move_structure(const std::vector<ulint>& lengths,
     for (size_t i = 0; i < n; ++i) {
         size_t last_real_pos = real_pos;
         real_pos = test_perm[real_pos];
-        pos = move_structure.move(pos);
+        pos = move_structure.move_exponential(pos);
         // if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
         //               std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
         //     assert(pos.idx == real_pos);

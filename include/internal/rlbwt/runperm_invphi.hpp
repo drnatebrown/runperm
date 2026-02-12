@@ -15,16 +15,16 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_invphi(const
 
     // Helpers for computation
     IntVector move_run_to_invphi(lf.move_runs(), bit_width(lf.move_runs())); // Map move run to its Phi interval (only set those corresponding to RLBWT runs)
-    IntVector run_head_sa_samples(lf.move_runs(), bit_width(lf.size())); // The SA samples at the head of each move run (only set those corresponding to RLBWT runs)
+    IntVector run_head_sa_samples(lf.move_runs(), bit_width(lf.domain())); // The SA samples at the head of each move run (only set those corresponding to RLBWT runs)
 
-    lf.first();
-    size_t last_sample = lf.size();
-    size_t sa = lf.size() - 1;
+    auto pos = lf.first();
+    size_t last_sample = lf.domain();
+    size_t sa = lf.domain() - 1;
     size_t curr_invphi_interval = lf.move_runs() - 1;
     // Step through entire BWT to recover InvPhi structure and SA samples at heads
-    for (size_t i = 0; i < lf.size(); ++i) {
-        size_t interval = lf.get_position().interval;
-        size_t offset = lf.get_position().offset;
+    for (size_t i = 0; i < lf.domain(); ++i) {
+        size_t interval = pos.interval;
+        size_t offset = pos.offset;
         // If at BWT tail
         if (offset == lf.get_length(interval) - 1 && (interval == lf.move_runs() - 1 || lf.get_character(interval + 1) != lf.get_character(interval))) {
             invphi_lengths[curr_invphi_interval] = last_sample - sa;
@@ -37,7 +37,7 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_invphi(const
             run_head_sa_samples.set(interval, sa);
         }
         --sa;
-        lf.LF();
+        pos = lf.LF(pos);
     }
 
     // Step through BWT tail samples to fill in Phi interval permutations
@@ -45,7 +45,7 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_invphi(const
         invphi_interval_permutations[move_run_to_invphi.get((i == 0) ? lf.move_runs() - 1 : i - 1)] = run_head_sa_samples.get(i);
     }
 
-    return {invphi_lengths, invphi_interval_permutations, lf.size()};
+    return {invphi_lengths, invphi_interval_permutations, lf.domain()};
 }
 
 std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_invphi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths) {
@@ -57,43 +57,46 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_invphi(const
 // Always use absolute positions for InvPhi
 template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
+         bool ExponentialSearch = DEFAULT_EXPONENTIAL_SEARCH,
          template<typename> class TableType = MoveVector>
-class RunPermInvPhi : public RunPermImpl<RunColsType, IntegratedMoveStructure, true, MoveCols, MoveStructure, TableType> {
-    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, true, MoveCols, MoveStructure, TableType>;
+class RunPermInvPhi : public RunPermImpl<RunColsType, IntegratedMoveStructure, true, ExponentialSearch, MoveCols, MoveStructure, TableType> {
+    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, true, ExponentialSearch, MoveCols, MoveStructure, TableType>;
 public:
     using Base::Base;
     using Base::operator=;
+    using Position = typename Base::Position;
 
-    void InvPhi() {
-        Base::next();
+    Position InvPhi(Position pos) {
+        return Base::next(pos);
     }
 
-    void InvPhi(ulint steps) {
-        Base::next(steps);
+    Position InvPhi(Position pos, ulint steps) {
+        return Base::next(pos, steps);
     }
 
-    ulint SA() {
-        return Base::get_position().idx;
+    ulint SA(Position pos) {
+        return pos.idx;
     }
 };
 
 // Always use absolute positions for InvPhi
-class MoveInvPhi : public MovePermImpl<true, MoveCols, MoveStructure, MoveVector> {
-    using Base = MovePermImpl<true, MoveCols, MoveStructure, MoveVector>;
+class MoveInvPhi : public MovePermImpl<true, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector> {
+    using Base = MovePermImpl<true, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
+    using Position = typename Base::Position;
 
-    void InvPhi() {
-        Base::next();
+    Position InvPhi(Position pos) {
+        return Base::next(pos);
     }
 
-    void InvPhi(ulint steps) {
-        Base::next(steps);
+    Position InvPhi(Position pos, ulint steps) {
+        return Base::next(pos, steps);
     }
 
-    ulint SA() {
-        return Base::get_position().idx;
+    ulint SA(Position pos) {
+        return pos.idx;
     }
 };
 

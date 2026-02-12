@@ -45,7 +45,7 @@ public:
         
         // Split the lengths and interval permutations if needed, using length/balancing splitting
         SplitResult split_result;
-        apply_splitting(final_lengths, final_interval_permutation, max_length, split_params, split_result);
+        apply_splitting(final_lengths, final_interval_permutation, domain,max_length, split_params, split_result);
         
         // Initialize the structure with the final lengths and interval permutations
         PackedVector<Columns> structure(final_lengths->size(), get_move_widths(domain, final_lengths->size(), max_length));
@@ -149,6 +149,19 @@ public:
         return fast_forward(pos);
     }
 
+    Position move_exponential(Position pos) const {
+        if constexpr (ColsTraits::RELATIVE) {
+            return move(pos);
+        } else {
+            assert(pos.interval < table.size());
+            assert(pos.idx < get_start(pos.interval + 1));
+            ulint next_interval = get_pointer(pos);
+            ulint next_offset = get_offset(pos) + pos.offset;
+            pos = {next_interval, next_offset, get_start(next_interval) + next_offset};
+            return fast_forward_exponential(pos);
+        }
+    }
+
     // === Utility Methods ===
     std::string get_file_extension() const
     {
@@ -193,21 +206,21 @@ protected:
     ulint r;
 
     // === Structure Building Helpers ===
-    static void apply_splitting(const std::vector<ulint>*& final_lengths, const std::vector<ulint>*& final_interval_permutation, ulint& max_length, const SplitParams& split_params, SplitResult& split_result) {
+    static void apply_splitting(const std::vector<ulint>*& final_lengths, const std::vector<ulint>*& final_interval_permutation, const ulint domain, ulint& max_length, const SplitParams& split_params, SplitResult& split_result) {
         auto set_by_split_result = [&](SplitResult& split_result) {
             final_lengths = &split_result.lengths;
             final_interval_permutation = &split_result.interval_permutations;
             max_length = split_result.max_length;
         };
-        if (split_params.max_allowed_length) {
-            split_by_max_allowed_length(*final_lengths, *final_interval_permutation, *split_params.max_allowed_length, split_result);
+        if (split_params.length_capping_factor) {
+            split_by_length_capping(*final_lengths, *final_interval_permutation, domain, *split_params.length_capping_factor, split_result);
             set_by_split_result(split_result);
         }
         if (split_params.balancing_factor) {
-            split_by_balancing_factor(*final_lengths, *final_interval_permutation, *split_params.balancing_factor, split_result);
+            split_by_balancing(*final_lengths, *final_interval_permutation, domain, *split_params.balancing_factor, split_result);
             set_by_split_result(split_result);
         }
-        if (!split_params.max_allowed_length && !split_params.balancing_factor) {
+        if (!split_params.length_capping_factor && !split_params.balancing_factor) {
             max_length = *std::max_element(final_lengths->begin(), final_lengths->end());
         }
     }
@@ -283,6 +296,36 @@ protected:
             }
         }
         return pos;
+    }
+
+    inline Position fast_forward_exponential(Position pos) const {
+        if constexpr (ColsTraits::RELATIVE) {
+            return fast_forward(pos);
+        } else {
+            ulint curr_start = pos.idx - pos.offset;
+            if (pos.idx < get_start(pos.interval + 1)) return pos;
+        
+            // Exponential search to find upper bound
+            ulint hi = 1;
+            while (pos.interval + hi < table.size() && pos.idx >= get_start(pos.interval + hi)) {
+                hi *= 2;
+            }
+            if (pos.interval + hi > table.size()) hi = table.size() - pos.interval;
+        
+            // Binary search in [hi/2, hi] for largest k with pos.idx >= get_start(pos.interval + k)
+            ulint lo = hi / 2;
+            while (lo + 1 < hi) {
+                ulint mid = lo + (hi - lo) / 2;
+                if (pos.idx >= get_start(pos.interval + mid)) lo = mid;
+                else hi = mid;
+            }
+            ulint k = lo;
+        
+            ulint new_start = get_start(pos.interval + k);
+            pos.offset -= (new_start - curr_start);
+            pos.interval += k;
+            return pos;
+        }
     }
 };
 

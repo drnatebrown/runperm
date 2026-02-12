@@ -13,8 +13,8 @@ template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          typename AlphabetType = Nucleotide>
-class RunPermLF : public RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, MoveVector> {
-    using Base = RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, MoveVector>;
+class RunPermLF : public RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
+    using Base = RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
@@ -36,8 +36,8 @@ using RunPermLFIntegratedAbsolute = RunPermLF<RunColsType, true, true, AlphabetT
 // === MoveLF ===
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          typename AlphabetType = Nucleotide>
-class MoveLF : public MoveLFImpl<StoreAbsolutePositions, AlphabetType, MoveVector> {
-    using Base = MoveLFImpl<StoreAbsolutePositions, AlphabetType, MoveVector>;
+class MoveLF : public MoveLFImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
+    using Base = MoveLFImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
@@ -50,8 +50,8 @@ template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          typename AlphabetType = Nucleotide>
-class RunPermFL : public RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, MoveVector> {
-    using Base = RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, MoveVector>;
+class RunPermFL : public RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
+    using Base = RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
@@ -59,7 +59,7 @@ public:
 
 // Takes std::vector<uchar> bwt_and std::vector<ulint> as bwt_heads and bwt_run_lengths as input in place of lengths and interval permutations
 // Otherwise, same as RunPerm
-// Also implements FL, FL(steps), get_character(), get_character(row)
+// Also implements FL(pos), FL(pos, steps), get_character(pos), get_character(interval)
 
 template<typename RunColsType, typename AlphabetType = Nucleotide>
 using RunPermFLSeperated = RunPermFL<RunColsType, false, false, AlphabetType>; // Default
@@ -73,8 +73,8 @@ using RunPermFLIntegratedAbsolute = RunPermFL<RunColsType, true, true, AlphabetT
 // === MoveFL ===
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          typename AlphabetType = Nucleotide>
-class MoveFL : public MoveFLImpl<StoreAbsolutePositions, AlphabetType, MoveVector> {
-    using Base = MoveFLImpl<StoreAbsolutePositions, AlphabetType, MoveVector>;
+class MoveFL : public MoveFLImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
+    using Base = MoveFLImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
@@ -86,7 +86,7 @@ public:
 // Need to call rlbwt_to_phi(rlbwt_heads, rlbwt_run_lengths) to get lengths and interval permutations
 // Otherwise, same as RunPerm
 // RunPhiPerm is just a named specilization which sets StoreAbsolutePositions to true
-// Also implements Phi, Phi(steps), SA()
+// Also implements Phi(pos), Phi(pos, steps), SA(pos)
 
 // === MovePhi ===
 // See above
@@ -95,7 +95,7 @@ public:
 // Need to call rlbwt_to_invphi(rlbwt_heads, rlbwt_run_lengths) to get lengths and interval permutations
 // Otherwise, same as RunPerm -->
 // RunInvPhiPerm is just a named specilization which sets StoreAbsolutePositions to true
-// Also implements InvPhi, InvPhi(steps), SA()
+// Also implements InvPhi(pos), InvPhi(pos, steps), SA(pos)
 
 // === MoveInvPhi ===
 // See above

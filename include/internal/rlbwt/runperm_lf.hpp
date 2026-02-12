@@ -8,15 +8,17 @@
 template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
+         bool ExponentialSearch = DEFAULT_EXPONENTIAL_SEARCH,
          typename AlphabetType = Nucleotide,
          template<typename> class TableType = MoveVector>
-class RunPermLFImpl : public RunPermRLBWT<RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, TableType>,
-                         RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, TableType> {
-    using Base = RunPermRLBWT<RunPermLFImpl, RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType, TableType>;
+class RunPermLFImpl : public RunPermRLBWT<RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>,
+                         RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType> {
+    using Base = RunPermRLBWT<RunPermLFImpl, RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>;
     using BaseColumns = typename Base::BaseColumns;
 public:
     using Base::Base;
     using Base::operator=;
+    using Position = typename Base::Position;
 
     void find_permutation_and_alphabet(
         const std::vector<uchar>& rlbwt_heads,
@@ -33,12 +35,12 @@ public:
         base_structure = Base::MoveStructureBase::find_structure(mapped_rlbwt_heads, rlbwt_run_lengths, interval_permutation, num_chars, alphabet.size());
     }
 
-    void LF() {
-        Base::next();
+    Position LF(Position pos) {
+        return Base::next(pos);
     }
 
-    void LF(ulint steps) {
-        Base::next(steps);
+    Position LF(Position pos, ulint steps) {
+        return Base::next(pos, steps);
     }
 
 private:
@@ -79,22 +81,24 @@ private:
 };
 
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
+         bool ExponentialSearch = DEFAULT_EXPONENTIAL_SEARCH,
          typename AlphabetType = Nucleotide,
          template<typename> class TableType = MoveVector>
-class MoveLFImpl : public MovePermRLBWT<RunPermLFImpl<EmptyRunCols, false, StoreAbsolutePositions, AlphabetType, TableType>, 
-                      StoreAbsolutePositions, AlphabetType, TableType> {
-    using Base = MovePermRLBWT<RunPermLFImpl<EmptyRunCols, false, StoreAbsolutePositions, AlphabetType, TableType>,
-                 StoreAbsolutePositions, AlphabetType, TableType>;
+class MoveLFImpl : public MovePermRLBWT<RunPermLFImpl<EmptyRunCols, false, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>, 
+                      StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType> {
+    using Base = MovePermRLBWT<RunPermLFImpl<EmptyRunCols, false, StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>,
+                 StoreAbsolutePositions, ExponentialSearch, AlphabetType, TableType>;
 public:
     using Base::Base;
     using Base::operator=;
+    using Position = typename Base::Position;
 
-    void LF() {
-        Base::next();
+    Position LF(Position pos) {
+        return Base::next(pos);
     }
 
-    void LF(ulint steps) {
-        Base::next(steps);
+    Position LF(Position pos, ulint steps) {
+        return Base::next(pos, steps);
     }
 };
 

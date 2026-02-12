@@ -14,8 +14,8 @@
 template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS>
-class RunPerm : public RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, MoveCols, MoveStructure, MoveVector> {
-    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, MoveCols, MoveStructure, MoveVector>;
+class RunPerm : public RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector> {
+    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector>;
 public:
     using Base::RunData;
     using Base::MoveStructurePerm;
@@ -66,45 +66,31 @@ using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true>;
 *    RunPerm(MoveStructure &&ms, std::vector<RunData> &run_data, const ulint domain);
 *
 *    // === Navigation methods ===
-*   // get_run_cols_data -> function to get run data for each interval, (orig_interval, orig_interval_length, new_offset_from_orig_start, new_length) -> run data
-*    // structure -> pre-computed move structure stored in PackedVector
-*    // ms -> pre-computed move structure stored in MoveStructure
-*    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, std::function<RunData(ulint, ulint, ulint, ulint)> get_run_cols_data);
-*    RunPerm(PackedVector<MoveCols> &&structure, const ulint domain);
-*    RunPerm(PackedVector<MoveCols> &&structure, std::vector<RunData> &run_data, const ulint domain);
-*    RunPerm(MoveStructure &&ms, const ulint domain);
-*    RunPerm(MoveStructure &&ms, std::vector<RunData> &run_data, const ulint domain);
-*
-*    // === Navigation methods ===
-*    void next(); // Apply permutation
-*    void next(ulint steps); // Apply permutation multiple times
-*    bool up(); // Move up one interval
-*    bool down(); // Move down one interval
-*    void first(); // Move to first interval
-*    void last(); // Move to last interval
-*    
-*    // === Position methods ===
-*    Position get_position() const; // Get current position
-*    void set_position(Position pos); // Set current position, (interval, offset) for relative positions, (interval, offset, idx) for absolute positions
+*    Position next(Position pos); // Apply permutation
+*    void next(Position pos, ulint steps); // Apply permutation multiple times
+*    Position up(Position pos); // Move up one interval, circularly if at top
+*    Position down(Position pos); // Move down one interval, circularly if at bottom
+*    Position first(); // Move to first interval
+*    Position last(); // Move to last interval
 *
 *    // === Query methods ===
-*    ulint size() const; // Get size of permutation
+*    ulint domain() const; // Get size of permutation
 *    ulint move_runs() const; // Get number of runs/intervals in move structure
 *    ulint permutation_runs() const; // Get number of runs/intervals in original permutation
 *
 *    // === Run data access ===
 *    template<RunColsType Col>
-*    ulint get() const; // Get value of run data column
+*    ulint get(Position pos) const; // Get value of run data column
 *    template<RunColsType Col>
 *    ulint get(size_t i) const; // Get value of run data column for interval i
-*    ulint get_length() const; // Get length of current interval
+*    ulint get_length(Position pos) const; // Get length of interval containing position
 *    ulint get_length(size_t i) const; // Get length of interval i
 *
 *    // === Search methods ===
 *    template<RunColsType Col>
-*    std::optional<Position> pred(ulint val); // Get position of largest idx before or at position run with matching run data value
+*    std::optional<Position> pred(Position pos, ulint val); // Get position of largest idx before or at position run with matching run data value
 *    template<RunColsType Col>
-*    std::optional<Position> succ(ulint val); // Get position of smallest idx after or at position run with matching run data value
+*    std::optional<Position> succ(Position pos, ulint val); // Get position of smallest idx after or at position run with matching run data value
 *
 *    // === Serialization ===
 *    size_t serialize(std::ostream& os); // Serialize data structure to ostream
@@ -119,8 +105,8 @@ using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true>;
 // Actual implementation, see documentation below
 // Advanced users can use the full implementation in include/internal/runperm/runperm.hpp
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS>
-class MovePerm : public MovePermImpl<StoreAbsolutePositions, MoveCols, MoveStructure, MoveVector> {
-    using Base = MovePermImpl<StoreAbsolutePositions, MoveCols, MoveStructure, MoveVector>;
+class MovePerm : public MovePermImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector> {
+    using Base = MovePermImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector>;
 public:
     using Base::Base;
     using Base::operator=;
@@ -132,7 +118,7 @@ using MovePermRelative = MovePerm<false>; // Same as MovePerm<>, the default
 
 /* === Simplified interface for basic users, see full MovePermImpl in include/internal/runperm/runperm.hpp for more template parameters ===
 /* NOTE: All methods here share the documentation above for RunPerm
-* template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS>
+* template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS> // Whether to store absolute positions instead of interval/offset to support idx lookups, default is false
 * class MovePerm {
 *
 * public:
@@ -144,20 +130,20 @@ using MovePermRelative = MovePerm<false>; // Same as MovePerm<>, the default
 *    MovePermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, SplitParams split_params = SplitParams()); // See RunPerm
 *    
 *    // === Navigation methods ===
-*    void next(); // Apply permutation
-*    void next(ulint steps); // Apply permutation multiple times
-*    bool up(); // Move up one interval
-*    bool down(); // Move down one interval
-*    void first(); // Move to first interval
-*    void last(); // Move to last interval
+*    Position next(Position pos); // Apply permutation
+*    Position next(Position pos, ulint steps); // Apply permutation multiple times
+*    Position up(Position pos); // Move up one interval, circularly if at top
+*    Position down(Position pos); // Move down one interval, circularly if at bottom
+*    Position first(); // Move to first interval
+*    Position last(); // Move to last interval
 *
 *    // === Query methods ===
-*    ulint size() const; // Get size of permutation
+*    ulint domain() const; // Get size of permutation
 *    ulint move_runs() const; // Get number of runs/intervals in move structure
 *    ulint permutation_runs() const; // Get number of runs/intervals in original permutation
 *
 *    // === Run data access ===
-*    ulint get_length() const; // Get length of current interval
+*    ulint get_length(Position pos) const; // Get length of interval containing position
 *    ulint get_length(size_t i) const; // Get length of interval i
 *
 *    // === Serialization ===
