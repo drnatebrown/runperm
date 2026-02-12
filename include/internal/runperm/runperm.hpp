@@ -341,7 +341,7 @@ protected:
     void fill_seperated_data(const std::vector<RunData>& run_data, const std::array<uchar, NumRunCols>& run_cols_widths) {
         this->run_cols_data = PackedVector<RunCols>(run_data.size(), run_cols_widths);
         for (size_t i = 0; i < run_data.size(); ++i) {
-            this->run_cols_data.template set_row(i, run_data[i]);
+            this->run_cols_data.set_row(i, run_data[i]);
         }
     }
 
@@ -354,7 +354,7 @@ protected:
 
             PackedVector<Columns> final_structure(base_structure.size(), widths);
             for (size_t i = 0; i < final_structure.size(); ++i) {
-                auto base_row = base_structure.template get_row(i);
+                auto base_row = base_structure.get_row(i);
                 auto run_row = run_data[i];
                 auto row = get_row(base_row, run_row);
                 final_structure.set_row(i, row);
