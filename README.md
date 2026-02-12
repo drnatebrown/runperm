@@ -1,32 +1,36 @@
 # RunPerm
 
-Efficient, header-only data structures for representing run-length encoded permutations, featuring move structures and specialized RLBWT implementations for high-performance indexing.
+Flexible plug-and-play header library! Implements data structures for representing run-length encoded permutations, featuring move structures and specialized RLBWT implementations for high-performance indexing. Can be used as a foundation for further applications, providing storage and retrieval of user fields alongside the permutation intervals.
+
+Described in greater detail at [https://arxiv.org/abs/2602.11029](https://arxiv.org/abs/2602.11029).
+
+Alpha Version 0.1.0
 
 ## Overview
 
 RunPerm provides compact representations of run-length encoded permutations using move structures, with specialized implementations for various indexing applications. The library offers three main interfaces:
 
-- **RunPerm**: Core run-length permutation data structure with integrated move structures
-- **MovePerm**: Simplified permutation representation using move structures
-- **RLBWT**: Run-length Burrows-Wheeler Transform implementations (LF/FL and Phi/InvPhi) built on RunPerm and MovePerm
+- **RunPerm**: Core run-length permutation data structure allowing user defined fields stored alongside permutation intervals
+- **MovePerm**: Simplified permutation representation using move structures, no user data
+- **RLBWT**: Specialized run-length Burrows-Wheeler Transform permutations (LF/FL and Phi/InvPhi) built on RunPerm and MovePerm
 
 ## Features
 
-- **Compact Representation**: Efficient storage of run-length encoded permutations
-- **Move Structures**: Advanced data structures for fast navigation and queries
+- **Compact Representation**: Bitpacked for minimum fixed width per stored value
+- **Length capping**: Optimization scheme for faster and smaller move structures
+- **Move Structures**: Advanced data structures for fast and cache efficient navigation of permutations
 - **RLBWT Specializations**:
   - LF/FL navigation with character access
-  - Phi/InvPhi navigation with SA sampling
+  - Phi/InvPhi navigation with SA retrieval
   - Helpers to derive Phi/InvPhi structures from run-length BWT
-- **Flexible Configuration**: Multiple template parameters for different use cases
-- **High Performance**: Optimized for indexing and pattern matching applications
-- **Serialization Support**: Built-in serialization/deserialization capabilities
+- **Flexible Configuration**: Multiple template parameters for various move structure representations
+- **Advanced Storage** Allows efficient storage and retrieval of additional information alongside permutations
 
 ## Quick Start
 
 ### Installation
 
-This library is header-only. There is no library artifact to build or install. Just add `include/` to your compiler's include paths and include `runperm.hpp`, `move.hpp`, or `rlbwt.hpp` as needed.
+This library is header-only. Just add `include/` to your compiler's include paths and include `runperm.hpp`, `move.hpp`, or `rlbwt.hpp` as needed.
 
 The provided `makefile` only builds example/test executables:
 - `move_test`
@@ -36,49 +40,61 @@ The provided `makefile` only builds example/test executables:
 ### Basic Usage
 
 #### RunPerm
+`RunPerm` is the generic implementation allowing storage of user defined fields alongside a runny permutation, included with `runperm.hpp`.
+
+Given the runny permutation example:
+
+<img width="598" height="572" alt="Image" src="https://github.com/user-attachments/assets/18933a68-b858-40eb-bfb3-f5fd758557d6" />
+
+We pass the lengths of contigiously permuted intervals and the permutation of their first values:
 
 ```cpp
 #include "runperm.hpp"
 
 // Create a run-length permutation
-std::vector<ulint> lengths = {5, 3, 7};           // Length of each run
-std::vector<ulint> permutation = {0, 2, 1};       // Permutation of runs
-ulint domain = 15;                                // Total domain size
+std::vector<ulint> lengths = {2, 3, 1, 2, 2, 1, 1, 1, 3};           // Length of runs
+std::vector<ulint> permutation = {1, 9, 3, 12, 4, 14, 0, 15, 6};       // Permutation of runs
+ulint domain = 16;                                // Total domain size
 
-// Your run data (example)
-struct MyRunCols {
-    static constexpr size_t COUNT = 3;
-    enum { CHAR_COUNT, FREQ, OFFSET };
+// Some example data to store alongside these runs.
+// Must always include COUNT as the last entry to signal number of fields.
+enum class RunData {
+  VAL1,
+  VAL2,
+  COUNT
 };
-using RunData = std::array<ulint, MyRunCols::COUNT>;
-std::vector<RunData> run_data(/* lengths.size() */);
+using RunDataTuple = std::array<ulint, RunData::COUNT>;
+std::vector<RunDataTuple> run_data(lengths.size()); // Some data with tuples per run
 
 // Basic construction
-RunPerm<MyRunCols> rp(lengths, permutation, domain, run_data);
+RunPerm<RunData> rp(lengths, permutation, domain, run_data);
 
 ```
 
 #### MovePerm
+`MovePerm` functions similarly to `RunPerm` but without user defined fields, also included in `runperm.hpp`
 
 ```cpp
 #include "runperm.hpp"
 
 // Create from permutation vector
 std::vector<ulint> permutation = {2, 0, 1, 3};
-MovePermRelative mp(permutation);
+MovePermRelative mp(permutation); // Stores interval/offset pairs as positions
 
 // Or from run structure
-MovePermAbsolute mp_abs(lengths, permutation, domain);
+MovePermAbsolute mp_abs(lengths, permutation, domain); // Also stores the absolute position in the permutation
 ```
 
 #### RLBWT: LF/FL
+By including `rlbwt.hpp` users can use specialized methods designed for permutations based on the RLBWT such as LF/FL for pattern matching and text extraction.
+
 ```cpp
 #include "rlbwt.hpp"
 
 // BWT = TTTTTCCCGGGAAAT$ATTTTAAAAAA
-// RLBWT as run heads (characters) and run lengths, with 1 as terminal
-std::vector<uchar> bwt_heads = {'T','C','G','A','T', 1 ,'A','T','A'};
-std::vector<ulint> bwt_run_lengths = {5,3,3,3,1,1,1,4,6};
+// RLBWT as run heads (characters) and run lengths, with 0 as terminator
+std::vector<uchar> bwt_heads =       {'T','C','G','A','T', 0 ,'A','T','A'};
+std::vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
 // LF using Move-only interface
 MoveLF<> move_lf(bwt_heads, bwt_run_lengths);
@@ -95,6 +111,7 @@ MoveFL<> move_fl(bwt_heads, bwt_run_lengths);
 ```
 
 #### RLBWT: Phi/InvPhi
+By including `rlbwt.hpp`, we can also build the permutations from an RLBWT for $\phi$ and $\phi^{-1}$ needed for locate queries.
 
 ```cpp
 #include "rlbwt.hpp"
@@ -126,63 +143,16 @@ RunPermInvPhi<PhiCols> invphi(invphi_lengths, invphi_interval_perm, domain_inv, 
 The main class for run-length encoded permutations with move structure integration.
 
 - **Template Parameters**:
-  - `RunColsType`: Type defining run data columns
+  - `RunColsType`: Type defining user run data columns
   - `IntegratedMoveStructure`: integrate run data with move structure (default: false)
   - `StoreAbsolutePositions`: store absolute positions for index lookups (default: false)
 - **Key Methods**:
-  - `next()`, `next(ulint steps)`
-  - `up()`, `down()`, `first()`, `last()`
-  - `get_position()`, `set_position(pos)`
-  - `get<Col>()`, `get<Col>(i)`, `get_length()`, `get_length(i)`
-  - `pred<Col>(val)`, `succ<Col>(val)`
-  - `size()`, `move_runs()`, `permutation_runs()`
+  - `next(pos)`, `next(pos, ulint steps)`
+  - `up(pos)`, `down(pos)`, `first()`, `last()`
+  - `get<Col>(pos)`, `get<Col>(pos, i)`, `get_length(pos)`, `get_length(i)`
+  - `pred<Col>(pos, val)`, `succ<Col>(pos, val)`
+  - `domain()`, `move_runs()`, `permutation_runs()`
   - `serialize(os)`, `load(is)`
-
-### MovePerm
-
-Simplified permutation representation using move structures.
-
-- **Template Parameters**:
-  - `StoreAbsolutePositions` (default: false)
-- **Key Methods**:
-  - `next()`, `up()`, `down()`, `first()`, `last()`
-  - `size()`, `move_runs()`, `permutation_runs()`
-  - `get_length()`, `get_length(i)`
-  - `serialize(os)`, `load(is)`
-
-### RLBWT: LF/FL
-
-- **Types**:
-  - `RunPermLF<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType>`
-  - `MoveLF<StoreAbsolutePositions, AlphabetType>`
-  - `RunPermFL<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, AlphabetType>`
-  - `MoveFL<StoreAbsolutePositions, AlphabetType>`
-  - Convenience aliases: `RunPermLFSeperated`, `RunPermLFIntegrated`, `RunPermLFSeperatedAbsolute`, `RunPermLFIntegratedAbsolute` and similarly for FL.
-- **Construction**:
-  - From `std::vector<uchar> bwt_heads` and `std::vector<ulint> bwt_run_lengths`
-- **Key Methods**:
-  - `LF()`, `LF(ulint steps)`; `FL()`, `FL(ulint steps)`
-  - `get_character()` (at current position)
-  - `get_character(run_index)` (character for a given run)
-  - All standard RunPerm/MovePerm navigation and queries
-- **Alphabet**:
-  - Default `AlphabetType = Nucleotide`. Internally maps inputs and handles special `TERMINATOR` and `SEPARATOR`.
-
-### RLBWT: Phi/InvPhi and Helpers
-
-- **Helpers**:
-  - `rlbwt_to_phi(bwt_heads, bwt_run_lengths)` -> `(lengths, interval_permutation, domain)`
-  - `rlbwt_to_phi(bwt_heads, bwt_run_lengths, lf)` overload to reuse an LF instance
-  - `rlbwt_to_invphi(bwt_heads, bwt_run_lengths)` and LF overload similarly
-- **Types**:
-  - `RunPermPhi<RunColsType, IntegratedMoveStructure, TableType>`
-  - `MovePhi` (absolute positions)
-  - `RunPermInvPhi<RunColsType, IntegratedMoveStructure, TableType>`
-  - `MoveInvPhi` (absolute positions)
-- **Key Methods**:
-  - `Phi()`, `Phi(ulint steps)`, `SA()` for Phi
-  - `InvPhi()`, `InvPhi(ulint steps)`, `SA()` for InvPhi
-  - Always uses absolute positions to expose `idx` via `SA()`
 
 ### Dependencies
 
@@ -199,15 +169,10 @@ Simplified permutation representation using move structures.
 RunPerm<MyRunCols> rp(lengths, permutation, domain, run_data);
 
 // Navigate
-rp.first();
-rp.next();
-rp.next(5);
-rp.down();
-
-// Query
-auto pos = rp.get_position();
-ulint size = rp.size();
-ulint runs = rp.move_runs();
+auto pos = rp.first();
+pos = rp.next(pos);
+pos = rp.next(pos, 5);
+pos = rp.down(pos);
 ```
 
 ### RLBWT LF Text Recovery
@@ -216,11 +181,11 @@ ulint runs = rp.move_runs();
 #include "rlbwt.hpp"
 
 MoveLF<> lf(bwt_heads, bwt_run_lengths);
-lf.first();
+pos = lf.first();
 std::string recovered(text.size(), '\0');
-for (size_t i = 1; i < lf.size(); ++i) {
-    recovered[text.size() - i] = (char)lf.get_character();
-    lf.LF();
+for (size_t i = 1; i < lf.domain(); ++i) {
+    recovered[text.size() - i] = (char)lf.get_character(pos);
+    pos = lf.LF(pos);
 }
 ```
 
@@ -231,18 +196,16 @@ for (size_t i = 1; i < lf.size(); ++i) {
 
 auto [phi_lens, phi_perm, n] = rlbwt_to_phi(bwt_heads, bwt_run_lengths);
 MovePhi phi(phi_lens, phi_perm, n);
-phi.last();
-phi.Phi();
+auto pos = phi.last();
+pos = phi.Phi(pos);
 std::vector<ulint> sa(n);
 for (size_t i = 0; i < n; ++i) {
     sa[n - i - 1] = phi.SA();
-    phi.Phi();
+    pos = pos.Phi(pos);
 }
 ```
 
 ## Performance Considerations
 
-- **Integrated vs Separated**: Integrated move structures offer better cache locality but may use more memory
-- **Absolute vs Relative Positions**: Absolute positions enable faster index lookups but increase memory usage
-- **Run Data Size**: Larger run data structures may impact cache performance
-- **RLBWT Mapping**: Alphabet mapping and special symbols handling can affect constant factors
+- **Integrated vs Separated**: Integrating user data alongside the move structure offer better cache locality but may cause slower move queries
+- **Absolute vs Relative Positions**: Absolute positions enable full permutation positional information but increase memory usage
