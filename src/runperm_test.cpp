@@ -12,16 +12,19 @@
     #include <vector>
     #include <chrono>
     #include <functional>
+    #include <random>
     
     using namespace std;
     using namespace std::chrono;
+
+    static std::mt19937 g_rng(std::random_device{}());
     
     std::vector<ulint> random_permutation(size_t n) {
         std::vector<ulint> permutation(n);
         for (size_t i = 0; i < n; ++i) {
             permutation[i] = i;
         }
-        std::random_shuffle(permutation.begin(), permutation.end());
+        std::shuffle(permutation.begin(), permutation.end(), g_rng);
         return permutation;
     }
     
@@ -37,7 +40,7 @@
             for (size_t i = 1; i < n; ++i) {
                 possible_breaks.push_back(i);
             }
-            std::random_shuffle(possible_breaks.begin(), possible_breaks.end());
+            std::shuffle(possible_breaks.begin(), possible_breaks.end(), g_rng);
             
             for (size_t i = 0; i < r - 1; ++i) {
                 break_points.push_back(possible_breaks[i]);
@@ -59,7 +62,7 @@
         for (size_t i = 0; i < r; ++i) {
             interval_order[i] = i;
         }
-        std::random_shuffle(interval_order.begin(), interval_order.end());
+        std::shuffle(interval_order.begin(), interval_order.end(), g_rng);
         
         // Step 4: Fill intervals with consecutive numbers
         std::vector<ulint> result(n);

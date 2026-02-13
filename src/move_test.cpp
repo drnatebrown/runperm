@@ -12,6 +12,8 @@
 #include <vector>
 #include <chrono>
 #include <functional>
+#include <algorithm>
+#include <random>
 
 using namespace std;
 using namespace std::chrono;
@@ -21,7 +23,9 @@ std::vector<ulint> random_permutation(size_t n) {
     for (size_t i = 0; i < n; ++i) {
         permutation[i] = i;
     }
-    std::random_shuffle(permutation.begin(), permutation.end());
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(permutation.begin(), permutation.end(), g);
     return permutation;
 }
 
@@ -29,6 +33,9 @@ std::vector<ulint> random_runny_permutation(size_t n, size_t r) {
     if (r == 0 || r > n) {
         return random_permutation(n);
     }
+
+    std::random_device rd;
+    std::mt19937 g(rd());
     
     // Step 1: Choose r-1 random break points in range [1, n-1] to create r intervals
     std::vector<size_t> break_points;
@@ -37,7 +44,7 @@ std::vector<ulint> random_runny_permutation(size_t n, size_t r) {
         for (size_t i = 1; i < n; ++i) {
             possible_breaks.push_back(i);
         }
-        std::random_shuffle(possible_breaks.begin(), possible_breaks.end());
+        std::shuffle(possible_breaks.begin(), possible_breaks.end(), g);
         
         for (size_t i = 0; i < r - 1; ++i) {
             break_points.push_back(possible_breaks[i]);
@@ -59,7 +66,7 @@ std::vector<ulint> random_runny_permutation(size_t n, size_t r) {
     for (size_t i = 0; i < r; ++i) {
         interval_order[i] = i;
     }
-    std::random_shuffle(interval_order.begin(), interval_order.end());
+    std::shuffle(interval_order.begin(), interval_order.end(), g);
     
     // Step 4: Fill intervals with consecutive numbers
     std::vector<ulint> result(n);
