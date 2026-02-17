@@ -18,10 +18,10 @@ public:
 
         alphabet_map.resize(MAX_ALPHABET_SIZE, UNMAPPED);
         uchar map_value = 0;
-        for (uchar c = 0; c < MAX_ALPHABET_SIZE; c++) {
-            if (char_counts[c] > 0) {
-                alphabet_map[c] = map_value;
-                reverse_alphabet_map.push_back(c);
+        for (size_t i = 0; i < MAX_ALPHABET_SIZE; i++) {
+            if (char_counts[i] > 0) {
+                alphabet_map[i] = map_value;
+                reverse_alphabet_map.push_back(static_cast<uchar>(i));
                 map_value++;
             }
         }
