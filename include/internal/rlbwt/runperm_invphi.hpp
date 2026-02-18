@@ -48,7 +48,7 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_invphi(const
     return {invphi_lengths, invphi_interval_permutations, lf.domain()};
 }
 
-std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_invphi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths) {
+inline std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_invphi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths) {
     // Need a move structure with LF to find SA samples
     MoveLFImpl<> move_lf(bwt_heads, bwt_run_lengths);
     return rlbwt_to_invphi(bwt_heads, bwt_run_lengths, move_lf);
