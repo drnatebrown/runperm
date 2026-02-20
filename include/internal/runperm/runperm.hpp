@@ -262,7 +262,7 @@ protected:
 
     template<BaseColumns Col>
     ulint get_base_column(size_t row) const {
-        return move_structure.template get<Col>(row);
+        return move_structure.template get<to_cols(Col)>(row);
     }
     template<BaseColumns Col>
     ulint get_base_column(Position position) const {
