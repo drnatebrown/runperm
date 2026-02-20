@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <utility>
 #include <vector>
+#include <array>
 
 // LEAVE UNCHANGED
 #define MAX_ALPHABET_SIZE 256
@@ -39,6 +40,14 @@ constexpr uchar bit_width(ulint value) {
 // ENUM REPRESENTS COLUMNS, USE ENUM HELPERS TO ENFORCE STRUCTURE
 template<class E>
 constexpr size_t to_index(E e) noexcept { return static_cast<size_t>(e); }
+
+template<class E>
+constexpr size_t enum_count() noexcept {
+    return static_cast<size_t>(E::COUNT);
+}
+
+template<class E, typename T = ulint>
+using DataTuple = std::array<T, enum_count<E>()>;
 
 #define MOVE_CLASS_TRAITS(ColumnsParam) \
     using Columns = ColumnsParam; \

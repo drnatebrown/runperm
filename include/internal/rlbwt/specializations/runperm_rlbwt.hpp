@@ -24,23 +24,14 @@ protected:
 public:
     // Sets Columns, ColsTraits, and NumCols
     MOVE_CLASS_TRAITS(RunColsType)
+    using RunCols = typename Base::RunCols;
     using RunData = typename Base::RunData;
     using Position = typename Base::Position;
 
     RunPermRLBWT() = default;
 
-    RunPermRLBWT(const std::vector<uchar> &rlbwt_heads, const std::vector<ulint> &rlbwt_run_lengths, const std::vector<RunData> &run_data) {
-        assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
-        assert(run_data.size() == rlbwt_heads.size());
-        Base::orig_intervals = rlbwt_heads.size();
-
-        alphabet = AlphabetType();
-        ulint num_chars;
-        PackedVector<BaseColumns> base_structure;
-        find_permutation_and_alphabet(rlbwt_heads, rlbwt_run_lengths, alphabet, num_chars, base_structure);
-
-        Base::populate_structure(std::move(base_structure), run_data, num_chars);
-    }
+    RunPermRLBWT(const std::vector<uchar> &rlbwt_heads, const std::vector<ulint> &rlbwt_run_lengths, const std::vector<RunData> &run_data)
+    : RunPermRLBWT(rlbwt_heads, rlbwt_run_lengths, DEFAULT_SPLITTING, run_data) {}
 
     RunPermRLBWT(const std::vector<uchar> &rlbwt_heads, const std::vector<ulint> &rlbwt_run_lengths, const SplitParams &split_params, const std::vector<RunData> &run_data)
         : RunPermRLBWT(rlbwt_heads, rlbwt_run_lengths, split_params,
@@ -130,7 +121,7 @@ public:
     
     MovePermRLBWT() = default;
 
-    MovePermRLBWT(const std::vector<uchar> &bwt, SplitParams split_params = SplitParams()) {
+    MovePermRLBWT(const std::vector<uchar> &bwt, SplitParams split_params = DEFAULT_SPLITTING) {
         auto [rlbwt_heads, rlbwt_run_lengths] = bwt_to_rlbwt(bwt);
         std::vector<std::array<ulint, 0>> empty_run_data(rlbwt_heads.size());
         run_perm_rlbwt = RunPermRLBWTType(rlbwt_heads, rlbwt_run_lengths, split_params, empty_run_data);
@@ -139,7 +130,7 @@ public:
     // Constructor from RLBWT data
     MovePermRLBWT(const std::vector<uchar> &rlbwt_heads, 
                   const std::vector<ulint> &rlbwt_run_lengths, 
-                  SplitParams split_params = SplitParams()) {
+                  SplitParams split_params = DEFAULT_SPLITTING) {
         std::vector<std::array<ulint, 0>> empty_run_data(rlbwt_heads.size());
         run_perm_rlbwt = RunPermRLBWTType(rlbwt_heads, rlbwt_run_lengths, split_params, empty_run_data);
     }
@@ -150,6 +141,8 @@ public:
     ulint get_length(Position pos) const { return run_perm_rlbwt.get_length(pos); }
     Position next(Position pos) { return run_perm_rlbwt.next(pos); }
     Position next(Position pos, ulint steps) { return run_perm_rlbwt.next(pos, steps); }
+    Position up(Position pos) { return run_perm_rlbwt.up(pos); }
+    Position down(Position pos) { return run_perm_rlbwt.down(pos); }
     
     ulint domain() const { return run_perm_rlbwt.domain(); }
     ulint move_runs() const { return run_perm_rlbwt.move_runs(); }

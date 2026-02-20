@@ -28,14 +28,14 @@ public:
     MoveStructure() = default;
     
     // Constructor from permutation data
-    MoveStructure(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams& split_params = SplitParams()) 
+    MoveStructure(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams& split_params = DEFAULT_SPLITTING) 
         : table(find_structure(lengths, interval_permutation, domain, split_params)), n(domain), r(table.size()) {}
 
     // Constructor from pre-computed table (move semantics) for advanced users
     MoveStructure(PackedVector<Columns> &&structure, const ulint domain) 
         : table(std::move(structure)), n(domain), r(table.size()) {}
 
-    static PackedVector<Columns> find_structure(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams& split_params = SplitParams()) {
+    static PackedVector<Columns> find_structure(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams& split_params = DEFAULT_SPLITTING) {
         assert(lengths.size() == interval_permutation.size());
 
         // Determined the final lengths and interval permutations, which change if we use splitting

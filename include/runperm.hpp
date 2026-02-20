@@ -126,8 +126,8 @@ using MovePermRelative = MovePerm<false>; // Same as MovePerm<>, the default
 *    using Position = typename RunPermType::Position;
 *    
 *    // === Constructors ===
-*    MovePermImpl(std::vector<ulint>& permutation, SplitParams split_params = SplitParams()); // Constructor from permutation vector
-*    MovePermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, SplitParams split_params = SplitParams()); // See RunPerm
+*    MovePermImpl(std::vector<ulint>& permutation, SplitParams split_params = DEFAULT_SPLITTING); // Constructor from permutation vector
+*    MovePermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, SplitParams split_params = DEFAULT_SPLITTING); // See RunPerm
 *    
 *    // === Navigation methods ===
 *    Position next(Position pos); // Apply permutation
