@@ -1,38 +1,42 @@
 # RunPerm
 
-Flexible plug-and-play header library! Implements data structures for representing run-length encoded permutations, featuring move structures and specialized RLBWT implementations for high-performance indexing. Can be used as a foundation for further applications, providing storage and retrieval of user fields alongside the permutation intervals.
+Flexible plug-and-play header library implementing data structures for representing run-length encoded permutations. Features move structures and specialized RLBWT implementations for high-performance indexing. Can be used as a foundation for further applications, providing storage and retrieval of user fields alongside the permutation intervals.
 
 Described in greater detail at [https://arxiv.org/abs/2602.11029](https://arxiv.org/abs/2602.11029).
 
-Alpha Version 0.1.2
+Alpha Version 0.1.3
 
 ## Overview
 
-RunPerm provides compact representations of run-length encoded permutations using move structures, with specialized implementations for various indexing applications. The library offers three main interfaces:
+RunPerm provides compact representations of run-length encoded permutations, with specialized implementations for various indexing applications. The core permutation logic is stored in a move structure. The library offers three main interfaces:
 
-- **RunPerm**: Core run-length permutation data structure allowing user defined fields stored alongside permutation intervals
-- **MovePerm**: Simplified permutation representation using move structures, no user data
-- **RLBWT**: Specialized run-length Burrows-Wheeler Transform permutations (LF/FL and Phi/InvPhi) built on RunPerm and MovePerm
+- **RunPerm**: Core run-length permutation data structure allowing user defined fields stored alongside permutation intervals.
+- **MovePerm**: Simplified permutation representation using move structures, no user data.
+- **RLBWT**: Specialized run-length Burrows-Wheeler Transform permutations (LF/FL and Phi/InvPhi) built on RunPerm and MovePerm.
 
 ## Features
 
-- **Compact Representation**: Bitpacked for minimum fixed width per stored value
-- **Length capping**: Optimization scheme for faster and smaller move structures
-- **Move Structures**: Advanced data structures for fast and cache efficient navigation of permutations
+- **Compact Representation**: Bitpacked for minimum fixed width per stored value.
+- **Length capping**: Optimization scheme for faster and smaller move structures.
+- **Move Structures**: Advanced data structures for fast and cache efficient navigation of permutations.
 - **RLBWT Specializations**:
-  - LF/FL navigation with character access
-  - Phi/InvPhi navigation with SA retrieval
-  - Helpers to derive Phi/InvPhi structures from run-length BWT
-- **Flexible Configuration**: Multiple template parameters for various move structure representations
-- **Advanced Storage** Allows efficient storage and retrieval of additional information alongside permutations
+  - LF/FL navigation with character access.
+  - Phi/InvPhi navigation with SA retrieval.
+  - Helpers to derive Phi/InvPhi structures from run-length BWT.
+- **Flexible Configuration**: Multiple template parameters for various move structure representations.
+- **Advanced Storage** Allows efficient storage and retrieval of additional information alongside permutations.
 
 ## Quick Start
 
 ### Installation
 
-This library is header-only. Just add `include/` to your compiler's include paths and include `runperm.hpp`, `move.hpp`, or `rlbwt.hpp` as needed.
+This library is header-only. Just add `include/` to your compiler's include paths and include `runperm.hpp`, `move.hpp`, or `rlbwt.hpp` as needed:
+- `runperm.hpp` loads RunPerm and MovePerm.
+- `move.hpp` loads the underlying move structure implementation only.
+- `rlbwt.hpp` loads specialized classes to represent LF/FL and Phi/InvPhi.
 
-The provided `makefile` only builds example/test executables:
+The provided `makefile` only builds example/test executables from `src`:
+- `example_test`
 - `move_test`
 - `rlbwt_test`
 - `runperm_test`
@@ -40,7 +44,7 @@ The provided `makefile` only builds example/test executables:
 ### Basic Usage
 
 #### RunPerm
-`RunPerm` is the generic implementation allowing storage of user defined fields alongside a runny permutation, included with `runperm.hpp`.
+`RunPerm` is the generic implementation allowing storage of user defined fields alongside a runny permutation, included with `runperm.hpp`. Some small examples are given in the `src/example_test.cpp` file.
 
 Given the runny permutation example:
 
@@ -52,23 +56,25 @@ We pass the lengths of contigiously permuted intervals and the permutation of th
 #include "runperm.hpp"
 
 // Create a run-length permutation
-std::vector<ulint> lengths = {2, 3, 1, 2, 2, 1, 1, 1, 3};           // Length of runs
-std::vector<ulint> permutation = {1, 9, 3, 12, 4, 14, 0, 15, 6};       // Permutation of runs
+// Length of contigiuously permuted intervals
+std::vector<unsigned long int> lengths = {2, 3, 1, 2, 2, 1, 1, 1, 3};
+// Permutation at head of each intervals
+std::vector<unsigned long int> permutation = {1, 9, 3, 12, 4, 14, 0, 15, 6};   
 ulint domain = 16;                                // Total domain size
 
 // Some example data to store alongside these runs.
 // Must always include COUNT as the last entry to signal number of fields.
-enum class RunData {
-  VAL1,
-  VAL2,
-  COUNT
+enum class RunCols {
+    VAL1,
+    VAL2,
+    COUNT
 };
-using RunDataTuple = std::array<ulint, RunData::COUNT>;
-std::vector<RunDataTuple> run_data(lengths.size()); // Some data with tuples per run
+// Defines an array of unsigned long integers of length COUNT
+using RunColsTuple = DataTuple<RunCols>;
+std::vector<RunColsTuple> run_data(lengths.size()); // Some data with tuples per run
 
 // Basic construction
-RunPerm<RunData> rp(lengths, permutation, domain, run_data);
-
+RunPerm<RunCols> rp(lengths, permutation, domain, run_data);
 ```
 
 #### MovePerm
@@ -78,12 +84,19 @@ RunPerm<RunData> rp(lengths, permutation, domain, run_data);
 #include "runperm.hpp"
 
 // Create from permutation vector
-std::vector<ulint> permutation = {2, 0, 1, 3};
-MovePermRelative mp(permutation); // Stores interval/offset pairs as positions
+std::vector<unsigned long int> permutation = {1, 2, 9, 10, 11, 3, 12, 13, 4, 5, 14, 0, 15, 6, 7, 8};
+// Stores interval/offset pairs as positions
+MovePermRelative mp(permutation); 
 
 // Or from run structure
-MovePermAbsolute mp_abs(lengths, permutation, domain); // Also stores the absolute position in the permutation
+auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
+ulint domain = permutation.size();
+// Also stores the absolute position in the permutation
+MovePermAbsolute mp_abs(lengths, permutation, domain);
 ```
+
+#### Length Capping
+TODO
 
 #### RLBWT: LF/FL
 By including `rlbwt.hpp` users can use specialized methods designed for permutations based on the RLBWT such as LF/FL for pattern matching and text extraction.
@@ -94,14 +107,14 @@ By including `rlbwt.hpp` users can use specialized methods designed for permutat
 // BWT = TTTTTCCCGGGAAAT$ATTTTAAAAAA
 // RLBWT as run heads (characters) and run lengths, with 0 as terminator
 std::vector<uchar> bwt_heads =       {'T','C','G','A','T', 0 ,'A','T','A'};
-std::vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+std::vector<unsigned long int> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
 // LF using Move-only interface
 MoveLF<> move_lf(bwt_heads, bwt_run_lengths);
 
 // LF with RunPerm + run data columns
-enum class RunCols { VAL_1, VAL_2, COUNT };
-using LFRunData = std::array<ulint, (size_t)RunCols::COUNT>;
+enum class RunCols { VAL1, VAL2, COUNT };
+using LFRunData = DataTuple<RunCols>;
 std::vector<LFRunData> lf_run_data(bwt_heads.size()); // Insert with some type of data
 RunPermLF<RunCols> runperm_lf(bwt_heads, bwt_run_lengths, lf_run_data);
 
@@ -120,8 +133,8 @@ By including `rlbwt.hpp`, we can also build the permutations from an RLBWT for $
 auto [phi_lengths, phi_interval_perm, domain] = rlbwt_to_phi(bwt_heads, bwt_run_lengths);
 
 // RunPerm Phi (always absolute positions)
-enum class PhiCols { VAL_1, VAL_2, COUNT };
-using PhiRunData = std::array<ulint, (size_t)PhiCols::COUNT>;
+enum class PhiCols { VAL1, VAL2, COUNT };
+using PhiRunData = DataTuple<RunCols>;
 std::vector<PhiRunData> phi_run_data(phi_lengths.size());
 RunPermPhi<PhiCols> phi(phi_lengths, phi_interval_perm, domain, phi_run_data);
 
@@ -131,7 +144,6 @@ MovePhi mphi(phi_lens2, phi_perm2, domain2);
 
 // Build InvPhi similarly...
 auto [invphi_lengths, invphi_interval_perm, domain_inv] = rlbwt_to_invphi(bwt_heads, bwt_run_lengths);
-RunPermInvPhi<PhiCols> invphi(invphi_lengths, invphi_interval_perm, domain_inv, phi_run_data);
 ...
 
 ```
@@ -153,6 +165,12 @@ The main class for run-length encoded permutations with move structure integrati
   - `pred<Col>(pos, val)`, `succ<Col>(pos, val)`
   - `domain()`, `move_runs()`, `permutation_runs()`
   - `serialize(os)`, `load(is)`
+
+### Performance Considerations
+- **Integrated vs Separated**: Integrating user data alongside the move structure offer better cache locality but may cause slower move queries since navigating the data structure requires loading larger entries.
+- **Absolute vs Relative Positions**: Absolute positions enable full permutation positional information but increase memory usage. The space usage is, for a runny permutation of $r$ runs over domain $n$ is approximately:
+  - **Absolute**: $r \log r + 2 r \log n$ bits
+  - **Relative**: $r \log r + 2 r \log \frac{n}{r}$ bits
 
 ### Dependencies
 
@@ -221,13 +239,6 @@ enum class RunData {
 };
 RunPerm<RunData> rp(bwt_run_lengths, lf_permutations, domain, bwt_heads);
 ```
-
-## Performance Considerations
-
-- **Integrated vs Separated**: Integrating user data alongside the move structure offer better cache locality but may cause slower move queries since navigating the data structure requires loading larger entries.
-- **Absolute vs Relative Positions**: Absolute positions enable full permutation positional information but increase memory usage. The space usage is, for a runny permutation of $r$ runs over domain $n$:
-  - **Absolute**: $O(r \log n)$-bits
-  - **Relative**: $O(r \log \frac{n}{r} + r \log r)$-bits
 
 ## Citation
 If using RunPerm or describing length capping in an academic context, please cite:
