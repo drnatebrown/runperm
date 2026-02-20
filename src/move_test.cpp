@@ -100,7 +100,7 @@ bool verify_permutation(const std::vector<ulint>& perm) {
 // std::vector<ulint> test_n = {1048576, 2097152, 4194304, 8388608};
 std::vector<ulint> test_n = {18388608};  
 std::vector<size_t> percentage_runs = {1, 2, 5, 10};
-std::optional<double> length_capping_factor = 4.0;
+SplitParams split_params = NO_SPLITTING; 
 
 // Helper function to get readable type name
 template<typename MoveStructType>
@@ -130,11 +130,8 @@ void test_move_structure(const std::vector<ulint>& lengths,
                         size_t n) {
     auto start_time = high_resolution_clock::now();
     
-    SplitParams split_params;
-    split_params.length_capping_factor = length_capping_factor;
-
     // Create move structure
-    auto move_structure = MoveStructType(lengths, interval_permutation, n);
+    auto move_structure = MoveStructType(lengths, interval_permutation, n, split_params);
     
     auto creation_time = high_resolution_clock::now();
     
