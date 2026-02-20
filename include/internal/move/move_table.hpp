@@ -149,7 +149,7 @@ struct MoveVector : public MoveTableInterface<MoveVector<ColumnsType>, ColumnsTy
 
     template <Columns Col>
     void set(size_t i, ulint val) {
-        vec.set<Col>(i, val);
+        vec.template set<Col>(i, val);
     }
 
     template <Columns Col>
