@@ -207,6 +207,10 @@ public:
     ulint move_runs() const { return move_structure.runs(); }
     ulint permutation_runs() const { return orig_intervals; }
 
+    const std::array<uchar, NumCols>& get_widths() const {
+        return move_structure.get_widths();
+    }
+
     template<RunCols Col>
     ulint get(ulint interval) const {
         if constexpr (IntegratedMoveStructure) {
