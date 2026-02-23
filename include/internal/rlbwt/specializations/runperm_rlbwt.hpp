@@ -31,7 +31,7 @@ public:
     RunPermRLBWT() = default;
 
     RunPermRLBWT(const std::vector<uchar> &rlbwt_heads, const std::vector<ulint> &rlbwt_run_lengths, const std::vector<RunData> &run_data)
-    : RunPermRLBWT(rlbwt_heads, rlbwt_run_lengths, DEFAULT_SPLITTING, run_data) {}
+        : RunPermRLBWT(rlbwt_heads, rlbwt_run_lengths, SplitParams(), run_data) {}
 
     RunPermRLBWT(const std::vector<uchar> &rlbwt_heads, const std::vector<ulint> &rlbwt_run_lengths, const SplitParams &split_params, const std::vector<RunData> &run_data)
         : RunPermRLBWT(rlbwt_heads, rlbwt_run_lengths, split_params,
@@ -47,8 +47,10 @@ public:
         alphabet = AlphabetType();
         ulint num_chars;
         PackedVector<BaseColumns> base_structure;
-        find_permutation_and_alphabet(rlbwt_heads, rlbwt_run_lengths, alphabet, num_chars, base_structure);
+        find_permutation_and_alphabet(rlbwt_heads, rlbwt_run_lengths, alphabet, num_chars, base_structure, split_params);
 
+        /* extend_run_data is required when find_structure applies splitting:
+           base_structure may have more rows than run_data; we copy run_data[orig_interval] for each split row */
         std::vector<RunData> final_run_data = Base::extend_run_data(rlbwt_run_lengths, num_chars, base_structure, get_run_cols_data);
         Base::populate_structure(std::move(base_structure), final_run_data, num_chars);
     }
@@ -98,10 +100,11 @@ protected:
         const std::vector<ulint>& rlbwt_run_lengths,
         AlphabetType& alphabet,
         ulint& num_chars,
-        PackedVector<BaseColumns>& base_structure
+        PackedVector<BaseColumns>& base_structure,
+        const SplitParams& split_params
     ) {
         return static_cast<Derived*>(this)->find_permutation_and_alphabet(
-            rlbwt_heads, rlbwt_run_lengths, alphabet, num_chars, base_structure);
+            rlbwt_heads, rlbwt_run_lengths, alphabet, num_chars, base_structure, split_params);
     }
 };
 
@@ -121,7 +124,7 @@ public:
     
     MovePermRLBWT() = default;
 
-    MovePermRLBWT(const std::vector<uchar> &bwt, SplitParams split_params = DEFAULT_SPLITTING) {
+    MovePermRLBWT(const std::vector<uchar> &bwt, SplitParams split_params = SplitParams()) {
         auto [rlbwt_heads, rlbwt_run_lengths] = bwt_to_rlbwt(bwt);
         std::vector<std::array<ulint, 0>> empty_run_data(rlbwt_heads.size());
         run_perm_rlbwt = RunPermRLBWTType(rlbwt_heads, rlbwt_run_lengths, split_params, empty_run_data);
@@ -130,7 +133,7 @@ public:
     // Constructor from RLBWT data
     MovePermRLBWT(const std::vector<uchar> &rlbwt_heads, 
                   const std::vector<ulint> &rlbwt_run_lengths, 
-                  SplitParams split_params = DEFAULT_SPLITTING) {
+                  SplitParams split_params = SplitParams()) {
         std::vector<std::array<ulint, 0>> empty_run_data(rlbwt_heads.size());
         run_perm_rlbwt = RunPermRLBWTType(rlbwt_heads, rlbwt_run_lengths, split_params, empty_run_data);
     }

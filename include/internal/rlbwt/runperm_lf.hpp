@@ -25,14 +25,15 @@ public:
         const std::vector<ulint>& rlbwt_run_lengths,
         AlphabetType& alphabet,
         ulint& num_chars,
-        PackedVector<BaseColumns>& base_structure
+        PackedVector<BaseColumns>& base_structure,
+        const SplitParams& split_params
     ) {
         auto [char_count, head_ranks, bwt_length] = get_char_counts(rlbwt_heads, rlbwt_run_lengths);
         num_chars = bwt_length;
         std::vector<ulint> interval_permutation = get_rlbwt_head_permutations(rlbwt_heads, char_count, head_ranks);
         alphabet = AlphabetType(char_count);
         auto mapped_rlbwt_heads = alphabet.map_sequence(rlbwt_heads);
-        base_structure = Base::MoveStructureBase::find_structure(mapped_rlbwt_heads, rlbwt_run_lengths, interval_permutation, num_chars, alphabet.size());
+        base_structure = Base::MoveStructureBase::find_structure(mapped_rlbwt_heads, rlbwt_run_lengths, interval_permutation, num_chars, alphabet.size(), split_params);
     }
 
     Position LF(Position pos) {

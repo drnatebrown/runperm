@@ -72,8 +72,15 @@ public:
      * domain -> domain of the permutation, i.e. a permutatation over 1..n has domain n
      * run_data -> run data for each interval, the size of this vector should be the same as the number of intervals
      */
-    RunPermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const std::vector<RunData> &run_data)
-        : RunPermImpl(lengths, interval_permutation, domain, DEFAULT_SPLITTING, run_data) {}
+    RunPermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const std::vector<RunData> &run_data) {
+        assert(lengths.size() == interval_permutation.size());
+        assert(run_data.size() == lengths.size());
+        orig_intervals = lengths.size();
+
+        // Find the base structure (move structure without run data)
+        PackedVector<BaseColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain);
+        populate_structure(std::move(base_structure), run_data, domain);
+    }
 
     // When Splitting, by default just copy the run data for the original interval if the move structure intervals have been split
     RunPermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, const std::vector<RunData> &run_data)
@@ -373,14 +380,14 @@ public:
     MovePermImpl() = default;
     
     // Constructor from permutation vector
-    MovePermImpl(std::vector<ulint>& permutation, SplitParams split_params = DEFAULT_SPLITTING) {
+    MovePermImpl(std::vector<ulint>& permutation, SplitParams split_params = SplitParams()) {
         auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
         std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
         run_perm = RunPermType(lengths, interval_permutation, permutation.size(), split_params, empty_run_data);
     }
     
     // Constructor from lengths and interval permutation
-    MovePermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, SplitParams split_params = DEFAULT_SPLITTING) {
+    MovePermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, SplitParams split_params = SplitParams()) {
         std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
         run_perm = RunPermType(lengths, interval_permutation, domain, split_params, empty_run_data);
     }
