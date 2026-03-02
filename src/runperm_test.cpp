@@ -97,7 +97,7 @@
     // std::vector<ulint> test_n = {1048576, 2097152, 4194304, 8388608};
     std::vector<ulint> test_n = {18388608};  
     std::vector<size_t> percentage_runs = {1, 2, 5, 10};
-    std::optional<double> length_capping_factor = 4.0;
+    SplitParams split_params = NO_SPLITTING;
     
     template<typename RunData, typename RunPermType>
     std::string get_runperm_type_name() {
@@ -119,9 +119,9 @@
                       const std::vector<ulint>& interval_permutation, 
                       const std::vector<std::array<ulint, 2>>& run_data, 
                       size_t n) {
+    
         auto start_time = high_resolution_clock::now();
-        // 5-arg with NO_SPLITTING: run_data is sized to lengths.size(), not the potentially larger split structure
-        auto runperm = RunPermType(lengths, interval_permutation, n, NO_SPLITTING, run_data);
+        auto runperm = RunPermType(lengths, interval_permutation, n, split_params, run_data);
         auto creation_time = high_resolution_clock::now();
     
         auto pos = runperm.first();

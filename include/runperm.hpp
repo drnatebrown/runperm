@@ -117,7 +117,7 @@ using MovePermAbsolute = MovePerm<true>;
 using MovePermRelative = MovePerm<false>; // Same as MovePerm<>, the default
 
 /* === Simplified interface for basic users, see full MovePermImpl in include/internal/runperm/runperm.hpp for more template parameters ===
-/* NOTE: All methods here share the documentation above for RunPerm
+* NOTE: All methods here share the documentation above for RunPerm
 * template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS> // Whether to store absolute positions instead of interval/offset to support idx lookups, default is false
 * class MovePerm {
 *

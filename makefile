@@ -1,10 +1,12 @@
+VERSION = 0.1.3
+
 CXX = g++
 CXXFLAGS = -std=c++17 -Iinclude -O3
 
 HEADERS = $(shell find include -name "*.hpp")
 
 # all: build invert move_build
-all: move_test rlbwt_test runperm_test
+all: move_test rlbwt_test runperm_test example_test
 
 # Target to build the executable for build.cpp
 # build: src/build.cpp $(HEADERS)
@@ -24,10 +26,13 @@ rlbwt_test: src/rlbwt_test.cpp $(HEADERS)
 runperm_test: src/runperm_test.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -o runperm_test src/runperm_test.cpp
 
+example_test: src/example_test.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -o example_test src/example_test.cpp
+
 .PHONY: debug
 debug: CXXFLAGS += -g -O0
 debug: all
 
 # Clean up build files
 clean:
-	rm -f build invert move_build move_test rlbwt_test runperm_test
+	rm -f build invert move_build move_test rlbwt_test runperm_test example_test

@@ -68,6 +68,7 @@ struct MoveTableInterface {
 template<typename ColumnsType = MoveCols>
 struct MoveTable : public MoveTableInterface<MoveTable<ColumnsType>, ColumnsType> {
     using Row = MoveRow<ColumnsType>;
+    using RowTraits = typename Row::RowTraits;
     // Sets NumCols, Columns, and ColsTraits
     MOVE_CLASS_TRAITS(ColumnsType)
     
@@ -81,6 +82,15 @@ struct MoveTable : public MoveTableInterface<MoveTable<ColumnsType>, ColumnsType
         for (size_t i = 0; i < vec.size(); ++i) {
             set_row(i, vec.get_row(i));
         }
+    }
+
+    const std::array<uchar, NumCols>& get_widths() const {
+        static const std::array<uchar, NumCols> w{
+            static_cast<uchar>(RowTraits::PRIMARY_BITS),
+            static_cast<uchar>(RowTraits::POINTER_BITS),
+            static_cast<uchar>(RowTraits::OFFSET_BITS)
+        };
+        return w;
     }
 
     size_t size() const { return table.size(); }
@@ -149,7 +159,7 @@ struct MoveVector : public MoveTableInterface<MoveVector<ColumnsType>, ColumnsTy
 
     template <Columns Col>
     void set(size_t i, ulint val) {
-        vec.set<Col>(i, val);
+        vec.template set<Col>(i, val);
     }
 
     template <Columns Col>
@@ -163,6 +173,10 @@ struct MoveVector : public MoveTableInterface<MoveVector<ColumnsType>, ColumnsTy
 
     std::array<ulint, NumCols> get_row(size_t i) const {
         return vec.get_row(i);
+    }
+
+    const std::array<uchar, NumCols>& get_widths() const {
+        return vec.get_widths();
     }
 
     size_t serialize(std::ostream &out) {

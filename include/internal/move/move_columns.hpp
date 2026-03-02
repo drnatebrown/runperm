@@ -31,14 +31,29 @@ struct MovePosition<true> {
     struct type {
         ulint interval = 0;
         ulint offset = 0;
+
+        bool operator==(const type& other) const {
+            return interval == other.interval && offset == other.offset;
+        }
+        bool operator!=(const type& other) const {
+            return !(*this == other);
+        }
     };
 };
+
 template <>
 struct MovePosition<false> {
     struct type {
         ulint interval = 0;
         ulint offset = 0;
         ulint idx = 0;
+
+        bool operator==(const type& other) const {
+            return interval == other.interval && offset == other.offset;
+        }
+        bool operator!=(const type& other) const {
+            return !(*this == other);
+        }
     };
 };
 

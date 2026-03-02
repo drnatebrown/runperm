@@ -51,7 +51,7 @@ protected:
 
 public:
     using RunCols = RunColsType;
-    using RunData = std::array<ulint, NumRunCols>;
+    using RunData = DataTuple<RunCols>;
     using Position = typename MoveStructurePerm::Position;
 
     // check if we're using MoveTable
@@ -72,15 +72,8 @@ public:
      * domain -> domain of the permutation, i.e. a permutatation over 1..n has domain n
      * run_data -> run data for each interval, the size of this vector should be the same as the number of intervals
      */
-    RunPermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const std::vector<RunData> &run_data) {
-        assert(lengths.size() == interval_permutation.size());
-        assert(run_data.size() == lengths.size());
-        orig_intervals = lengths.size();
-
-        // Find the base structure (move structure without run data)
-        PackedVector<BaseColumns> base_structure = MoveStructureBase::find_structure(lengths, interval_permutation, domain);
-        populate_structure(std::move(base_structure), run_data, domain);
-    }
+    RunPermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const std::vector<RunData> &run_data)
+        : RunPermImpl(lengths, interval_permutation, domain, SplitParams(), run_data) {}
 
     // When Splitting, by default just copy the run data for the original interval if the move structure intervals have been split
     RunPermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, const std::vector<RunData> &run_data)
@@ -214,6 +207,10 @@ public:
     ulint move_runs() const { return move_structure.runs(); }
     ulint permutation_runs() const { return orig_intervals; }
 
+    const std::array<uchar, NumCols>& get_widths() const {
+        return move_structure.get_widths();
+    }
+
     template<RunCols Col>
     ulint get(ulint interval) const {
         if constexpr (IntegratedMoveStructure) {
@@ -262,7 +259,7 @@ protected:
 
     template<BaseColumns Col>
     ulint get_base_column(size_t row) const {
-        return move_structure.template get<Col>(row);
+        return move_structure.template get<to_cols(Col)>(row);
     }
     template<BaseColumns Col>
     ulint get_base_column(Position position) const {

@@ -4,8 +4,8 @@
 #include "internal/common.hpp"
 #include <cmath>
 
-constexpr std::optional<double> DEFAULT_LENGTH_CAPPING_FACTOR = 8.0;
-constexpr std::optional<ulint> DEFAULT_BALANCING_FACTOR = 16;
+inline constexpr std::optional<double> DEFAULT_LENGTH_CAPPING_FACTOR = 8.0;
+inline constexpr std::optional<ulint> DEFAULT_BALANCING_FACTOR = 16;
 
 struct SplitParams {
     std::optional<double> length_capping_factor;
@@ -16,10 +16,10 @@ struct SplitParams {
     : length_capping_factor(std::move(length_capping_factor)), balancing_factor(std::move(balancing_factor)) {}
 };
 
-SplitParams NO_SPLITTING = SplitParams(std::nullopt, std::nullopt);
-SplitParams DEFAULT_SPLITTING = SplitParams(DEFAULT_LENGTH_CAPPING_FACTOR, DEFAULT_BALANCING_FACTOR);
-SplitParams DEFAULT_LENGTH_CAPPING = SplitParams(DEFAULT_LENGTH_CAPPING_FACTOR, std::nullopt);
-SplitParams DEFAULT_BALANCING = SplitParams(std::nullopt, DEFAULT_BALANCING_FACTOR);
+inline SplitParams NO_SPLITTING = SplitParams(std::nullopt, std::nullopt);
+inline SplitParams DEFAULT_SPLITTING = SplitParams(DEFAULT_LENGTH_CAPPING_FACTOR, DEFAULT_BALANCING_FACTOR);
+inline SplitParams DEFAULT_LENGTH_CAPPING = SplitParams(DEFAULT_LENGTH_CAPPING_FACTOR, std::nullopt);
+inline SplitParams DEFAULT_BALANCING = SplitParams(std::nullopt, DEFAULT_BALANCING_FACTOR);
 
 struct SplitResult {
     std::vector<ulint> lengths;
@@ -28,7 +28,7 @@ struct SplitResult {
 };
 
 // TODO see if double scan is faster
-void split_by_length_capping(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const double length_capping_factor, SplitResult& result) {
+inline void split_by_length_capping(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const double length_capping_factor, SplitResult& result) {
     assert(lengths.size() == interval_permutation.size());
     assert(length_capping_factor > 0.0);
 
@@ -63,7 +63,7 @@ void split_by_length_capping(const std::vector<ulint>& lengths, const std::vecto
     result.interval_permutations.shrink_to_fit();
 }
 
-void split_by_balancing(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const ulint balancing_factor, SplitResult& result) {
+inline void split_by_balancing(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const ulint balancing_factor, SplitResult& result) {
     assert(lengths.size() == interval_permutation.size());
     // TODO
     result.lengths = lengths;

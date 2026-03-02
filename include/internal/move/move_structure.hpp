@@ -120,6 +120,10 @@ public:
         return r;
     }
 
+    const std::array<uchar, NumCols>& get_widths() const {
+        return table.get_widths();
+    }
+
     // === Position Navigation ===
     Position first() const {
         return Position();
