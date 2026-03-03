@@ -65,7 +65,7 @@ std::vector<unsigned long int> permutation = {1, 9, 3, 12, 4, 14, 0, 15, 6};
 ulint domain = 16;                                // Total domain size
 
 // Some example data to store alongside these runs:
-DEFINE_RUN_COLS(RunCols,)
+DEFINE_RUN_COLS(RunCols, VAL1, VAL2)
 // The DEFINE_RUN_COLS(enum_name, ...) macro above is equivalent to:
 // enum class RunCols {
 //     VAL1,
