@@ -180,6 +180,7 @@ void example3() {
 
     std::cout << "Length Capping Factor: " << split_params.length_capping_factor.value() << std::endl;
     std::cout << "Capped Length (n/r * length_capping_factor): " << static_cast<ulint>(std::ceil(static_cast<double>(domain) / static_cast<double>(lengths.size()) * split_params.length_capping_factor.value())) << std::endl;
+    std::cout << "Round up to use all log2(n/r * length_capping_factor) bits: " << MAX_VAL(bit_width(static_cast<ulint>(std::ceil(static_cast<double>(domain) / static_cast<double>(lengths.size()) * split_params.length_capping_factor.value())))) << std::endl;
 
     std::cout << "\nMove Permutation (Relative):" << std::endl;
     MovePermRelative mp_relative_split(lengths, interval_permutation, domain, split_params);
