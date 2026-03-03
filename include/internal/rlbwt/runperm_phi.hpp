@@ -38,7 +38,7 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_phi(const st
                 --curr_phi_interval;
             }
             else {
-                run_tail_sa_samples.set(interval, UNUSED_SA);
+                move_run_to_phi.set(interval, UNUSED_INTERVAL);
             }
         }
         // If at BWT run tail
@@ -47,7 +47,7 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_phi(const st
                 run_tail_sa_samples.set(interval, sa);
             }
             else {
-                move_run_to_phi.set(interval, UNUSED_INTERVAL);
+                run_tail_sa_samples.set(interval, UNUSED_SA);
             }
         }
         --sa;

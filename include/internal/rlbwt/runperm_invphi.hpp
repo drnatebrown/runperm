@@ -38,7 +38,7 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_invphi(const
                 --curr_invphi_interval;
             }
             else {
-                run_head_sa_samples.set(interval, UNUSED_SA);
+                move_run_to_invphi.set(interval, UNUSED_INTERVAL);
             }
         }
         // If at BWT run head
@@ -47,7 +47,7 @@ std::tuple<std::vector<ulint>, std::vector<ulint>, size_t> rlbwt_to_invphi(const
                 run_head_sa_samples.set(interval, sa);
             }
             else {
-                move_run_to_invphi.set(interval, UNUSED_INTERVAL);
+                run_head_sa_samples.set(interval, UNUSED_SA);
             }
         }
         --sa;

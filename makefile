@@ -51,6 +51,8 @@ test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	@echo "     All unit and integration tests passed"
 	@echo "================================================="
 
+bench: $(BENCH_TESTS)
+
 examples: examples.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
