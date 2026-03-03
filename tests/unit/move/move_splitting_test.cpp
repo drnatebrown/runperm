@@ -43,14 +43,15 @@ void test_split_by_length_capping_with_splitting() {
     split_by_length_capping(lengths, perm, domain, factor, result);
 
     // avg_run_length = 15 / 3 = 5
-    // max_allowed_length = next_power_of_two(ceil(5 * 1.0)) = next_power_of_two(5) = 8
-    // The middle run (length 10, start 2) is split into [8, 2].
-    const vector<ulint> expected_lengths = {2, 8, 2, 3};
-    const vector<ulint> expected_perm = {0, 2, 10, 12};
+    // desired_max_allowed_length = ceil(5 * 1.0) = 5
+    // bit_width(5) = 3, so max_allowed_length = 2^3 - 1 = 7
+    // The middle run (length 10, start 2) is split into [7, 3].
+    const vector<ulint> expected_lengths = {2, 7, 3, 3};
+    const vector<ulint> expected_perm = {0, 2, 9, 12};
 
     assert(result.lengths == expected_lengths);
     assert(result.interval_permutations == expected_perm);
-    assert(result.max_length == 8);
+    assert(result.max_length == 7);
 }
 
 void test_split_by_length_capping_mixed_lengths() {
@@ -65,16 +66,16 @@ void test_split_by_length_capping_mixed_lengths() {
 
     // avg_run_length = 19 / 3 ≈ 6.333...
     // ceil(avg_run_length * 0.5) = ceil(3.166...) = 4
-    // max_allowed_length = next_power_of_two(4) = 4
+    // bit_width(4) = 3, so max_allowed_length = 2^3 - 1 = 7
     //
-    // So the run of length 16 is split into four chunks of length 4:
-    // [1, 16, 2] -> [1, 4, 4, 4, 4, 2]
-    const vector<ulint> expected_lengths = {1, 4, 4, 4, 4, 2};
-    const vector<ulint> expected_perm = {0, 1, 5, 9, 13, 17};
+    // So the run of length 16 is split into [7, 7, 2]:
+    // [1, 16, 2] -> [1, 7, 7, 2, 2]
+    const vector<ulint> expected_lengths = {1, 7, 7, 2, 2};
+    const vector<ulint> expected_perm = {0, 1, 8, 15, 17};
 
     assert(result.lengths == expected_lengths);
     assert(result.interval_permutations == expected_perm);
-    assert(result.max_length == 4);
+    assert(result.max_length == 7);
 }
 
 // Dummy test for balancing: just ensure the function is callable.

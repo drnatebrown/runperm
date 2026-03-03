@@ -103,4 +103,7 @@ public:
     }
 };
 
+template<typename Alphabet=Nucleotide>
+using MoveLFImplDefault = MoveLFImpl<DEFAULT_STORE_ABSOLUTE_POSITIONS, DEFAULT_EXPONENTIAL_SEARCH, Alphabet, MoveVector>;
+
 #endif /* end of include guard: _RLBWT_LF_HPP */

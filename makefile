@@ -18,9 +18,15 @@ UNIT_TESTS = $(UNIT_BUILD_DIR)/packed_vector_test \
              $(UNIT_BUILD_DIR)/alphabet_test \
              $(UNIT_BUILD_DIR)/move_table_test \
              $(UNIT_BUILD_DIR)/move_splitting_test \
-             $(UNIT_BUILD_DIR)/move_structure_test
+             $(UNIT_BUILD_DIR)/move_structure_test \
+             $(UNIT_BUILD_DIR)/moveperm_test \
+             $(UNIT_BUILD_DIR)/runperm_test \
+             $(UNIT_BUILD_DIR)/rlbwt_row_test \
+             $(UNIT_BUILD_DIR)/rlbwt_structure_test
 INTEGRATION_TESTS = $(INTEGRATION_BUILD_DIR)/rlbwt_test \
-                    $(INTEGRATION_BUILD_DIR)/move_structure_test
+                    $(INTEGRATION_BUILD_DIR)/move_structure_test \
+                    $(INTEGRATION_BUILD_DIR)/moveperm_test \
+                    $(INTEGRATION_BUILD_DIR)/runperm_test
 BENCH_TESTS = $(BENCH_BUILD_DIR)/move_bench \
               $(BENCH_BUILD_DIR)/runperm_bench \
               $(BENCH_BUILD_DIR)/rlbwt_bench
@@ -33,8 +39,17 @@ test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	$(UNIT_BUILD_DIR)/move_table_test
 	$(UNIT_BUILD_DIR)/move_splitting_test
 	$(UNIT_BUILD_DIR)/move_structure_test
+	$(UNIT_BUILD_DIR)/moveperm_test
+	$(UNIT_BUILD_DIR)/runperm_test
+	$(UNIT_BUILD_DIR)/rlbwt_row_test
+	$(UNIT_BUILD_DIR)/rlbwt_structure_test
 	$(INTEGRATION_BUILD_DIR)/rlbwt_test
 	$(INTEGRATION_BUILD_DIR)/move_structure_test
+	$(INTEGRATION_BUILD_DIR)/moveperm_test
+	$(INTEGRATION_BUILD_DIR)/runperm_test
+	@echo "================================================="
+	@echo "     All unit and integration tests passed"
+	@echo "================================================="
 
 examples: examples.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -o $@ $<
@@ -60,12 +75,36 @@ $(UNIT_BUILD_DIR)/move_structure_test: ./tests/unit/move/move_structure_test.cpp
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
+$(UNIT_BUILD_DIR)/moveperm_test: ./tests/unit/runperm/moveperm_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/runperm_test: ./tests/unit/runperm/runperm_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/rlbwt_row_test: ./tests/unit/rlbwt/rlbwt_row_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/rlbwt_structure_test: ./tests/unit/rlbwt/rlbwt_structure_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
 # Integration-style tests that exercise larger rlbwt/runperm flows
 $(INTEGRATION_BUILD_DIR)/rlbwt_test: ./tests/integration/rlbwt_test.cpp $(HEADERS)
 	mkdir -p $(INTEGRATION_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(INTEGRATION_BUILD_DIR)/move_structure_test: ./tests/integration/move_structure_test.cpp $(HEADERS)
+	mkdir -p $(INTEGRATION_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(INTEGRATION_BUILD_DIR)/moveperm_test: ./tests/integration/moveperm_test.cpp $(HEADERS)
+	mkdir -p $(INTEGRATION_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(INTEGRATION_BUILD_DIR)/runperm_test: ./tests/integration/runperm_test.cpp $(HEADERS)
 	mkdir -p $(INTEGRATION_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 

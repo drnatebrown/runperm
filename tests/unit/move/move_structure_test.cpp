@@ -110,10 +110,64 @@ static void test_move_structure_serialize_roundtrip() {
     }
 }
 
+static void test_move_structure_widths_relative_and_absolute_with_and_without_splitting() {
+    // Base example from earlier tests.
+    const vector<ulint> lengths = {3, 2, 1, 2, 2};
+    const vector<ulint> perm = {4, 0, 9, 2, 7};
+    const ulint domain = 10;
+
+    // Relative, no splitting.
+    MoveStructure<MoveCols> ms_rel(lengths, perm, domain, NO_SPLITTING);
+    auto widths_rel = ms_rel.get_widths();
+
+    // PRIMARY and OFFSET widths should match for relative representation.
+    uchar w_primary_rel = widths_rel[static_cast<size_t>(MoveColsTraits<MoveCols>::PRIMARY)];
+    uchar w_pointer_rel = widths_rel[static_cast<size_t>(MoveColsTraits<MoveCols>::POINTER)];
+    uchar w_offset_rel  = widths_rel[static_cast<size_t>(MoveColsTraits<MoveCols>::OFFSET)];
+    assert(w_primary_rel == w_offset_rel);
+    // Pointer width must be enough to index all runs.
+    assert(w_pointer_rel >= bit_width(ms_rel.runs()));
+
+    // Relative, with length-capping splitting.
+    SplitParams split = ONLY_LENGTH_CAPPING;
+    MoveStructure<MoveCols> ms_rel_split(lengths, perm, domain, split);
+    auto widths_rel_split = ms_rel_split.get_widths();
+
+    uchar w_primary_rel_split =
+        widths_rel_split[static_cast<size_t>(MoveColsTraits<MoveCols>::PRIMARY)];
+    uchar w_pointer_rel_split =
+        widths_rel_split[static_cast<size_t>(MoveColsTraits<MoveCols>::POINTER)];
+    uchar w_offset_rel_split =
+        widths_rel_split[static_cast<size_t>(MoveColsTraits<MoveCols>::OFFSET)];
+
+    // Still must have PRIMARY == OFFSET after splitting.
+    assert(w_primary_rel_split == w_offset_rel_split);
+    // Pointer width must match the (possibly increased) number of runs.
+    assert(w_pointer_rel_split >= bit_width(ms_rel_split.runs()));
+
+    // Absolute, no splitting.
+    MoveStructure<MoveColsIdx> ms_abs(lengths, perm, domain, NO_SPLITTING);
+    auto widths_abs = ms_abs.get_widths();
+
+    uchar w_primary_abs =
+        widths_abs[static_cast<size_t>(MoveColsTraits<MoveColsIdx>::PRIMARY)];
+    uchar w_pointer_abs =
+        widths_abs[static_cast<size_t>(MoveColsTraits<MoveColsIdx>::POINTER)];
+    uchar w_offset_abs =
+        widths_abs[static_cast<size_t>(MoveColsTraits<MoveColsIdx>::OFFSET)];
+
+    // PRIMARY width should be enough for domain indices.
+    assert(w_primary_abs >= bit_width(domain));
+    // Pointer width enough for runs, offset width reused for relative length.
+    assert(w_pointer_abs >= bit_width(ms_abs.runs()));
+    assert(w_offset_abs >= bit_width(ms_abs.get_length(0)));
+}
+
 int main() {
     test_move_structure_relative_build_invariants();
     test_move_structure_absolute_build_invariants();
     test_move_structure_serialize_roundtrip();
+    test_move_structure_widths_relative_and_absolute_with_and_without_splitting();
 
     std::cout << "move_structure unit tests passed" << std::endl;
     return 0;

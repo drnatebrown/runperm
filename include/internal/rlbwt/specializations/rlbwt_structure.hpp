@@ -17,7 +17,7 @@ public:
     RLBWTMoveStructure() = default;
 
     RLBWTMoveStructure(const std::vector<uchar>& bwt_chars, const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const uchar char_width, const SplitParams& split_params = SplitParams())
-    : Base::table(find_structure(bwt_chars, lengths, interval_permutation, domain, char_width, split_params)), Base::n(domain), Base::r(Base::table.size()) {}
+    : Base(find_structure(bwt_chars, lengths, interval_permutation, domain, char_width, split_params), domain) {}
 
     RLBWTMoveStructure(PackedVector<Columns> &&structure, const ulint domain) : Base(std::move(structure), domain) {}
 
@@ -55,7 +55,7 @@ public:
         return Base::table.template get<ColsTraits::CHARACTER>(i);
     }
     uchar get_character(Position pos) const {
-        return Base::get_character(pos.interval);
+        return get_character(pos.interval);
     }
 
 private:

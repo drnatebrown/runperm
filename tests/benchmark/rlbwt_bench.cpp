@@ -408,7 +408,7 @@ void bench_move_invphi_exp(const string &name,
     cout << "    Size:           " << move_invphi.serialize(ss) << " bytes" << endl;
 }
 
-template<typename LFTypeForPhi>
+template<typename AlphabetType=Nucleotide>
 void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
                                const vector<ulint> &bwt_run_lengths,
                                const vector<ulint> &sa_truth) {
@@ -417,15 +417,8 @@ void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
     cout << "Domain (SA size): " << sa_truth.size() << endl;
 
     // Build Phi / InvPhi structures from the RLBWT.
-    // For Nucleotide data, LFTypeForPhi can be MoveLF<> (or MoveLFImpl<>).
-    // For generic-text data, use MoveLFImpl<..., Alphabet>.
-    // IMPORTANT: build Phi/InvPhi from the *unsplit* LF structure.
-    // The conversion routines expect move_runs == permutation_runs (original BWT runs),
-    // so passing default SplitParams() (which enables splitting) can corrupt memory.
-    LFTypeForPhi lf_phi(bwt_heads, bwt_run_lengths, NO_SPLITTING);
-    LFTypeForPhi lf_invphi(bwt_heads, bwt_run_lengths, NO_SPLITTING);
-    auto [phi_lengths, phi_interval_permutations, phi_domain] = rlbwt_to_phi(bwt_heads, bwt_run_lengths, lf_phi);
-    auto [invphi_lengths, invphi_interval_permutations, invphi_domain] = rlbwt_to_invphi(bwt_heads, bwt_run_lengths, lf_invphi);
+    auto [phi_lengths, phi_interval_permutations, phi_domain] = rlbwt_to_phi<AlphabetType>(bwt_heads, bwt_run_lengths);
+    auto [invphi_lengths, invphi_interval_permutations, invphi_domain] = rlbwt_to_invphi<AlphabetType>(bwt_heads, bwt_run_lengths);
 
     assert(phi_domain == sa_truth.size());
     assert(invphi_domain == sa_truth.size());
@@ -555,7 +548,7 @@ int main() {
                 run_lf_fl_benchmarks<LFStd, LFExp, FLStd, FLExp>(bwt_heads, bwt_run_lengths, text);
 
                 using LFPhi = MoveLF<>;
-                run_phi_invphi_benchmarks<LFPhi>(bwt_heads, bwt_run_lengths, sa_truth);
+                run_phi_invphi_benchmarks<Nucleotide>(bwt_heads, bwt_run_lengths, sa_truth);
             } else {
                 using LFStd = MoveLFImpl<false, false, Alphabet>;
                 using LFExp = MoveLFImpl<true, true, Alphabet>;
@@ -564,7 +557,7 @@ int main() {
                 run_lf_fl_benchmarks<LFStd, LFExp, FLStd, FLExp>(bwt_heads, bwt_run_lengths, text);
 
                 using LFPhi = MoveLFImpl<false, false, Alphabet>;
-                run_phi_invphi_benchmarks<LFPhi>(bwt_heads, bwt_run_lengths, sa_truth);
+                run_phi_invphi_benchmarks<Alphabet>(bwt_heads, bwt_run_lengths, sa_truth);
             }
         }
 

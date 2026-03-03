@@ -34,8 +34,10 @@ inline void split_by_length_capping(const std::vector<ulint>& lengths, const std
     assert(length_capping_factor > 0.0);
 
     double avg_run_length = static_cast<double>(domain) / static_cast<double>(lengths.size());
-    ulint max_allowed_length = next_power_of_two(static_cast<ulint>(std::ceil(avg_run_length * length_capping_factor)));
-
+    ulint desired_max_allowed_length = static_cast<ulint>(std::ceil(avg_run_length * length_capping_factor));
+    uchar bits = bit_width(desired_max_allowed_length);
+    ulint max_allowed_length = MAX_VAL(bits);
+    
     result.lengths.clear();
     result.interval_permutations.clear();
     result.lengths.reserve(static_cast<size_t>(lengths.size() + lengths.size()/length_capping_factor));

@@ -173,7 +173,7 @@ public:
     // Returns row/offset of largest idx before or at position run with matching run data value
     template<RunCols Col>
     std::optional<Position> pred(Position position, ulint val) {
-        while (get<Col>() != val) 
+        while (get<Col>(position) != val)
         {
             if (position.interval == 0) return std::nullopt;
             --position.interval;
@@ -188,7 +188,7 @@ public:
     // Returns row/offset of smallest idx after or at position run with matching run data value
     template<RunCols Col>
     std::optional<Position> succ(Position position, ulint val) {
-        while (get<Col>() != val) 
+        while (get<Col>(position) != val)
         {
             if (position.interval == move_structure.runs() - 1) return std::nullopt;
             ++position.interval;
