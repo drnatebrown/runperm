@@ -90,22 +90,36 @@ public:
         out.write((char *)&num_rows, sizeof(num_rows));
         written_bytes += sizeof(num_rows);
 
-        size_t size = widths.size() * sizeof(uchar);
-        out.write((char *)widths.data(), size);
-        written_bytes += size;
+        // Serialize column widths (may be zero columns)
+        size_t widths_bytes = widths.size() * sizeof(uchar);
+        if (widths_bytes > 0) {
+            out.write((char *)widths.data(), widths_bytes);
+            written_bytes += widths_bytes;
+        }
 
-        size = data.size() * sizeof(word_t);
-        out.write((char *)data.data(), size);
-        written_bytes += size;
+        // Serialize packed data buffer
+        size_t data_bytes = data.size() * sizeof(word_t);
+        if (data_bytes > 0) {
+            out.write((char *)data.data(), data_bytes);
+            written_bytes += data_bytes;
+        }
 
         return written_bytes;
     }
 
     void load(std::istream &in) {
         in.read((char *)&num_rows, sizeof(num_rows));
-        in.read((char *)widths.data(), sizeof(widths));
+        // Load column widths (may be zero columns)
+        size_t widths_bytes = widths.size() * sizeof(uchar);
+        if (widths_bytes > 0) {
+            in.read((char *)widths.data(), widths_bytes);
+        }
         init();
-        in.read((char *)data.data(), data_size() * sizeof(word_t));
+        // Load packed data buffer
+        size_t data_bytes = data_size() * sizeof(word_t);
+        if (data_bytes > 0) {
+            in.read((char *)data.data(), data_bytes);
+        }
     }
 
 private:

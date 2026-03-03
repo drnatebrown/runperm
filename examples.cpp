@@ -240,6 +240,7 @@ void example5() {
 
 // Extract SA from RLBWT using Inverse Phi
 void example6() {
+    std::cout << "Example 6: " << example_names[5] << std::endl;
     std::vector<uchar> bwt_heads =       {'T','C','G','A','T', 0 ,'A','T','A'};
     std::vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
