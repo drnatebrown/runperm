@@ -3,6 +3,8 @@
 
 #include "internal/common.hpp"
 #include <cmath>
+#include <cassert>
+#include <optional>
 
 inline constexpr std::optional<double> DEFAULT_LENGTH_CAPPING_FACTOR = 8.0;
 inline constexpr std::optional<ulint> DEFAULT_BALANCING_FACTOR = 16;
@@ -18,8 +20,8 @@ struct SplitParams {
 
 inline SplitParams NO_SPLITTING = SplitParams(std::nullopt, std::nullopt);
 inline SplitParams DEFAULT_SPLITTING = SplitParams(DEFAULT_LENGTH_CAPPING_FACTOR, DEFAULT_BALANCING_FACTOR);
-inline SplitParams DEFAULT_LENGTH_CAPPING = SplitParams(DEFAULT_LENGTH_CAPPING_FACTOR, std::nullopt);
-inline SplitParams DEFAULT_BALANCING = SplitParams(std::nullopt, DEFAULT_BALANCING_FACTOR);
+inline SplitParams ONLY_LENGTH_CAPPING = SplitParams(DEFAULT_LENGTH_CAPPING_FACTOR, std::nullopt);
+inline SplitParams ONLY_BALANCING = SplitParams(std::nullopt, DEFAULT_BALANCING_FACTOR);
 
 struct SplitResult {
     std::vector<ulint> lengths;
@@ -27,13 +29,12 @@ struct SplitResult {
     ulint max_length;
 };
 
-// TODO see if double scan is faster
 inline void split_by_length_capping(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const double length_capping_factor, SplitResult& result) {
     assert(lengths.size() == interval_permutation.size());
     assert(length_capping_factor > 0.0);
 
     double avg_run_length = static_cast<double>(domain) / static_cast<double>(lengths.size());
-    ulint max_allowed_length = static_cast<ulint>(std::ceil(avg_run_length * length_capping_factor));
+    ulint max_allowed_length = next_power_of_two(static_cast<ulint>(std::ceil(avg_run_length * length_capping_factor)));
 
     result.lengths.clear();
     result.interval_permutations.clear();

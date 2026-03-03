@@ -69,7 +69,4 @@ Testing/
 .cache/
 
 # compiled executables
-move_test
-rlbwt_test
-runperm_test
-example_test
+examples

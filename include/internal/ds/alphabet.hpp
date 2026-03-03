@@ -4,6 +4,8 @@
 #include "internal/common.hpp"
 #include <cctype>
 #include <cassert>
+#include <ostream>
+#include <istream>
 
 static constexpr uchar UNMAPPED = MAX_VAL(BYTES_TO_BITS(sizeof(uchar)));
 

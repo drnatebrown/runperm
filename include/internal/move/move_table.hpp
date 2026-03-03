@@ -6,6 +6,9 @@
 #include "internal/move/move_columns.hpp"
 #include "internal/ds/packed_vector.hpp"
 
+#include <cassert>
+#include <numeric>
+
 template<typename Derived, typename ColumnsType>
 struct MoveTableInterface {
     // Sets NumCols, Columns, and ColsTraits
@@ -97,7 +100,7 @@ struct MoveTable : public MoveTableInterface<MoveTable<ColumnsType>, ColumnsType
 
     template <Columns Col>
     void set(size_t i, ulint val) {
-        table[i].set<Col>(val);
+        table[i].template set<Col>(val);
     }
 
     template <Columns Col>

@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 #include <array>
+#include <cmath>
 
 // LEAVE UNCHANGED
 #define MAX_ALPHABET_SIZE 256
@@ -35,6 +36,11 @@ typedef unsigned long int ulint;
 
 constexpr uchar bit_width(ulint value) {
     return value == 0 ? 1 : 64 - __builtin_clzll(value);
+}
+
+constexpr ulint next_power_of_two(ulint x) {
+    if (x == 0) return 1;
+    return 1ull << static_cast<ulint>(std::ceil(std::log2(static_cast<double>(x))));
 }
 
 // ENUM REPRESENTS COLUMNS, USE ENUM HELPERS TO ENFORCE STRUCTURE
