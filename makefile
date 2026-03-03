@@ -18,6 +18,7 @@ UNIT_TESTS = $(UNIT_BUILD_DIR)/packed_vector_test \
              $(UNIT_BUILD_DIR)/alphabet_test \
              $(UNIT_BUILD_DIR)/columns_test \
              $(UNIT_BUILD_DIR)/api_test \
+             $(UNIT_BUILD_DIR)/common_test \
              $(UNIT_BUILD_DIR)/move_table_test \
              $(UNIT_BUILD_DIR)/move_splitting_test \
              $(UNIT_BUILD_DIR)/move_structure_test \
@@ -41,6 +42,7 @@ test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	$(UNIT_BUILD_DIR)/packed_vector_test
 	$(UNIT_BUILD_DIR)/alphabet_test
 	$(UNIT_BUILD_DIR)/columns_test
+	$(UNIT_BUILD_DIR)/common_test
 	$(UNIT_BUILD_DIR)/api_test
 	$(UNIT_BUILD_DIR)/move_table_test
 	$(UNIT_BUILD_DIR)/move_splitting_test
@@ -70,6 +72,10 @@ $(UNIT_BUILD_DIR)/packed_vector_test: ./tests/unit/ds/packed_vector_test.cpp $(H
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(UNIT_BUILD_DIR)/alphabet_test: ./tests/unit/ds/alphabet_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/common_test: ./tests/unit/common_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
