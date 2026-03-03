@@ -48,12 +48,7 @@ The provided `makefile` only builds example/test executables:
 
 `RunPerm` is the generic implementation allowing storage of user defined fields alongside a runny permutation, included with `runperm.hpp`. Some small examples are given in the provided `examples.cpp` file.
 
-Given the runny permutation example:
-
-
-
-We pass the lengths of contiguously permuted intervals and the permutation of their first values:
-
+Given the runny permutation example above, we pass the lengths of contiguously permuted intervals and the permutation of their first values:
 ```cpp
 #include "runperm.hpp"
 
@@ -62,31 +57,46 @@ We pass the lengths of contiguously permuted intervals and the permutation of th
 std::vector<unsigned long int> lengths = {2, 3, 1, 2, 2, 1, 1, 1, 3};
 // Permutation at head of each intervals
 std::vector<unsigned long int> permutation = {1, 9, 3, 12, 4, 14, 0, 15, 6};   
-ulint domain = 16;                                // Total domain size
+ulint domain = 16; // Total domain size
+```
 
-// Some example data to store alongside these runs:
+Then, we must define the number of columns of additional data to store alongside the permutation intervals. This is made easier with a macro:
+```cpp
 DEFINE_RUN_COLS(RunCols, VAL1, VAL2)
 // The DEFINE_RUN_COLS(enum_name, ...) macro above is equivalent to:
-// enum class RunCols {
-//     VAL1,
-//     VAL2,
-//     COUNT
-// };
+enum class RunCols {
+     VAL1,
+     VAL2,
+     COUNT
+};
 // The COUNT enumerator is automatically added by the DEFINE_RUN_COLS macro,
 // but must be included manually in the explicit enum definition.
+```
 
+The actual data is then stored in a vector of tuples. The length of this vector must match the number of permutation intervals.
+```cpp
 // Defines an array of unsigned long integers of length COUNT
-// i.e., std::array<ulint, static_cast<size_t>(RunsCols::COUNT>)
+// i.e., std::array<unsigned long int, static_cast<size_t>(RunsCols::COUNT>)
 using RunColsTuple = DataTuple<RunCols>;
 std::vector<RunColsTuple> run_data(lengths.size()); // Some data with tuples per run
+```
 
-// Basic construction
+Given this information, we pass the user defined run columns to RunPerm and construct a runny permutation:
+```cpp
 RunPerm<RunCols> rp(lengths, permutation, domain, run_data);
 ```
 
+Finally, we use the position type of our RunPerm object to navigate the permutation and access data:
+```cpp
+using Position = typename RunPerm<RunCols>::Position
+Position pos = rp.first(); // start from 0
+unsigned long int some_data = rp.get<VAL1>(pos);
+pos = rp.next(pos); // move one permutation step
+unsigned long int other_data = rp.get<VAL2>(pos);
+```
 #### MovePerm
 
-`MovePerm` functions similarly to `RunPerm` but without user defined fields, also included in `runperm.hpp`
+`MovePerm` functions similarly to `RunPerm` but without user defined fields. It is also loaded by `runperm.hpp`
 
 ```cpp
 #include "runperm.hpp"
@@ -163,7 +173,7 @@ auto [invphi_lengths, invphi_interval_perm, domain_inv] = rlbwt_to_invphi(bwt_he
 
 ### RunPerm
 
-The main class for run-length encoded permutations with move structure integration.
+The main class for run-length encoded permutations with move structure integration. Core functionality is supported by 
 
 - **Template Parameters**:
   - `RunColsType`: Type defining user run data columns
