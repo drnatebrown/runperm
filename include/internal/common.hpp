@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 #include <array>
+#include <cmath>
 
 // LEAVE UNCHANGED
 #define MAX_ALPHABET_SIZE 256
@@ -38,6 +39,13 @@ constexpr uchar bit_width(ulint value) {
 }
 
 // ENUM REPRESENTS COLUMNS, USE ENUM HELPERS TO ENFORCE STRUCTURE
+// in common.hpp (or an internal traits header)
+template<class, class = void>
+struct has_count_enumerator : std::false_type {};
+
+template<class E>
+struct has_count_enumerator<E, std::void_t<decltype(E::COUNT)>> : std::true_type {};
+
 template<class E>
 constexpr size_t to_index(E e) noexcept { return static_cast<size_t>(e); }
 
@@ -48,6 +56,12 @@ constexpr size_t enum_count() noexcept {
 
 template<class E, typename T = ulint>
 using DataTuple = std::array<T, enum_count<E>()>;
+
+// Defines a macro to generate an enum class named <enum_name> with specified fields, 
+// and appends COUNT as the last enumerator for sizing.
+// Usage: DEFINE_ENUM_CLASS_WITH_COUNT(MyEnum, FIELD1, FIELD2, FIELD3)
+#define DEFINE_RUN_COLS(enum_name, ...) \
+    enum class enum_name { __VA_ARGS__, COUNT };
 
 #define MOVE_CLASS_TRAITS(ColumnsParam) \
     using Columns = ColumnsParam; \

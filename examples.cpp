@@ -120,13 +120,17 @@ void example1() {
     ulint domain = 16; // Total domain size
 
     // Some example data columns to store alongside these runs.
-    // Must always include COUNT as the last entry to signal number of fields.
-    enum class RunCols {
-        VAL1,
-        VAL2,
-        COUNT
-    };
+    DEFINE_RUN_COLS(RunCols, VAL1, VAL2);
+    // The DEFINE_RUN_COLS(enum_name, ...) macro above is equivalent to:
+    // enum class RunCols {
+    //     VAL1,
+    //     VAL2,
+    //     COUNT
+    // };
+    // !!! The COUNT enumerator is automatically added by the DEFINE_RUN_COLS macro,
+    // !!! but must be included manually in the enum definition.
 
+    // Defines std::array<ulint, static_cast<size_t>(RunCols::COUNT)>
     using RunColsTuple = DataTuple<RunCols>;
     std::vector<RunColsTuple> run_data(lengths.size()); // Some data with tuples per run
     // Fill with dummy data
@@ -180,6 +184,7 @@ void example3() {
 
     std::cout << "Length Capping Factor: " << split_params.length_capping_factor.value() << std::endl;
     std::cout << "Capped Length (n/r * length_capping_factor): " << static_cast<ulint>(std::ceil(static_cast<double>(domain) / static_cast<double>(lengths.size()) * split_params.length_capping_factor.value())) << std::endl;
+    std::cout << "Round up to use all log2(n/r * length_capping_factor) bits: " << MAX_VAL(bit_width(static_cast<ulint>(std::ceil(static_cast<double>(domain) / static_cast<double>(lengths.size()) * split_params.length_capping_factor.value())))) << std::endl;
 
     std::cout << "\nMove Permutation (Relative):" << std::endl;
     MovePermRelative mp_relative_split(lengths, interval_permutation, domain, split_params);
@@ -206,7 +211,12 @@ void example4() {
 
     // LF with RunPerm + run data columns
     std::cout << "\n\nLF with RunPerm + run data columns" << std::endl;
-    enum class RunCols { VAL1, VAL2, COUNT };
+    // Alternative to example 1, without using the macro
+    enum class RunCols {
+        VAL1,
+        VAL2,
+        COUNT
+    };
     using LFRunData = DataTuple<RunCols>;
     std::vector<LFRunData> lf_run_data(bwt_heads.size()); // Insert with some type of data
     for (size_t i = 0; i < bwt_heads.size(); ++i) {
@@ -240,6 +250,7 @@ void example5() {
 
 // Extract SA from RLBWT using Inverse Phi
 void example6() {
+    std::cout << "Example 6: " << example_names[5] << std::endl;
     std::vector<uchar> bwt_heads =       {'T','C','G','A','T', 0 ,'A','T','A'};
     std::vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 

@@ -1,4 +1,48 @@
-// Convenience Header for RunPermLF, RunPermFL, MoveLF, MoveFL
+// Convenience header for RLBWT-based permutations.
+//
+// This header exposes high-level wrappers for working with run-length BWT
+// permutations:
+//   - LF / FL navigation over an RLBWT (`MoveLF`, `MoveFL`, `RunPermLF`, `RunPermFL`)
+//   - Phi / InvPhi permutations for suffix-array based locate queries
+//
+// Usage overview:
+//   - You start from a run-length BWT, given as:
+//       std::vector<uchar> bwt_heads;       // run heads (characters)
+//       std::vector<ulint> bwt_run_lengths; // run lengths
+//   - For "move-only" access (no user run data), use:
+//       MoveLF<> lf(bwt_heads, bwt_run_lengths);
+//       MoveFL<> fl(bwt_heads, bwt_run_lengths);
+//   - For RLBWT permutations that also carry user-defined run data, use:
+//       enum class RunCols { FIELD1, FIELD2, COUNT };
+//       where you must include COUNT as the last entry to signal number of fields.
+//       using RunData = DataTuple<RunCols>;
+//       std::vector<RunData> run_data(bwt_heads.size());
+//       RunPermLF<RunCols> lf_rp(bwt_heads, bwt_run_lengths, run_data);
+//       RunPermFL<RunCols> fl_rp(bwt_heads, bwt_run_lengths, run_data);
+//
+//   - Phi / InvPhi structures are built from an RLBWT via helpers
+//     declared in the internal headers (see README for examples):
+//       auto [phi_lengths, phi_interval_perm, n] =
+//           rlbwt_to_phi(bwt_heads, bwt_run_lengths);
+//       auto [inv_lengths, inv_interval_perm, n2] =
+//           rlbwt_to_invphi(bwt_heads, bwt_run_lengths);
+//
+//     and then wrapped by:
+//       MovePhi phi(phi_lengths, phi_interval_perm, n);
+//       MoveInvPhi invphi(inv_lengths, inv_interval_perm, n2);
+//       RunPermPhi<RunCols> rp_phi(phi_lengths, phi_interval_perm, n, run_data);
+//       RunPermInvPhi<RunCols> rp_inv(inv_lengths, inv_interval_perm, n2, run_data);
+//
+// Aliases:
+//   - *Separated* vs *Integrated* controls whether run data is stored in a
+//     separate packed vector (Separated, default) or integrated into the
+//     move structure rows (Integrated, better locality but larger rows).
+//   - *Absolute* variants additionally store absolute positions for each
+//     entry, which enables direct index lookups at the cost of extra space.
+//
+// See the README and tests under `tests/unit/rlbwt/` and
+// `tests/integration/rlbwt_test.cpp` for concrete usage.
+// Expanded documentation below:
 #ifndef _RLBWT_HPP
 #define _RLBWT_HPP
 
@@ -25,11 +69,11 @@ public:
 // Also implements LF, LF(steps), get_character(), get_character(row)
 
 template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermLFSeperated = RunPermLF<RunColsType, false, false, AlphabetType>; // Default
+using RunPermLFSeparated = RunPermLF<RunColsType, false, false, AlphabetType>; // Default
 template<typename RunColsType, typename AlphabetType = Nucleotide>
 using RunPermLFIntegrated = RunPermLF<RunColsType, true, false, AlphabetType>;
 template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermLFSeperatedAbsolute = RunPermLF<RunColsType, false, true, AlphabetType>;
+using RunPermLFSeparatedAbsolute = RunPermLF<RunColsType, false, true, AlphabetType>;
 template<typename RunColsType, typename AlphabetType = Nucleotide>
 using RunPermLFIntegratedAbsolute = RunPermLF<RunColsType, true, true, AlphabetType>;
 
@@ -62,11 +106,11 @@ public:
 // Also implements FL(pos), FL(pos, steps), get_character(pos), get_character(interval)
 
 template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermFLSeperated = RunPermFL<RunColsType, false, false, AlphabetType>; // Default
+using RunPermFLSeparated = RunPermFL<RunColsType, false, false, AlphabetType>; // Default
 template<typename RunColsType, typename AlphabetType = Nucleotide>
 using RunPermFLIntegrated = RunPermFL<RunColsType, true, false, AlphabetType>;
 template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermFLSeperatedAbsolute = RunPermFL<RunColsType, false, true, AlphabetType>;
+using RunPermFLSeparatedAbsolute = RunPermFL<RunColsType, false, true, AlphabetType>;
 template<typename RunColsType, typename AlphabetType = Nucleotide>
 using RunPermFLIntegratedAbsolute = RunPermFL<RunColsType, true, true, AlphabetType>;
 

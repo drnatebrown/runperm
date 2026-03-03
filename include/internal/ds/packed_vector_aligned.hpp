@@ -80,13 +80,9 @@ public:
     [[nodiscard]] size_t rows() const noexcept { return num_rows; }
     [[nodiscard]] static constexpr size_t cols() noexcept { return NumCols; }
     [[nodiscard]] size_t data_size() const noexcept {
-        return byte_row_width*num_rows + sizeof(ulint)/sizeof(word_t);
+        return byte_row_width * num_rows + sizeof(ulint) / sizeof(word_t);
     }
-    [[nodiscard]] const std::array<uchar, NumCols>& widths() const noexcept { return widths; }
-    size_t size() const { return num_rows; }
-    size_t data_size() const { 
-        return byte_row_width*num_rows + sizeof(ulint)/sizeof(word_t);
-    }
+    [[nodiscard]] const std::array<uchar, NumCols>& get_widths() const noexcept { return widths; }
 
     size_t serialize(std::ostream &out) {
         size_t written_bytes = 0;
@@ -94,22 +90,37 @@ public:
         out.write((char *)&num_rows, sizeof(num_rows));
         written_bytes += sizeof(num_rows);
 
-        out.write((char *)widths.data(), sizeof(widths));
-        written_bytes += sizeof(widths);
+        // Serialize column widths (may be zero columns)
+        size_t widths_bytes = widths.size() * sizeof(uchar);
+        if (widths_bytes > 0) {
+            out.write((char *)widths.data(), widths_bytes);
+            written_bytes += widths_bytes;
+        }
 
+        // Serialize packed data buffer
         const char* data_mem = reinterpret_cast<const char*>(data.data());
-        size_t size = data.size() * sizeof(word_t);
-        out.write(data_mem, size);
-        written_bytes += size;
+        size_t data_bytes = data.size() * sizeof(word_t);
+        if (data_bytes > 0) {
+            out.write(data_mem, data_bytes);
+            written_bytes += data_bytes;
+        }
 
         return written_bytes;
     }
 
     void load(std::istream &in) {
         in.read((char *)&num_rows, sizeof(num_rows));
-        in.read((char *)widths.data(), sizeof(widths));
+        // Load column widths (may be zero columns)
+        size_t widths_bytes = widths.size() * sizeof(uchar);
+        if (widths_bytes > 0) {
+            in.read((char *)widths.data(), widths_bytes);
+        }
         init();
-        in.read((char *)data.data(), data_size() * sizeof(word_t));
+        // Load packed data buffer
+        size_t data_bytes = data_size() * sizeof(word_t);
+        if (data_bytes > 0) {
+            in.read((char *)data.data(), data_bytes);
+        }
     }
 
 private:
@@ -164,7 +175,7 @@ private:
 };
 
 template<class Columns>
-class PackedVectorAligned : public PackedMatrixAligned<static_cast<size_t>(Columns::NUM_COLS)> {
+class PackedVectorAligned : public PackedMatrixAligned<static_cast<size_t>(Columns::COUNT)> {
     using Base = PackedMatrixAligned<static_cast<size_t>(Columns::COUNT)>;
 
 public:

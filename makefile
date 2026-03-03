@@ -5,29 +5,174 @@ CXXFLAGS = -std=c++17 -Iinclude -O3
 
 HEADERS = $(shell find include -name "*.hpp")
 
-# all: build invert move_build
-all: move_test rlbwt_test runperm_test example_test
+BUILD_DIR = build
+UNIT_BUILD_DIR = $(BUILD_DIR)/unit
+INTEGRATION_BUILD_DIR = $(BUILD_DIR)/integration
+BENCH_BUILD_DIR = $(BUILD_DIR)/bench
 
-# Target to build the executable for build.cpp
-# build: src/build.cpp $(HEADERS)
-# 	$(CXX) $(CXXFLAGS) -o build src/build.cpp
+# High-level targets
+# - all: build all unit/integration tests + benchmarks + examples
+# - test: build unit/integration tests and run them
+# - bench: build benchmarks
+# - examples: build examples
+# - clean: clean build files
+# - debug: build with debug symbols
 
-# # Target to build the executable for invert.cpp
-# invert: src/invert.cpp $(HEADERS)
-# 	$(CXX) $(CXXFLAGS) -o invert src/invert.cpp
+# make help: print this help message
+help:
+	@echo "Usage: make [target]"
+	@echo "Targets:"
+	@echo "  all: build all unit/integration tests + benchmarks + examples"
+	@echo "  examples: build examples"
+	@echo "  test: build unit/integration tests and run them"
+	@echo "  bench: build benchmarks"
+	@echo "  clean: clean build files"
+	@echo "  debug: build with debug symbols"
 
-# Target to build the test executable for move_build.cpp
-move_test: src/move_test.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -o move_test src/move_test.cpp
+UNIT_TESTS = $(UNIT_BUILD_DIR)/packed_vector_test \
+             $(UNIT_BUILD_DIR)/alphabet_test \
+             $(UNIT_BUILD_DIR)/columns_test \
+             $(UNIT_BUILD_DIR)/api_test \
+             $(UNIT_BUILD_DIR)/common_test \
+             $(UNIT_BUILD_DIR)/move_table_test \
+             $(UNIT_BUILD_DIR)/move_splitting_test \
+             $(UNIT_BUILD_DIR)/move_structure_test \
+             $(UNIT_BUILD_DIR)/moveperm_test \
+             $(UNIT_BUILD_DIR)/runperm_test \
+             $(UNIT_BUILD_DIR)/runperm_random_test \
+             $(UNIT_BUILD_DIR)/rlbwt_row_test \
+             $(UNIT_BUILD_DIR)/rlbwt_structure_test \
+             $(UNIT_BUILD_DIR)/runperm_lf_fl_test \
+             $(UNIT_BUILD_DIR)/runperm_phi_invphi_test
+INTEGRATION_TESTS = $(INTEGRATION_BUILD_DIR)/rlbwt_test \
+                    $(INTEGRATION_BUILD_DIR)/move_structure_test \
+                    $(INTEGRATION_BUILD_DIR)/moveperm_test \
+                    $(INTEGRATION_BUILD_DIR)/runperm_test
+BENCH_TESTS = $(BENCH_BUILD_DIR)/move_bench \
+              $(BENCH_BUILD_DIR)/runperm_bench \
+              $(BENCH_BUILD_DIR)/rlbwt_bench
 
-rlbwt_test: src/rlbwt_test.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -o rlbwt_test src/rlbwt_test.cpp
+all: $(UNIT_TESTS) $(INTEGRATION_TESTS) $(BENCH_TESTS) examples
 
-runperm_test: src/runperm_test.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -o runperm_test src/runperm_test.cpp
+examples: examples.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -o $@ $<
 
-example_test: src/example_test.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -o example_test src/example_test.cpp
+test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
+	$(UNIT_BUILD_DIR)/packed_vector_test
+	$(UNIT_BUILD_DIR)/alphabet_test
+	$(UNIT_BUILD_DIR)/columns_test
+	$(UNIT_BUILD_DIR)/common_test
+	$(UNIT_BUILD_DIR)/api_test
+	$(UNIT_BUILD_DIR)/move_table_test
+	$(UNIT_BUILD_DIR)/move_splitting_test
+	$(UNIT_BUILD_DIR)/move_structure_test
+	$(UNIT_BUILD_DIR)/moveperm_test
+	$(UNIT_BUILD_DIR)/runperm_test
+	$(UNIT_BUILD_DIR)/runperm_random_test
+	$(UNIT_BUILD_DIR)/rlbwt_row_test
+	$(UNIT_BUILD_DIR)/rlbwt_structure_test
+	$(UNIT_BUILD_DIR)/runperm_lf_fl_test
+	$(UNIT_BUILD_DIR)/runperm_phi_invphi_test
+	$(INTEGRATION_BUILD_DIR)/rlbwt_test
+	$(INTEGRATION_BUILD_DIR)/move_structure_test
+	$(INTEGRATION_BUILD_DIR)/moveperm_test
+	$(INTEGRATION_BUILD_DIR)/runperm_test
+	@echo "==============================================="
+	@echo "     All unit and integration tests passed"
+	@echo "==============================================="
+
+bench: $(BENCH_TESTS)
+
+# Unit tests (header-only data structures)
+$(UNIT_BUILD_DIR)/packed_vector_test: ./tests/unit/ds/packed_vector_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/alphabet_test: ./tests/unit/ds/alphabet_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/common_test: ./tests/unit/common_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/api_test: ./tests/unit/api_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/columns_test: ./tests/unit/columns_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/move_table_test: ./tests/unit/move/move_table_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/move_splitting_test: ./tests/unit/move/move_splitting_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/move_structure_test: ./tests/unit/move/move_structure_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/moveperm_test: ./tests/unit/runperm/moveperm_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/runperm_test: ./tests/unit/runperm/runperm_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/runperm_random_test: ./tests/unit/runperm/runperm_random_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/rlbwt_row_test: ./tests/unit/rlbwt/rlbwt_row_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/rlbwt_structure_test: ./tests/unit/rlbwt/rlbwt_structure_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/runperm_lf_fl_test: ./tests/unit/rlbwt/runperm_lf_fl_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/runperm_phi_invphi_test: ./tests/unit/rlbwt/runperm_phi_invphi_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+# Integration-style tests that exercise larger rlbwt/runperm flows
+$(INTEGRATION_BUILD_DIR)/rlbwt_test: ./tests/integration/rlbwt_test.cpp $(HEADERS)
+	mkdir -p $(INTEGRATION_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(INTEGRATION_BUILD_DIR)/move_structure_test: ./tests/integration/move_structure_test.cpp $(HEADERS)
+	mkdir -p $(INTEGRATION_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(INTEGRATION_BUILD_DIR)/moveperm_test: ./tests/integration/moveperm_test.cpp $(HEADERS)
+	mkdir -p $(INTEGRATION_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(INTEGRATION_BUILD_DIR)/runperm_test: ./tests/integration/runperm_test.cpp $(HEADERS)
+	mkdir -p $(INTEGRATION_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+# Benchmarks (not run by default in `make test`)
+$(BENCH_BUILD_DIR)/move_bench: ./tests/benchmark/move_bench.cpp $(HEADERS)
+	mkdir -p $(BENCH_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(BENCH_BUILD_DIR)/runperm_bench: ./tests/benchmark/runperm_bench.cpp $(HEADERS)
+	mkdir -p $(BENCH_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(BENCH_BUILD_DIR)/rlbwt_bench: ./tests/benchmark/rlbwt_bench.cpp $(HEADERS)
+	mkdir -p $(BENCH_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
 
 .PHONY: debug
 debug: CXXFLAGS += -g -O0
@@ -35,4 +180,5 @@ debug: all
 
 # Clean up build files
 clean:
-	rm -f build invert move_build move_test rlbwt_test runperm_test example_test
+	rm -rf $(BUILD_DIR)
+	rm -f examples

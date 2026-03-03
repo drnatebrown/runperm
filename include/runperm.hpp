@@ -1,4 +1,36 @@
-// Convenience Header for RunPerm and MovePerm
+// Convenience header for run-length permutations (RunPerm / MovePerm).
+//
+// This header exposes high-level wrappers around the internal move structure
+// for generic "runny" permutations:
+//   - RunPerm: run-length encoded permutations with user-defined run data.
+//   - MovePerm: run-length encoded permutations without extra data.
+//
+// Typical usage:
+//   - Start from a permutation over [0, n) that is "runny", or from its
+//     run decomposition:
+//       std::vector<ulint> lengths;          // lengths of contiguous intervals
+//       std::vector<ulint> interval_perm;    // perm position of each interval head
+//       ulint domain = n;                    // permutation domain size
+//   - Define an enum for run data columns and a DataTuple alias:
+//       enum class RunCols { VAL1, VAL2, COUNT };
+//       // Must include COUNT as the last entry to signal number of fields.
+//       using RunData = DataTuple<RunCols>;
+//       std::vector<RunData> run_data(lengths.size()); // Some data with tuples per run
+//   - Construct a RunPerm instance:
+//       RunPerm<RunCols> rp(lengths, interval_perm, domain, run_data);
+//
+// Aliases:
+//   - RunPermSeparated / RunPermIntegrated select whether run data is stored
+//     in a separate packed vector (Separated, default) or integrated into the
+//     move structure rows (Integrated, better locality but larger rows).
+//   - RunPermSeparatedAbsolute / RunPermIntegratedAbsolute additionally store
+//     absolute positions, enabling direct index lookups at extra space cost.
+//   - MovePermRelative / MovePermAbsolute provide analogous choices for the
+//     move-only interface without run data.
+//
+// See the README and tests under `tests/unit/runperm/` and
+// `tests/integration/runperm_test.cpp` for concrete usage.
+// Expanded documentation below:
 #ifndef _PUBLIC_RUNPERM_HPP
 #define _PUBLIC_RUNPERM_HPP
 
@@ -27,11 +59,11 @@ public:
 
 /* === Basic types === */
 template<typename RunColsType>
-using RunPermSeperated = RunPerm<RunColsType, false, false>; // Same as RunPerm<RunColsType>, the default
+using RunPermSeparated = RunPerm<RunColsType, false, false>; // Same as RunPerm<RunColsType>, the default
 template<typename RunColsType>
 using RunPermIntegrated = RunPerm<RunColsType, true, false>;
 template<typename RunColsType>
-using RunPermSeperatedAbsolute = RunPerm<RunColsType, false, true>;
+using RunPermSeparatedAbsolute = RunPerm<RunColsType, false, true>;
 template<typename RunColsType>
 using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true>;
 

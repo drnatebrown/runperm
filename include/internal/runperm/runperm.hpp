@@ -13,11 +13,11 @@ constexpr bool DEFAULT_EXPONENTIAL_SEARCH = false; // Whether to use exponential
 
 // If we're integrating the run data alongside the move structure, we don't need to store it separately
 template <typename RunColsType, bool IntegratedMoveStructure>
-struct SeperatedDataHolder;
+struct SeparatedDataHolder;
 template <typename RunColsType>
-struct SeperatedDataHolder<RunColsType, false> { [[no_unique_address]] PackedVector<RunColsType> run_cols_data; };
+struct SeparatedDataHolder<RunColsType, false> { [[no_unique_address]] PackedVector<RunColsType> run_cols_data; };
 template <typename RunColsType>
-struct SeperatedDataHolder<RunColsType, true> { /* empty */ };
+struct SeparatedDataHolder<RunColsType, true> { /* empty */ };
 
 // TODO InversePermutation, which builds both the forward and inverse move structures if needed
 template<typename RunColsType, // Fields to be stored alongside the move structure representing a runny permutation
@@ -28,7 +28,7 @@ template<typename RunColsType, // Fields to be stored alongside the move structu
          template<typename, template<typename> class> class MoveStructureType = MoveStructure,
          template<typename> class TableType = MoveVector>
          // TODO need PackedType option?
-class RunPermImpl : SeperatedDataHolder<RunColsType, IntegratedMoveStructure> {
+class RunPermImpl : SeparatedDataHolder<RunColsType, IntegratedMoveStructure> {
 protected:
     // Helpful constants for number of base (move permutation information) columns and run (additional data) columns
     static constexpr size_t NumRunCols = static_cast<size_t>(RunColsType::COUNT);
@@ -53,6 +53,9 @@ public:
     using RunCols = RunColsType;
     using RunData = DataTuple<RunCols>;
     using Position = typename MoveStructurePerm::Position;
+
+
+    static_assert(has_count_enumerator<RunCols>::value, "RunColsType must have a COUNT enumerator");
 
     // check if we're using MoveTable
     static constexpr bool is_move_table_type() {
@@ -120,7 +123,7 @@ public:
     RunPermImpl(MoveStructurePerm &&ms, std::vector<RunData> &run_data, const ulint domain) : move_structure(std::move(ms)), orig_intervals(move_structure.size()) {
         static_assert(!IntegratedMoveStructure, "Cannot construct RunPerm with pre-computed move structure if integrating user data with move structure");
         auto run_cols_widths = get_run_cols_widths(run_data);
-        fill_seperated_data(run_data, run_cols_widths);
+        fill_separated_data(run_data, run_cols_widths);
     }
     
     Position next(Position position) { 
@@ -173,7 +176,7 @@ public:
     // Returns row/offset of largest idx before or at position run with matching run data value
     template<RunCols Col>
     std::optional<Position> pred(Position position, ulint val) {
-        while (get<Col>() != val) 
+        while (get<Col>(position) != val)
         {
             if (position.interval == 0) return std::nullopt;
             --position.interval;
@@ -188,7 +191,7 @@ public:
     // Returns row/offset of smallest idx after or at position run with matching run data value
     template<RunCols Col>
     std::optional<Position> succ(Position position, ulint val) {
-        while (get<Col>() != val) 
+        while (get<Col>(position) != val)
         {
             if (position.interval == move_structure.runs() - 1) return std::nullopt;
             ++position.interval;
@@ -335,7 +338,7 @@ protected:
         return row;
     }
 
-    void fill_seperated_data(const std::vector<RunData>& run_data, const std::array<uchar, NumRunCols>& run_cols_widths) {
+    void fill_separated_data(const std::vector<RunData>& run_data, const std::array<uchar, NumRunCols>& run_cols_widths) {
         this->run_cols_data = PackedVector<RunCols>(run_data.size(), run_cols_widths);
         for (size_t i = 0; i < run_data.size(); ++i) {
             this->run_cols_data.set_row(i, run_data[i]);
@@ -359,7 +362,7 @@ protected:
             move_structure = MoveStructurePerm(std::move(final_structure), domain);
         } else {
             move_structure = MoveStructurePerm(std::move(base_structure), domain);
-            fill_seperated_data(run_data, run_cols_widths);
+            fill_separated_data(run_data, run_cols_widths);
         }
     }
 };

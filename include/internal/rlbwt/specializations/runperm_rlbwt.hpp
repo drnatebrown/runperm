@@ -71,7 +71,7 @@ public:
     RunPermRLBWT(MoveStructurePerm &&ms, std::vector<RunData> &run_data, const ulint domain) : Base::move_structure(std::move(ms)), Base::position(Position()), Base::orig_intervals(Base::move_structure.size()) {
         static_assert(!IntegratedMoveStructure, "Cannot construct RunPermRLBWT with pre-computed move structure if integrating user data with move structure");
         auto run_cols_widths = get_run_cols_widths(run_data);
-        fill_seperated_data(run_data, run_cols_widths);
+        fill_separated_data(run_data, run_cols_widths);
     }
 
 

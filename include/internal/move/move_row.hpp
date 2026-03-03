@@ -5,6 +5,7 @@
 #include "internal/move/move_columns.hpp"
 #include <stdexcept>
 #include <array>
+#include <cassert>
 
 template <typename ColumnsType>
 struct MoveRowTraits;

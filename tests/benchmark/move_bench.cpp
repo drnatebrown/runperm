@@ -1,7 +1,7 @@
-/* These tests were made using generative AI, they need to be improved upon
+/* These benchmarks were made using generative AI, they need to be improved upon
     I wrote some of the functions myself, but need to manually write better
-    tests and benchmarks. Leaving them here for now since they somewhat 
-    verify correctness. Better unit tests and benchmarks should be written. */
+    benchmarks. Leaving them here for now since they somewhat 
+    verify performance. Better benchmarks should be written. */
 
 #include "move.hpp"
 
@@ -18,14 +18,15 @@
 using namespace std;
 using namespace std::chrono;
 
+// Deterministic RNG for reproducible benchmarks
+static std::mt19937 rng(42);
+
 std::vector<ulint> random_permutation(size_t n) {
     std::vector<ulint> permutation(n);
     for (size_t i = 0; i < n; ++i) {
         permutation[i] = i;
     }
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(permutation.begin(), permutation.end(), g);
+    std::shuffle(permutation.begin(), permutation.end(), rng);
     return permutation;
 }
 
@@ -34,9 +35,6 @@ std::vector<ulint> random_runny_permutation(size_t n, size_t r) {
         return random_permutation(n);
     }
 
-    std::random_device rd;
-    std::mt19937 g(rd());
-    
     // Step 1: Choose r-1 random break points in range [1, n-1] to create r intervals
     std::vector<size_t> break_points;
     if (r > 1) {
@@ -44,7 +42,7 @@ std::vector<ulint> random_runny_permutation(size_t n, size_t r) {
         for (size_t i = 1; i < n; ++i) {
             possible_breaks.push_back(i);
         }
-        std::shuffle(possible_breaks.begin(), possible_breaks.end(), g);
+        std::shuffle(possible_breaks.begin(), possible_breaks.end(), rng);
         
         for (size_t i = 0; i < r - 1; ++i) {
             break_points.push_back(possible_breaks[i]);
@@ -66,7 +64,7 @@ std::vector<ulint> random_runny_permutation(size_t n, size_t r) {
     for (size_t i = 0; i < r; ++i) {
         interval_order[i] = i;
     }
-    std::shuffle(interval_order.begin(), interval_order.end(), g);
+    std::shuffle(interval_order.begin(), interval_order.end(), rng);
     
     // Step 4: Fill intervals with consecutive numbers
     std::vector<ulint> result(n);
@@ -119,24 +117,21 @@ std::string get_type_name() {
     }
 }
 
-// Test function template (no splitting: reference data matches unsplit layout)
+// Benchmark function template (no splitting: reference data matches unsplit layout)
 template<typename MoveStructType>
-void test_move_structure(const std::vector<ulint>& lengths, 
-                        const std::vector<ulint>& interval_permutation,
-                        const std::vector<ulint>& starts,
-                        const std::vector<ulint>& pointers,
-                        const std::vector<ulint>& offsets,
-                        const std::vector<ulint>& test_perm,
-                        const std::vector<std::pair<size_t, size_t>>& full_cycle_pos,
-                        size_t n) {
-    auto start_time = high_resolution_clock::now();
-    
-    // Create move structure
+void bench_move_structure(const std::vector<ulint>& lengths, 
+                          const std::vector<ulint>& interval_permutation,
+                          const std::vector<ulint>& starts,
+                          const std::vector<ulint>& pointers,
+                          const std::vector<ulint>& offsets,
+                          const std::vector<ulint>& test_perm,
+                          size_t n) {
+    // Creation
+    auto t0 = high_resolution_clock::now();
     auto move_structure = MoveStructType(lengths, interval_permutation, n, split_params);
-    
-    auto creation_time = high_resolution_clock::now();
-    
-    // Test getters
+    auto t1 = high_resolution_clock::now();
+
+    // Getter phase
     for (size_t i = 0; i < lengths.size(); ++i) {
         assert(move_structure.get_pointer(i) == pointers[i]);
         assert(move_structure.get_offset(i) == offsets[i]);
@@ -149,10 +144,9 @@ void test_move_structure(const std::vector<ulint>& lengths,
             assert(move_structure.get_length(i) == lengths[i]);
         }
     }
-    
-    auto getter_time = high_resolution_clock::now();
-    
-    // Test move operations
+    auto t2 = high_resolution_clock::now();
+
+    // Benchmark move() operations
     typename MoveStructType::Position pos;
     if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
                   std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
@@ -161,43 +155,60 @@ void test_move_structure(const std::vector<ulint>& lengths,
         pos = {0, 0};     // normal types have 2 fields
     }
 
-    ulint real_pos = 0;
-    
+    auto t3 = high_resolution_clock::now();
     for (size_t i = 0; i < n; ++i) {
-        size_t last_real_pos = real_pos;
-        real_pos = test_perm[real_pos];
         pos = move_structure.move(pos);
     }
-    
-    auto move_time = high_resolution_clock::now();
-    
+    auto t4 = high_resolution_clock::now();
+
+    // Benchmark move_exponential() operations (no splitting)
+    typename MoveStructType::Position pos_exp;
+    if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
+                  std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
+        pos_exp = {0, 0, 0};
+    } else {
+        pos_exp = {0, 0};
+    }
+
+    auto t5 = high_resolution_clock::now();
+    for (size_t i = 0; i < n; ++i) {
+        pos_exp = move_structure.move_exponential(pos_exp);
+    }
+    auto t6 = high_resolution_clock::now();
+
     // Print timing results
-    auto creation_duration = duration_cast<microseconds>(creation_time - start_time);
-    auto getter_duration = duration_cast<microseconds>(getter_time - creation_time);
-    auto move_duration = duration_cast<microseconds>(move_time - getter_time);
-    auto total_duration = duration_cast<microseconds>(move_time - start_time);
+    auto creation_duration   = duration_cast<microseconds>(t1 - t0);
+    auto getter_duration     = duration_cast<microseconds>(t2 - t1);
+    auto move_duration       = duration_cast<microseconds>(t4 - t3);
+    auto move_exp_duration   = duration_cast<microseconds>(t6 - t5);
+    auto total_duration      = duration_cast<microseconds>(t6 - t0);
     
-    std::cout << "  " << get_type_name<MoveStructType>() << ":" << std::endl;
-    std::cout << "    Creation: " << creation_duration.count() << "μs" << std::endl;
-    std::cout << "    Getters: " << getter_duration.count() << "μs" << std::endl;
-    std::cout << "    Moves: " << move_duration.count() << "μs" << std::endl;
-    std::cout << "    Total: " << total_duration.count() << "μs" << std::endl;
+    std::cout << "  " << get_type_name<MoveStructType>() << " (no splitting):" << std::endl;
+    std::cout << "    Creation:        " << creation_duration.count() << "μs" << std::endl;
+    std::cout << "    Getters:         " << getter_duration.count() << "μs" << std::endl;
+    std::cout << "    Moves (move):    " << move_duration.count() << "μs" << std::endl;
+    std::cout << "    Moves (exp):     " << move_exp_duration.count() << "μs" << std::endl;
+    std::cout << "    Total:           " << total_duration.count() << "μs" << std::endl;
     std::stringstream ss;
     std::cout << "    Size: " << move_structure.serialize(ss) << std::endl;
 }
 
-// Splitting-aware test: verify move operations correctness when structure is split.
-// Skips getter assertions (pointer/offset layout differs with splitting).
+// Splitting-aware benchmark: measures both move() and move_exponential() under splitting.
 template<typename MoveStructType>
-void test_move_structure_with_splitting(const std::vector<ulint>& lengths, 
-                                        const std::vector<ulint>& interval_permutation,
-                                        const std::vector<ulint>& test_perm,
-                                        size_t n) {
-    SplitParams split_params(length_capping_factor, std::nullopt);
-    auto move_structure = MoveStructType(lengths, interval_permutation, n, split_params);
+void bench_move_structure_with_splitting(const std::vector<ulint>& lengths, 
+                                         const std::vector<ulint>& interval_permutation,
+                                         const std::vector<ulint>& test_perm,
+                                         size_t n) {
+    auto t0 = high_resolution_clock::now();
+
+    SplitParams split_params_split(length_capping_factor, std::nullopt);
+    auto move_structure = MoveStructType(lengths, interval_permutation, n, split_params_split);
+
+    auto t1 = high_resolution_clock::now();
 
     assert(move_structure.runs() >= lengths.size() && "splitting can only add runs");
 
+    // Benchmark move() in splitting mode
     typename MoveStructType::Position pos;
     if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
                   std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
@@ -206,16 +217,43 @@ void test_move_structure_with_splitting(const std::vector<ulint>& lengths,
         pos = {0, 0};
     }
 
-    ulint real_pos = 0;
+    auto t2 = high_resolution_clock::now();
     for (size_t i = 0; i < n; ++i) {
-        real_pos = test_perm[real_pos];
-        pos = move_structure.move_exponential(pos);
+        pos = move_structure.move(pos);
     }
-    std::cout << "Passed splitting tests" << std::endl;
+    auto t3 = high_resolution_clock::now();
+
+    // Benchmark move_exponential() in splitting mode
+    typename MoveStructType::Position pos_exp;
+    if constexpr (std::is_same_v<MoveStructType, MoveStructureTblIdx> || 
+                  std::is_same_v<MoveStructType, MoveStructureVecIdx>) {
+        pos_exp = {0, 0, 0};
+    } else {
+        pos_exp = {0, 0};
+    }
+
+    auto t4 = high_resolution_clock::now();
+    for (size_t i = 0; i < n; ++i) {
+        pos_exp = move_structure.move_exponential(pos_exp);
+    }
+    auto t5 = high_resolution_clock::now();
+
+    auto creation_duration   = duration_cast<microseconds>(t1 - t0);
+    auto move_duration       = duration_cast<microseconds>(t3 - t2);
+    auto move_exp_duration   = duration_cast<microseconds>(t5 - t4);
+    auto total_duration      = duration_cast<microseconds>(t5 - t0);
+
+    std::cout << "  " << get_type_name<MoveStructType>() << " (splitting):" << std::endl;
+    std::cout << "    Creation:        " << creation_duration.count() << "μs" << std::endl;
+    std::cout << "    Moves (move):    " << move_duration.count() << "μs" << std::endl;
+    std::cout << "    Moves (exp):     " << move_exp_duration.count() << "μs" << std::endl;
+    std::cout << "    Total:           " << total_duration.count() << "μs" << std::endl;
+    std::stringstream ss;
+    std::cout << "    Size: " << move_structure.serialize(ss) << std::endl;
 }
 
-void tests() {
-    cout << "=== MoveStructure Table Tests ===" << endl << endl;
+void run_benchmarks() {
+    cout << "=== MoveStructure Benchmarks ===" << endl << endl;
 
     for (size_t n : test_n) {
         for (size_t percentage_run : percentage_runs) {
@@ -247,37 +285,24 @@ void tests() {
                 }
             }
 
-            vector<std::pair<size_t, size_t>> full_cycle_pos(n);
-            for (size_t i = 0; i < n; ++i) {
-                ulint result = test_perm[i];
-                auto it = std::upper_bound(starts.begin(), starts.end(), result);
-                if (it != starts.begin()) {
-                    size_t index = std::distance(starts.begin(), it) - 1;
-                    size_t element = starts[index];
-                    full_cycle_pos[i] = {index, result - element};
-                }
-            }
-
             std::cout << "Testing n=" << n << ", r=" << r << " (n/r=" << n/r << "):" << std::endl;
             
-            // Test all table types (no splitting)
-            test_move_structure<MoveStructureTbl>(lengths, interval_permutation, starts, pointers, offsets, test_perm, full_cycle_pos, n);
-            test_move_structure_with_splitting<MoveStructureTbl>(lengths, interval_permutation, test_perm, n);
-            test_move_structure<MoveStructureVec>(lengths, interval_permutation, starts, pointers, offsets, test_perm, full_cycle_pos, n);
-            test_move_structure_with_splitting<MoveStructureVec>(lengths, interval_permutation, test_perm, n);
-            test_move_structure<MoveStructureTblIdx>(lengths, interval_permutation, starts, pointers, offsets, test_perm, full_cycle_pos, n);
-            test_move_structure_with_splitting<MoveStructureTblIdx>(lengths, interval_permutation, test_perm, n);
-            test_move_structure<MoveStructureVecIdx>(lengths, interval_permutation, starts, pointers, offsets, test_perm, full_cycle_pos, n);
-            test_move_structure_with_splitting<MoveStructureVecIdx>(lengths, interval_permutation, test_perm, n);
+            // Benchmark all table types (no splitting + splitting)
+            bench_move_structure<MoveStructureTbl>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
+            bench_move_structure_with_splitting<MoveStructureTbl>(lengths, interval_permutation, test_perm, n);
+            bench_move_structure<MoveStructureVec>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
+            bench_move_structure_with_splitting<MoveStructureVec>(lengths, interval_permutation, test_perm, n);
+            bench_move_structure<MoveStructureTblIdx>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
+            bench_move_structure_with_splitting<MoveStructureTblIdx>(lengths, interval_permutation, test_perm, n);
+            bench_move_structure<MoveStructureVecIdx>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
+            bench_move_structure_with_splitting<MoveStructureVecIdx>(lengths, interval_permutation, test_perm, n);
 
-            // Splitting-aware: verify move correctness when structure is split
-            
             std::cout << std::endl;
         }
     }
 }
 
 int main() {
-    tests();
+    run_benchmarks();
     return 0;
 }
