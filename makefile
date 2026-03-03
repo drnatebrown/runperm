@@ -16,13 +16,17 @@ BENCH_BUILD_DIR = $(BUILD_DIR)/bench
 
 UNIT_TESTS = $(UNIT_BUILD_DIR)/packed_vector_test \
              $(UNIT_BUILD_DIR)/alphabet_test \
+             $(UNIT_BUILD_DIR)/columns_test \
+             $(UNIT_BUILD_DIR)/api_test \
              $(UNIT_BUILD_DIR)/move_table_test \
              $(UNIT_BUILD_DIR)/move_splitting_test \
              $(UNIT_BUILD_DIR)/move_structure_test \
              $(UNIT_BUILD_DIR)/moveperm_test \
              $(UNIT_BUILD_DIR)/runperm_test \
              $(UNIT_BUILD_DIR)/rlbwt_row_test \
-             $(UNIT_BUILD_DIR)/rlbwt_structure_test
+             $(UNIT_BUILD_DIR)/rlbwt_structure_test \
+			 $(UNIT_BUILD_DIR)/runperm_lf_fl_test \
+			 $(UNIT_BUILD_DIR)/runperm_phi_invphi_test
 INTEGRATION_TESTS = $(INTEGRATION_BUILD_DIR)/rlbwt_test \
                     $(INTEGRATION_BUILD_DIR)/move_structure_test \
                     $(INTEGRATION_BUILD_DIR)/moveperm_test \
@@ -36,6 +40,8 @@ all: $(UNIT_TESTS) $(INTEGRATION_TESTS) $(BENCH_TESTS) examples
 test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	$(UNIT_BUILD_DIR)/packed_vector_test
 	$(UNIT_BUILD_DIR)/alphabet_test
+	$(UNIT_BUILD_DIR)/columns_test
+	$(UNIT_BUILD_DIR)/api_test
 	$(UNIT_BUILD_DIR)/move_table_test
 	$(UNIT_BUILD_DIR)/move_splitting_test
 	$(UNIT_BUILD_DIR)/move_structure_test
@@ -43,6 +49,8 @@ test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	$(UNIT_BUILD_DIR)/runperm_test
 	$(UNIT_BUILD_DIR)/rlbwt_row_test
 	$(UNIT_BUILD_DIR)/rlbwt_structure_test
+	$(UNIT_BUILD_DIR)/runperm_lf_fl_test
+	$(UNIT_BUILD_DIR)/runperm_phi_invphi_test
 	$(INTEGRATION_BUILD_DIR)/rlbwt_test
 	$(INTEGRATION_BUILD_DIR)/move_structure_test
 	$(INTEGRATION_BUILD_DIR)/moveperm_test
@@ -62,6 +70,14 @@ $(UNIT_BUILD_DIR)/packed_vector_test: ./tests/unit/ds/packed_vector_test.cpp $(H
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(UNIT_BUILD_DIR)/alphabet_test: ./tests/unit/ds/alphabet_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/api_test: ./tests/unit/api_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/columns_test: ./tests/unit/columns_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
@@ -90,6 +106,14 @@ $(UNIT_BUILD_DIR)/rlbwt_row_test: ./tests/unit/rlbwt/rlbwt_row_test.cpp $(HEADER
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(UNIT_BUILD_DIR)/rlbwt_structure_test: ./tests/unit/rlbwt/rlbwt_structure_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/runperm_lf_fl_test: ./tests/unit/rlbwt/runperm_lf_fl_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/runperm_phi_invphi_test: ./tests/unit/rlbwt/runperm_phi_invphi_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
