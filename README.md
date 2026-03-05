@@ -90,9 +90,9 @@ Finally, we use the position type of our RunPerm object to navigate the permutat
 ```cpp
 using Position = typename RunPerm<RunCols>::Position
 Position pos = rp.first(); // start from 0
-unsigned long int some_data = rp.get<VAL1>(pos);
+unsigned long int some_data = rp.get<RunCols::VAL1>(pos);
 pos = rp.next(pos); // move one permutation step
-unsigned long int other_data = rp.get<VAL2>(pos);
+unsigned long int other_data = rp.get<RunsCols::VAL2>(pos);
 ```
 #### MovePerm
 
