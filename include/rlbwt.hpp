@@ -53,29 +53,34 @@
 #include "internal/rlbwt/runperm_invphi.hpp"
 
 // === RunPermLF ===
-template<typename RunColsType,
+template<typename DataColumns,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          typename AlphabetType = Nucleotide>
-class RunPermLF : public RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
-    using Base = RunPermLFImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
+class RunPermLF : public RunPermLFImpl<DataColumns, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
+    using Base = RunPermLFImpl<DataColumns, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
 public:
+    using RunDataColumns = typename Base::RunCols;
+    using RunDataTuple = typename Base::RunData;
+    
     using Base::Base;
     using Base::operator=;
+
+    using Position = typename Base::Position;
 };
 
 // Takes std::vector<uchar> bwt_and std::vector<ulint> as bwt_heads and bwt_run_lengths as input in place of lengths and interval permutations
 // Otherwise, same as RunPerm
 // Also implements LF, LF(steps), get_character(), get_character(row)
 
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermLFSeparated = RunPermLF<RunColsType, false, false, AlphabetType>; // Default
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermLFIntegrated = RunPermLF<RunColsType, true, false, AlphabetType>;
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermLFSeparatedAbsolute = RunPermLF<RunColsType, false, true, AlphabetType>;
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermLFIntegratedAbsolute = RunPermLF<RunColsType, true, true, AlphabetType>;
+template<typename DataColumns, typename AlphabetType = Nucleotide>
+using RunPermLFSeparated = RunPermLF<DataColumns, false, false, AlphabetType>; // Default
+template<typename DataColumns, typename AlphabetType = Nucleotide>
+using RunPermLFIntegrated = RunPermLF<DataColumns, true, false, AlphabetType>;
+template<typename DataColumns, typename AlphabetType = Nucleotide>
+using RunPermLFSeparatedAbsolute = RunPermLF<DataColumns, false, true, AlphabetType>;
+template<typename DataColumns, typename AlphabetType = Nucleotide>
+using RunPermLFIntegratedAbsolute = RunPermLF<DataColumns, true, true, AlphabetType>;
 
 // === MoveLF ===
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
@@ -85,34 +90,41 @@ class MoveLF : public MoveLFImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEA
 public:
     using Base::Base;
     using Base::operator=;
+
+    using Position = typename Base::Position;
 };
 
 // See above
 
 // === RunPermFL ===
-template<typename RunColsType,
+template<typename DataColumns,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          typename AlphabetType = Nucleotide>
-class RunPermFL : public RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
-    using Base = RunPermFLImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
+class RunPermFL : public RunPermFLImpl<DataColumns, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector> {
+    using Base = RunPermFLImpl<DataColumns, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, AlphabetType, MoveVector>;
 public:
+    using RunDataColumns = typename Base::RunCols;
+    using RunDataTuple = typename Base::RunData;
+
     using Base::Base;
     using Base::operator=;
+
+    using Position = typename Base::Position;
 };
 
 // Takes std::vector<uchar> bwt_and std::vector<ulint> as bwt_heads and bwt_run_lengths as input in place of lengths and interval permutations
 // Otherwise, same as RunPerm
 // Also implements FL(pos), FL(pos, steps), get_character(pos), get_character(interval)
 
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermFLSeparated = RunPermFL<RunColsType, false, false, AlphabetType>; // Default
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermFLIntegrated = RunPermFL<RunColsType, true, false, AlphabetType>;
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermFLSeparatedAbsolute = RunPermFL<RunColsType, false, true, AlphabetType>;
-template<typename RunColsType, typename AlphabetType = Nucleotide>
-using RunPermFLIntegratedAbsolute = RunPermFL<RunColsType, true, true, AlphabetType>;
+template<typename DataColumns, typename AlphabetType = Nucleotide>
+using RunPermFLSeparated = RunPermFL<DataColumns, false, false, AlphabetType>; // Default
+template<typename DataColumns, typename AlphabetType = Nucleotide>
+using RunPermFLIntegrated = RunPermFL<DataColumns, true, false, AlphabetType>;
+template<typename DataColumns, typename AlphabetType = Nucleotide>
+using RunPermFLSeparatedAbsolute = RunPermFL<DataColumns, false, true, AlphabetType>;
+template<typename DataColumns, typename AlphabetType = Nucleotide>
+using RunPermFLIntegratedAbsolute = RunPermFL<DataColumns, true, true, AlphabetType>;
 
 // === MoveFL ===
 template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
@@ -122,6 +134,8 @@ class MoveFL : public MoveFLImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEA
 public:
     using Base::Base;
     using Base::operator=;
+
+    using Position = typename Base::Position;
 };
 
 // See above

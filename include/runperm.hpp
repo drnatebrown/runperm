@@ -43,38 +43,39 @@
 
 // Actual implementation, see documentation below
 // Advanced users can use the full implementation in include/internal/runperm/runperm.hpp
-template<typename RunColsType,
+template<typename DataColumns,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS>
-class RunPerm : public RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector> {
-    using Base = RunPermImpl<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector>;
+class RunPerm : public RunPermImpl<DataColumns, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector> {
+    using Base = RunPermImpl<DataColumns, IntegratedMoveStructure, StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector>;
 public:
-    using typename Base::RunData;
-    using typename Base::MoveStructurePerm;
+    using RunDataColumns = typename Base::RunCols;
+    using RunDataTuple = typename Base::RunData;
     using typename Base::Position;
+    using typename Base::MoveStructurePerm;
 
     using Base::Base;
     using Base::operator=;
 };
 
 /* === Basic types === */
-template<typename RunColsType>
-using RunPermSeparated = RunPerm<RunColsType, false, false>; // Same as RunPerm<RunColsType>, the default
-template<typename RunColsType>
-using RunPermIntegrated = RunPerm<RunColsType, true, false>;
-template<typename RunColsType>
-using RunPermSeparatedAbsolute = RunPerm<RunColsType, false, true>;
-template<typename RunColsType>
-using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true>;
+template<typename DataColumns>
+using RunPermSeparated = RunPerm<DataColumns, false, false>; // Same as RunPerm<DataColumns>, the default
+template<typename DataColumns>
+using RunPermIntegrated = RunPerm<DataColumns, true, false>;
+template<typename DataColumns>
+using RunPermSeparatedAbsolute = RunPerm<DataColumns, false, true>;
+template<typename DataColumns>
+using RunPermIntegratedAbsolute = RunPerm<DataColumns, true, true>;
 
 /* === Simplified interface for basic users, see full RunPermImpl in include/internal/runperm/runperm.hpp for more template parameters ===
-*   template<typename RunColsType,
+*   template<typename DataColumns,
 *         bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE, // Whether to integrate the run data alongside the move structure for cache locality, default is false
 *         bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS> // Whether to store absolute positions instead of interval/offset to support idx lookups, default is false
-*  class RunPerm : public RunPermHelper<RunColsType, IntegratedMoveStructure, StoreAbsolutePositions> {
+*  class RunPerm : public RunPermHelper<DataColumns, IntegratedMoveStructure, StoreAbsolutePositions> {
 *   public:
 *    // === Implemented types ===
-*    using RunData = typename Base::RunData; // std::array<ulint, RunColsType::COUNT>
+*    using RunData = typename Base::RunData; // std::array<ulint, DataColumns::COUNT>
 *    using Position = typename MoveStructure::Position; // see set position method below
 *    using MoveStructurePerm = typename Base::MoveStructurePerm; // MoveStructurePerm as determined by the template parameters
 *
@@ -111,17 +112,17 @@ using RunPermIntegratedAbsolute = RunPerm<RunColsType, true, true>;
 *    ulint permutation_runs() const; // Get number of runs/intervals in original permutation
 *
 *    // === Run data access ===
-*    template<RunColsType Col>
+*    template<DataColumns Col>
 *    ulint get(Position pos) const; // Get value of run data column
-*    template<RunColsType Col>
+*    template<DataColumns Col>
 *    ulint get(size_t i) const; // Get value of run data column for interval i
 *    ulint get_length(Position pos) const; // Get length of interval containing position
 *    ulint get_length(size_t i) const; // Get length of interval i
 *
 *    // === Search methods ===
-*    template<RunColsType Col>
+*    template<DataColumns Col>
 *    std::optional<Position> pred(Position pos, ulint val); // Get position of largest idx before or at position run with matching run data value
-*    template<RunColsType Col>
+*    template<DataColumns Col>
 *    std::optional<Position> succ(Position pos, ulint val); // Get position of smallest idx after or at position run with matching run data value
 *
 *    // === Serialization ===
@@ -140,6 +141,8 @@ template<bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS>
 class MovePerm : public MovePermImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector> {
     using Base = MovePermImpl<StoreAbsolutePositions, DEFAULT_EXPONENTIAL_SEARCH, MoveCols, MoveStructure, MoveVector>;
 public:
+    using typename Base::Position;
+
     using Base::Base;
     using Base::operator=;
 };
