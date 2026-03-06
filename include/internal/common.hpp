@@ -72,6 +72,14 @@ using ColumnsTuple = std::array<T, num_columns<E>()>;
     template<typename E> static constexpr Columns to_cols(E e) { return static_cast<Columns>(e); }
 
 /* PERMUTATION UTILITIES */
+inline std::vector<ulint> get_inverse_permutation(const std::vector<ulint>& permutation) {
+    std::vector<ulint> inverse_permutation(permutation.size());
+    for (size_t i = 0; i < permutation.size(); ++i) {
+        inverse_permutation[permutation[i]] = i;
+    }
+    return inverse_permutation;
+}
+
 inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_intervals(const std::vector<ulint> &permutation) {
     std::vector<ulint> lengths;
     std::vector<ulint> interval_permutation;
