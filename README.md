@@ -49,6 +49,7 @@ The provided `makefile` only builds example/test executables:
 `RunPerm` is the generic implementation allowing storage of user defined fields alongside a runny permutation, included with `runperm.hpp`. Some small examples are given in the provided `examples.cpp` file.
 
 Consider this runny permutation example:
+
 <img width="598" height="572" alt="Image" src="https://github.com/user-attachments/assets/18933a68-b858-40eb-bfb3-f5fd758557d6" />
 
 We pass the lengths of contiguously permuted intervals and the permutation of their first values:
