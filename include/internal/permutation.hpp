@@ -50,41 +50,27 @@ public:
 
     PermutationImpl() = default;
 
-    PermutationImpl(const std::vector<ulint>& permutation, const SplitParams& split_params = SplitParams()) {
+    static PermutationImpl<IntVectorType> from_permutation(const std::vector<ulint>& permutation, const SplitParams& split_params = SplitParams()) {
         ulint max_length = 0;
         auto [lengths, interval_permutation] = get_permutation_intervals(permutation, &max_length);
         assert(lengths.size() == interval_permutation.size());
-        set_initial_values(permutation.size(), lengths.size(), max_length);
 
-        IntVectorType tau_inv = permutation_helpers::get_tau_inv(interval_permutation);
-        init_tau_inv(lengths, tau_inv, split_params);
-    }
-
-    PermutationImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& tau_inv, const SplitParams& split_params = SplitParams()) {
-        assert(lengths.size() == tau_inv.size());
-        auto [domain, max_length] = permutation_helpers::sum_and_max(lengths);
-        set_initial_values(domain, lengths.size(), max_length);
-
-        init_tau_inv(lengths, tau_inv, split_params);
-    }
-
-    PermutationImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& tau_inv, const ulint domain, const ulint max_length, const SplitParams& split_params = SplitParams()) {
-        assert(lengths.size() == tau_inv.size());
-        set_initial_values(domain, lengths.size(), max_length);
-
-        init_tau_inv(lengths, tau_inv, split_params);
-    }
-
-    static PermutationImpl<IntVectorType> from_permutation(const std::vector<ulint>& permutation, const SplitParams& split_params = SplitParams()) {
-        return PermutationImpl<IntVectorType>(permutation, split_params);
+        return from_lengths_and_interval_permutation(lengths, interval_permutation, permutation.size(), max_length, split_params);
     }
 
     static PermutationImpl<IntVectorType> from_lengths_and_tau_inv(const std::vector<ulint>& lengths, const std::vector<ulint>& tau_inv, const SplitParams& split_params = SplitParams()) {
-        return PermutationImpl<IntVectorType>(lengths, tau_inv, split_params);
+        assert(lengths.size() == tau_inv.size());
+        auto [domain, max_length] = permutation_helpers::sum_and_max(lengths);
+        
+        return from_lengths_and_tau_inv(lengths, tau_inv, domain, max_length, split_params);
     }
     
     static PermutationImpl<IntVectorType> from_lengths_and_tau_inv(const std::vector<ulint>& lengths, const std::vector<ulint>& tau_inv, const ulint domain, const ulint max_length, const SplitParams& split_params = SplitParams()) {
-        return PermutationImpl<IntVectorType>(lengths, tau_inv, domain, max_length, split_params);
+        assert(lengths.size() == tau_inv.size());
+        PermutationImpl<IntVectorType> permutation;
+        permutation.set_initial_values(domain, lengths.size(), max_length);
+        permutation.init_tau_inv(lengths, tau_inv, split_params);
+        return permutation;
     }
 
     static PermutationImpl<IntVectorType> from_lengths_and_tau(const std::vector<ulint>& lengths, const std::vector<ulint>& tau, const SplitParams& split_params = SplitParams()) {
@@ -114,7 +100,7 @@ public:
         assert(lengths.size() == interval_permutation.size());
 
         std::vector<ulint> tau_inv = permutation_helpers::get_tau_inv(interval_permutation);
-        return PermutationImpl<IntVectorType>(lengths, tau_inv, domain, max_length, split_params);
+        return from_lengths_and_tau_inv(lengths, tau_inv, domain, max_length, split_params);
     }
 
     static PermutationImpl<IntVectorType> from_starts_and_tau_inv(const std::vector<ulint>& starts, const std::vector<ulint>& tau_inv, const ulint domain, const SplitParams& split_params = SplitParams()) {
