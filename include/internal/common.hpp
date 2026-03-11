@@ -86,7 +86,9 @@ inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_interva
     ulint max_length = 0;
     for (size_t i = 0; i < permutation.size(); ++i) {
         if (i == 0 || permutation[i] != permutation[i - 1] + 1) {
-            max_length = std::max(max_length, lengths.back());
+            if (!lengths.empty()) {
+                max_length = std::max(max_length, lengths.back());
+            }
             lengths.push_back(1);
             interval_permutation.push_back(permutation[i]);
         } else {

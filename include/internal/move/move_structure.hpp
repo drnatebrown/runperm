@@ -12,6 +12,7 @@
 #include <numeric>
 
 #include "internal/common.hpp"
+#include "internal/permutation.hpp"
 #include "internal/move/move_table.hpp"
 #include "internal/move/move_splitting.hpp"
 #include "internal/ds/packed_vector.hpp"

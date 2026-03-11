@@ -93,7 +93,7 @@ public:
         assert(lengths.size() == interval_permutation.size());
 
         auto [domain, max_length] = permutation_helpers::sum_and_max(lengths);
-        return from_lengths_and_tau(lengths, interval_permutation, domain, max_length, split_params);
+        return from_lengths_and_interval_permutation(lengths, interval_permutation, domain, max_length, split_params);
     }
 
     static PermutationImpl<IntVectorType> from_lengths_and_interval_permutation(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const ulint max_length, const SplitParams& split_params = SplitParams()) {

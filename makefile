@@ -34,6 +34,7 @@ UNIT_TESTS = $(UNIT_BUILD_DIR)/packed_vector_test \
              $(UNIT_BUILD_DIR)/columns_test \
              $(UNIT_BUILD_DIR)/api_test \
              $(UNIT_BUILD_DIR)/common_test \
+             $(UNIT_BUILD_DIR)/permutation_test \
              $(UNIT_BUILD_DIR)/move_table_test \
              $(UNIT_BUILD_DIR)/move_splitting_test \
              $(UNIT_BUILD_DIR)/move_structure_test \
@@ -61,6 +62,7 @@ test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	$(UNIT_BUILD_DIR)/packed_vector_test
 	$(UNIT_BUILD_DIR)/alphabet_test
 	$(UNIT_BUILD_DIR)/columns_test
+	$(UNIT_BUILD_DIR)/permutation_test
 	$(UNIT_BUILD_DIR)/common_test
 	$(UNIT_BUILD_DIR)/api_test
 	$(UNIT_BUILD_DIR)/move_table_test
@@ -101,6 +103,10 @@ $(UNIT_BUILD_DIR)/api_test: ./tests/unit/api_test.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(UNIT_BUILD_DIR)/columns_test: ./tests/unit/columns_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/permutation_test: ./tests/unit/runperm/permutation_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 

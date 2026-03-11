@@ -13,7 +13,7 @@ struct SplitParams {
     std::optional<double> length_capping;
     std::optional<ulint> balancing;
 
-    SplitParams() : length_capping(DEFAULT_LENGTH_CAPPING_FACTOR), balancing(DEFAULT_BALANCING_FACTOR) {}
+    SplitParams() : length_capping(DEFAULT_LENGTH_CAPPING), balancing(DEFAULT_BALANCING) {}
     SplitParams(std::optional<double> length_capping, std::optional<ulint> balancing)
     : length_capping(std::move(length_capping)), balancing(std::move(balancing)) {}
 };
