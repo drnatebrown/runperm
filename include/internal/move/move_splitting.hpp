@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cassert>
 #include <optional>
+#include <iostream>
 
 inline constexpr std::optional<double> DEFAULT_LENGTH_CAPPING = 8.0;
 inline constexpr std::optional<ulint> DEFAULT_BALANCING = 16;
@@ -46,7 +47,9 @@ inline void split_by_length_capping(
     uchar bits = bit_width(desired_max_allowed_length);
     ulint max_allowed_length = MAX_VAL(bits);
 
-    split_by_max_allowed_length(lengths, tau_inv, domain, max_allowed_length, result);
+    size_t new_intervals_upper_bound = std::ceil(static_cast<double>(lengths.size()) / length_capping_factor);
+
+    split_by_max_allowed_length(lengths, tau_inv, domain, max_allowed_length, result, new_intervals_upper_bound);
 }
 
 template<class IntVectorType>
@@ -55,25 +58,35 @@ inline void split_by_max_allowed_length(
     const IntVectorType& tau_inv,
     const ulint domain,
     const ulint max_allowed_length, 
-    SplitResult<IntVectorType>& result
+    SplitResult<IntVectorType>& result,
+    const size_t new_intervals_upper_bound = 0
 ) {
     assert(lengths.size() == tau_inv.size());
     assert(max_allowed_length > 0);
+    size_t intervals_after_splitting_upper_bound = 
+        (new_intervals_upper_bound == 0) ? domain - 1 : lengths.size() + new_intervals_upper_bound - 1;
 
-    // First pass to determine the number of intervals after splitting and the max length
+    // For each original run, how many new intervals were added up to but not including this run?
+    IntVectorType input_splits_exclusive_cumsum(lengths.size(), bit_width(intervals_after_splitting_upper_bound));
+    
+    // First pass to determine the number of intervals after splitting in input order, 
+    // the number of new intervals added up to but not including each run, 
+    // and the max length of the new intervals
     size_t num_intervals_after_splitting = 0;
-    // Map from original interval index to new interval index
-    IntVectorType old_to_new_interval_idx(lengths.size(), bit_width(domain - 1));
+    size_t cumulative_new_intervals = 0;
     result.max_length = 0;
     for (size_t i = 0; i < lengths.size(); ++i) {
-        old_to_new_interval_idx.set(i, num_intervals_after_splitting);
+        input_splits_exclusive_cumsum[i] = cumulative_new_intervals;
+
         if (lengths[i] > max_allowed_length) {
             ulint remaining = lengths[i];
             while (remaining > 0) {
                 ulint chunk = std::min(remaining, max_allowed_length);
                 remaining -= chunk;
                 ++num_intervals_after_splitting;
+                ++cumulative_new_intervals;
             }
+            --cumulative_new_intervals;
             result.max_length = max_allowed_length;
         } else {
             result.max_length = std::max(result.max_length, lengths[i]);
@@ -84,24 +97,30 @@ inline void split_by_max_allowed_length(
     result.lengths = IntVectorType(num_intervals_after_splitting, bit_width(result.max_length));
     result.tau_inv = IntVectorType(num_intervals_after_splitting, bit_width(num_intervals_after_splitting - 1));
 
-    // Second pass to fill the lengths and tau_inv arrays
-    size_t curr_interval_idx = 0;
+    // Second pass to fill the lengths and tau_inv arrays, in output order
+    size_t curr_tau_inv_idx = 0;
     for (size_t i = 0; i < lengths.size(); ++i) {
-        if (lengths[i] > max_allowed_length) {
-            ulint remaining = lengths[i];
-            size_t relative_interval_idx = 0;
+        size_t j = tau_inv[i];
+        size_t length = lengths[j];
+        size_t num_splits = 0;
+        if (length > max_allowed_length) {
+            ulint remaining = length;
             while (remaining > 0) {
                 ulint chunk = std::min(remaining, max_allowed_length);
-                result.lengths[curr_interval_idx] = chunk;
-                result.tau_inv[curr_interval_idx] = old_to_new_interval_idx[tau_inv[i]] + relative_interval_idx;
-                ++curr_interval_idx;
-                ++relative_interval_idx;
                 remaining -= chunk;
+                result.lengths[j + input_splits_exclusive_cumsum[j] + num_splits] = chunk;
+                ++num_splits;
             }
+            --num_splits;
         } else {
-            result.lengths[curr_interval_idx] = lengths[i];
-            result.tau_inv[curr_interval_idx] = old_to_new_interval_idx[tau_inv[i]];
-            ++curr_interval_idx;
+            result.lengths[j + input_splits_exclusive_cumsum[j]] = length;
+        }
+        
+        // Fill the tau_inv array
+        size_t curr_tau_inv_val = j + input_splits_exclusive_cumsum[j];
+        for (size_t k = 0; k < num_splits + 1; ++k) {
+            result.tau_inv[curr_tau_inv_idx] = curr_tau_inv_val + k;
+            ++curr_tau_inv_idx;
         }
     }
 }

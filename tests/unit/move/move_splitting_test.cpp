@@ -44,34 +44,42 @@ void test_split_by_length_capping_no_splitting() {
 
 void test_split_by_length_capping_with_splitting() {
     // One run is longer than the allowed maximum and should be split.
-    const vector<ulint> lengths_vec = {2, 10, 3};
-    const vector<ulint> perm_vec = {0, 2, 12};
-    const vector<ulint> tau_inv_vec = {0, 1, 2};
+    const vector<ulint> lengths_vec = {2, 3, 1, 2, 2, 1, 1, 1, 3};
+    const vector<ulint> perm_vec = {1, 9, 3, 12, 4, 14, 0, 15, 6};
+    const vector<ulint> tau_inv_vec = {6, 0, 2, 4, 8, 1, 3, 5, 7};
     const ulint domain = 15; // Sum of lengths.
-    const double factor = 1.0;
+    size_t max_length = 2;
 
     TestIntVector lengths(lengths_vec);
     TestIntVector tau_inv(tau_inv_vec);
 
     TestSplitResult result;
-    split_by_length_capping(lengths, tau_inv, domain, factor, result);
+    split_by_max_allowed_length(lengths, tau_inv, domain, max_length, result);
 
-    // avg_run_length = 15 / 3 = 5
-    // desired_max_allowed_length = ceil(5 * 1.0) = 5
-    // bit_width(5) = 3, so max_allowed_length = 2^3 - 1 = 7
-    // The middle run (length 10, start 2) is split into [7, 3].
-    const vector<ulint> expected_lengths = {2, 7, 3, 3};
-    const vector<ulint> expected_perm    = {0, 2, 9, 12};
-    const vector<ulint> expected_tau_inv = {0, 1, 2, 3};
+    const vector<ulint> expected_lengths = {2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 1};
+    const vector<ulint> expected_perm = {1, 9, 11, 3, 12, 4, 14, 0, 15, 6, 8};
+    const vector<ulint> expected_tau_inv = {7, 0, 3, 5, 9, 10, 1, 2, 4, 6, 8};
 
+
+    std::cout << "result.lengths: " << std::endl;
+    for (size_t i = 0; i < result.lengths.size(); ++i) {
+        std::cout << result.lengths[i] << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "result.tau_inv: " << std::endl;
+    for (size_t i = 0; i < result.tau_inv.size(); ++i) {
+        std::cout << result.tau_inv[i] << " ";
+    }
+    std::cout << std::endl;
+    
     assert(result.lengths.size() == expected_lengths.size());
-    assert(result.tau_inv.size()   == expected_tau_inv.size());
+    assert(result.tau_inv.size() == expected_tau_inv.size());
 
     for (size_t i = 0; i < expected_lengths.size(); ++i) {
         assert(result.lengths[i] == expected_lengths[i]);
         assert(result.tau_inv[i] == expected_tau_inv[i]);
     }
-    assert(result.max_length == 7);
+    assert(result.max_length == max_length);
 }
 
 void test_split_by_length_capping_mixed_lengths() {
@@ -112,7 +120,7 @@ void test_split_by_length_capping_mixed_lengths() {
 void test_split_by_balancing_dummy() {
     const vector<ulint> lengths_vec = {3, 5, 2};
     const vector<ulint> perm_vec    = {0, 3, 8};
-    const vector<ulint> tau_inv_vec = {2, 1, 0};
+    const vector<ulint> tau_inv_vec = {0, 1, 2};
     const ulint domain = 10;
     const ulint factor = 4;
 

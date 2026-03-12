@@ -36,7 +36,9 @@ inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_interva
             ++lengths.back();
         }
     }
-    max_length = std::max(max_length, lengths.back());
+    if (!lengths.empty()) {
+        max_length = std::max(max_length, lengths.back());
+    }
     if (max_length_ret) {
         *max_length_ret = max_length;
     }

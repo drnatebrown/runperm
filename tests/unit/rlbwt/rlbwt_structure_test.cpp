@@ -48,7 +48,7 @@ static void test_rlbwt_move_structure_relative_splitting_preserves_chars() {
     // Two runs: a long run (symbol 0) followed by a short run (symbol 1).
     const vector<uchar> rlbwt_chars = {0, 1};
     const vector<ulint> lengths     = {5, 1};
-    const vector<ulint> interval_perm = {1, 0};
+    const vector<ulint> interval_perm = {0, 1};
     const ulint domain = 6;
     const uchar sigma = 4;
 
@@ -64,7 +64,7 @@ static void test_rlbwt_move_structure_relative_splitting_preserves_chars() {
     // Sum up lengths per character to ensure splitting preserved run heads.
     ulint sym0_len = 0;
     ulint sym1_len = 0;
-    for (ulint i = 0; i < ms.runs(); ++i) {
+    for (ulint i = 0; i < ms.intervals(); ++i) {
         uchar ch = ms.get_character(i);
         if (ch == 0) {
             sym0_len += ms.get_length(i);
