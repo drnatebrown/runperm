@@ -5,8 +5,6 @@
 #include "internal/runperm/runperm.hpp"
 #include "internal/rlbwt/runperm_lf.hpp"
 
-// TODO give tau_inv instead of interval permutation
-
 namespace phi {
 
 using IntVec = IntVectorAligned;

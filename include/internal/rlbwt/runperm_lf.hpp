@@ -6,6 +6,8 @@
 #include "internal/rlbwt/specializations/runperm_rlbwt.hpp"
 #include "internal/ds/alphabet.hpp"
 
+// TODO use IntVector here
+
 template<typename RunColsType,
          bool IntegratedMoveStructure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool StoreAbsolutePositions = DEFAULT_STORE_ABSOLUTE_POSITIONS,

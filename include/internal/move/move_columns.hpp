@@ -66,7 +66,6 @@ struct MoveColsTraits;
    - OFFSET: enum class Columns
    - NUM_COLS: size_t
    - Position: struct with interval, offset, and idx (if ABSOLUTE)
-   // TODO couple position type to absolute/relative
 */
 
 template <>
