@@ -104,9 +104,36 @@ void test_runperm_phi_invphi_wrapper_equivalence() {
     assert(inv2.offset == it_inv.offset);
 }
 
+void test_runperm_invphi_tau_inv_wrapper_equivalence() {
+    // Reuse the small RLBWT example from the integration test.
+    vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
+    vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+
+    size_t inv_domain_1;
+    ulint max_length_inv_1;
+    auto [inv_lengths_1, inv_perm] = phi::rlbwt_to_invphi(bwt_heads, bwt_run_lengths, &inv_domain_1, &max_length_inv_1);
+    size_t inv_domain_2;
+    ulint max_length_inv_2;
+    auto [inv_lengths_2, invphi_tau_inv] = phi::rlbwt_to_invphi_tau_inv(bwt_heads, bwt_run_lengths, &inv_domain_2, &max_length_inv_2);
+
+    assert(inv_domain_1 == inv_domain_2);
+    assert(inv_lengths_1.size() == inv_lengths_2.size());
+    assert(inv_perm.size() == invphi_tau_inv.size());
+
+    for (size_t i = 0; i < inv_lengths_1.size(); ++i) {
+        assert(inv_lengths_1[i] == inv_lengths_2[i]);
+    }
+
+    auto expected_invphi_tau_inv = compute_tau_inv(inv_perm);
+    for (size_t i = 0; i < expected_invphi_tau_inv.size(); ++i) {
+        assert(expected_invphi_tau_inv[i] == invphi_tau_inv[i]);
+    }
+}
+
 int main() {
     test_phi_invphi_structure_on_small_rlbwt();
     test_runperm_phi_invphi_wrapper_equivalence();
+    test_runperm_invphi_tau_inv_wrapper_equivalence();
 
     std::cout << "runperm_phi_invphi unit tests passed" << std::endl;
     return 0;
