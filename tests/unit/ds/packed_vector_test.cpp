@@ -9,6 +9,8 @@
 #include <sstream>
 #include <vector>
 #include <iostream>
+#include <algorithm>
+#include <numeric>
 
 using std::array;
 using std::size_t;
@@ -85,6 +87,77 @@ void test_int_vector_serialize_roundtrip() {
         ulint expected = static_cast<ulint>((i * 7) % (1u << width));
         assert(loaded.get(i) == expected);
     }
+}
+
+void test_int_vector_vector_ctor_non_empty() {
+    std::vector<ulint> data;
+    data.reserve(64);
+    for (size_t i = 0; i < 64; ++i) {
+        data.push_back(static_cast<ulint>((i * 17) ^ (i >> 1)));
+    }
+
+    IntVector v(data);
+    assert(v.rows() == data.size());
+    for (size_t i = 0; i < data.size(); ++i) {
+        assert(v.get(i) == data[i]);
+    }
+}
+
+void test_int_vector_vector_ctor_empty() {
+    std::vector<ulint> data;
+    IntVector v(data);
+    assert(v.rows() == 0);
+}
+
+// (data, width) constructor: initialize from vector with explicit bit width.
+void test_int_vector_vector_width_ctor() {
+    std::vector<ulint> data = {0, 1, 15, 127, 255}; // fits in 8 bits
+    const uchar width = 8;
+
+    IntVector v(data, width);
+    assert(v.rows() == data.size());
+    for (size_t i = 0; i < data.size(); ++i) {
+        assert(v.get(i) == data[i]);
+    }
+}
+
+// Iterator tests for IntVector: mutable and const access.
+void test_int_vector_iterators() {
+    const size_t rows = 32;
+    const uchar width = 10;
+
+    IntVector v(rows, width);
+
+    // Fill via mutable iterators (exercise proxy assignment).
+    ulint value = 0;
+    for (auto it = v.begin(); it != v.end(); ++it, ++value) {
+        *it = value;
+    }
+
+    // Verify via get and operator[].
+    for (size_t i = 0; i < rows; ++i) {
+        assert(v.get(i) == static_cast<ulint>(i));
+        assert(v[i] == static_cast<ulint>(i));
+    }
+
+    // Exercise a standard algorithm (read/write through iterators).
+    std::for_each(v.begin(), v.end(), [](IntVector::reference x) {
+        ulint current = static_cast<ulint>(x);
+        x = current * 2;
+    });
+
+    for (size_t i = 0; i < rows; ++i) {
+        assert(v.get(i) == static_cast<ulint>(2 * i));
+    }
+
+    // Const iteration: range-for over const reference.
+    const IntVector& cv = v;
+    size_t idx = 0;
+    for (auto x : cv) {
+        assert(x == cv.get(idx));
+        ++idx;
+    }
+    assert(idx == rows);
 }
 
 // Tests for the Columns-based PackedVector facade.
@@ -166,6 +239,74 @@ void test_int_vector_aligned() {
     }
 }
 
+void test_int_vector_aligned_vector_ctor_non_empty() {
+    std::vector<ulint> data;
+    data.reserve(64);
+    for (size_t i = 0; i < 64; ++i) {
+        // keep values small-ish but non-trivial
+        data.push_back(static_cast<ulint>((i * 17) ^ (i >> 1)));
+    }
+
+    IntVectorAligned v(data);
+    assert(v.rows() == data.size());
+    for (size_t i = 0; i < data.size(); ++i) {
+        assert(v.get(i) == data[i]);
+    }
+}
+
+void test_int_vector_aligned_vector_ctor_empty() {
+    std::vector<ulint> data;
+    IntVectorAligned v(data);
+    assert(v.rows() == 0);
+}
+
+// (data, width) constructor for aligned variant.
+void test_int_vector_aligned_vector_width_ctor() {
+    std::vector<ulint> data = {0, 100, 500, 1023}; // fits in 10 bits
+    const uchar width = 10;
+
+    IntVectorAligned v(data, width);
+    assert(v.rows() == data.size());
+    for (size_t i = 0; i < data.size(); ++i) {
+        assert(v.get(i) == data[i]);
+    }
+}
+
+// Iterator tests for IntVectorAligned: mutable and const access.
+void test_int_vector_aligned_iterators() {
+    const size_t rows = 40;
+    const uchar width = 12;
+
+    IntVectorAligned v(rows, width);
+
+    // Use std::iota to fill via iterators.
+    std::iota(v.begin(), v.end(), static_cast<ulint>(0));
+
+    for (size_t i = 0; i < rows; ++i) {
+        assert(v.get(i) == static_cast<ulint>(i));
+        assert(v[i] == static_cast<ulint>(i));
+    }
+
+    // Use std::sort with a custom comparator to ensure compatibility.
+    std::sort(v.begin(), v.end(), [](ulint a, ulint b) {
+        return a > b; // sort in descending order
+    });
+
+    for (size_t i = 0; i < rows; ++i) {
+        ulint expected = static_cast<ulint>(rows - 1 - i);
+        assert(v.get(i) == expected);
+    }
+
+    // Const iteration over aligned vector.
+    const IntVectorAligned& cv = v;
+    size_t idx = 0;
+    for (auto x : cv) {
+        assert(x == cv.get(idx));
+        ++idx;
+    }
+    assert(idx == rows);
+}
+
 // Round-trip serialize/load for IntVectorAligned.
 void test_int_vector_aligned_serialize_roundtrip() {
     const size_t rows = 32;
@@ -225,11 +366,19 @@ int main() {
     test_packed_matrix_single_column();
     test_packed_matrix_multi_column();
     test_int_vector_serialize_roundtrip();
+    test_int_vector_vector_ctor_non_empty();
+    test_int_vector_vector_ctor_empty();
+    test_int_vector_vector_width_ctor();
+    test_int_vector_iterators();
     test_packed_vector_with_enum();
     test_packed_matrix_aligned_basic();
     test_int_vector_aligned();
+    test_int_vector_aligned_vector_ctor_non_empty();
+    test_int_vector_aligned_vector_ctor_empty();
+    test_int_vector_aligned_vector_width_ctor();
     test_int_vector_aligned_serialize_roundtrip();
     test_packed_vector_aligned_with_enum();
+    test_int_vector_aligned_iterators();
 
     std::cout << "packed_vector tests passed" << std::endl;
     return 0;

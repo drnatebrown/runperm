@@ -34,7 +34,7 @@ static void test_move_structure_move_matches_interval_permutation_relative() {
     const ulint domain = 10;
 
     using MS = MoveStructure<MoveCols>;
-    MS ms(lengths, perm, domain, NO_SPLITTING);
+    MS ms(lengths, perm, NO_SPLITTING);
     using Position = typename MS::Position;
 
     // For each interval and offset, move once and check absolute index.
@@ -57,7 +57,7 @@ static void test_move_structure_move_matches_interval_permutation_absolute() {
     const ulint domain = 10;
 
     using MS = MoveStructure<MoveColsIdx>;
-    MS ms(lengths, perm, domain, NO_SPLITTING);
+    MS ms(lengths, perm, NO_SPLITTING);
     using Position = typename MS::Position;
 
     for (size_t j = 0; j < lengths.size(); ++j) {
@@ -85,7 +85,7 @@ static void test_move_structure_move_exponential_agrees_with_move_absolute() {
     const ulint domain = 10;
 
     using MS = MoveStructure<MoveColsIdx>;
-    MS ms(lengths, perm, domain, NO_SPLITTING);
+    MS ms(lengths, perm, NO_SPLITTING);
     using Position = typename MS::Position;
 
     for (size_t j = 0; j < lengths.size(); ++j) {
@@ -113,11 +113,11 @@ static void test_move_structure_splitting_preserves_semantics_relative() {
     const ulint domain = 10;
 
     using MS = MoveStructure<MoveCols>;
-    MS base_ms(lengths, perm, domain, NO_SPLITTING);
+    MS base_ms(lengths, perm, NO_SPLITTING);
 
     // Use only length capping with a small factor to trigger splitting.
     SplitParams params = ONLY_LENGTH_CAPPING;
-    MS capped_ms(lengths, perm, domain, params);
+    MS capped_ms(lengths, perm, params);
 
     using Position = typename MS::Position;
 

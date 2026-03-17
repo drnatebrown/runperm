@@ -25,7 +25,7 @@ static MovePermRelative::Position make_pos_relative(const MovePermRelative &mp,
                                                     ulint idx) {
     MovePermRelative::Position pos{};
     ulint prefix = 0;
-    for (ulint interval = 0; interval < mp.move_runs(); ++interval) {
+    for (ulint interval = 0; interval < mp.intervals(); ++interval) {
         ulint len = mp.get_length(interval);
         if (idx < prefix + len) {
             pos.interval = interval;
@@ -43,7 +43,7 @@ static MovePermAbsolute::Position make_pos_absolute(const MovePermAbsolute &mp,
     MovePermAbsolute::Position pos{};
     pos.idx = idx;
     ulint prefix = 0;
-    for (ulint interval = 0; interval < mp.move_runs(); ++interval) {
+    for (ulint interval = 0; interval < mp.intervals(); ++interval) {
         ulint len = mp.get_length(interval);
         if (idx < prefix + len) {
             pos.interval = interval;
@@ -74,7 +74,7 @@ static void integration_move_perm_relative_and_absolute() {
 
     // Absolute constructor from lengths + interval permutation.
     auto [lengths, interval_perm] = get_permutation_intervals(perm);
-    MovePermAbsolute mp_abs(lengths, interval_perm, domain);
+    MovePermAbsolute mp_abs(lengths, interval_perm);
     assert(mp_abs.domain() == domain);
 
     for (ulint idx = 0; idx < domain; ++idx) {
@@ -100,11 +100,11 @@ static void integration_move_perm_splitting_equivalence() {
         }
     }
 
-    MovePermRelative mp_no_split(lengths, interval_perm, domain);
+    MovePermRelative mp_no_split(lengths, interval_perm);
 
     SplitParams split;
-    split.length_capping_factor = 1.0;
-    MovePermRelative mp_split(lengths, interval_perm, domain, split);
+    split.length_capping = 1.0;
+    MovePermRelative mp_split(lengths, interval_perm, split);
 
     assert(mp_no_split.domain() == domain);
     assert(mp_split.domain() == domain);

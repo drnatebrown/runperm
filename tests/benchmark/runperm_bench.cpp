@@ -123,7 +123,7 @@ void bench_runperm(const std::vector<ulint>& lengths,
                    size_t n) {
 
     auto start_time = high_resolution_clock::now();
-    auto runperm = RunPermType(lengths, interval_permutation, n, split_params, run_data);
+    auto runperm = RunPermType(lengths, interval_permutation, split_params, run_data);
     auto creation_time = high_resolution_clock::now();
 
     auto pos = runperm.first();

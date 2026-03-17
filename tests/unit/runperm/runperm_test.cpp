@@ -27,7 +27,7 @@ static typename RP::Position make_pos_absolute(const RP &rp, ulint idx) {
     Position pos{};
     pos.idx = idx;
     ulint prefix = 0;
-    for (ulint interval = 0; interval < rp.move_runs(); ++interval) {
+    for (ulint interval = 0; interval < rp.intervals(); ++interval) {
         ulint len = rp.get_length(interval);
         if (idx < prefix + len) {
             pos.interval = interval;
@@ -52,14 +52,14 @@ static void test_runperm_separated_absolute_basic_mapping_and_run_data() {
     }
 
     using RP = RunPermSeparatedAbsolute<TestRunCols>;
-    RP rp(lengths, interval_perm, domain, run_data);
+    RP rp(lengths, interval_perm, run_data);
 
     assert(rp.domain() == domain);
-    assert(rp.move_runs() == lengths.size());
-    assert(rp.permutation_runs() == lengths.size());
+    assert(rp.runs() == lengths.size());
+    assert(rp.intervals() == lengths.size());
 
     // Interval-level checks.
-    for (ulint i = 0; i < rp.move_runs(); ++i) {
+    for (ulint i = 0; i < rp.intervals(); ++i) {
         assert(rp.get_length(i) == lengths[i]);
         assert(rp.get<TestRunCols::VAL1>(i) == static_cast<ulint>(i));
         assert(rp.get<TestRunCols::VAL2>(i) == static_cast<ulint>(i + 100));
@@ -96,11 +96,11 @@ static void test_runperm_up_down_navigation() {
     }
 
     using RP = RunPermSeparatedAbsolute<TestRunCols>;
-    RP rp(lengths, interval_perm, domain, run_data);
+    RP rp(lengths, interval_perm, run_data);
 
     auto pos = rp.first();
     // Going down move_runs() times should wrap back to first().
-    for (ulint i = 0; i < rp.move_runs(); ++i) {
+    for (ulint i = 0; i < rp.intervals(); ++i) {
         pos = rp.down(pos);
     }
     auto first_pos = rp.first();
@@ -109,7 +109,7 @@ static void test_runperm_up_down_navigation() {
 
     // Going up move_runs() times from first() should also wrap back.
     pos = rp.first();
-    for (ulint i = 0; i < rp.move_runs(); ++i) {
+    for (ulint i = 0; i < rp.intervals(); ++i) {
         pos = rp.up(pos);
     }
     first_pos = rp.first();
@@ -128,7 +128,7 @@ static void test_runperm_serialize_roundtrip_separated_absolute() {
     }
 
     using RP = RunPermSeparatedAbsolute<TestRunCols>;
-    RP rp(lengths, interval_perm, domain, run_data);
+    RP rp(lengths, interval_perm, run_data);
 
     std::stringstream ss;
     size_t bytes = rp.serialize(ss);
@@ -138,10 +138,12 @@ static void test_runperm_serialize_roundtrip_separated_absolute() {
     loaded.load(ss);
 
     assert(loaded.domain() == rp.domain());
-    assert(loaded.move_runs() == rp.move_runs());
-    assert(loaded.permutation_runs() == rp.permutation_runs());
+    assert(loaded.intervals() == rp.intervals());
+    assert(loaded.runs() == rp.runs());
+    assert(loaded.get_split_params() == NO_SPLITTING);
+    assert(loaded.get_split_params() == rp.get_split_params());
 
-    for (ulint i = 0; i < loaded.move_runs(); ++i) {
+    for (ulint i = 0; i < loaded.intervals(); ++i) {
         assert(loaded.get_length(i) == rp.get_length(i));
         assert(loaded.get<TestRunCols::VAL1>(i) == rp.get<TestRunCols::VAL1>(i));
         assert(loaded.get<TestRunCols::VAL2>(i) == rp.get<TestRunCols::VAL2>(i));
@@ -167,7 +169,7 @@ static void test_runperm_next_with_steps_and_pred_succ() {
     }
 
     using RP = RunPermSeparatedAbsolute<TestRunCols>;
-    RP rp(lengths, interval_perm, domain, run_data);
+    RP rp(lengths, interval_perm, run_data);
 
     // next with steps: compare to repeated single-step.
     for (ulint idx = 0; idx < domain; ++idx) {

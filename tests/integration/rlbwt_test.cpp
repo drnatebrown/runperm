@@ -339,8 +339,10 @@ void test_runperm_phi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_l
         run_data[i][1] = i * 3;   // Another dummy value
     }
 
-    auto [phi_lengths, phi_interval_permutations, domain] = rlbwt_to_phi(bwt_heads, bwt_run_lengths);
-    RunPermPhi<RunData> runperm_phi(phi_lengths, phi_interval_permutations, domain, run_data);
+    size_t phi_domain;
+    ulint max_length;
+    auto [phi_lengths, phi_interval_permutations] = phi::rlbwt_to_phi(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
+    RunPermPhi<RunData> runperm_phi(phi_lengths, phi_interval_permutations, run_data);
             
     using Position = typename RunPermPhi<RunData>::Position;
     Position pos = runperm_phi.first();
@@ -363,9 +365,11 @@ void test_runperm_phi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_l
 }
 
 void test_move_phi_with_splitting(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
-        auto [phi_lengths, phi_interval_permutations, domain] = rlbwt_to_phi(bwt_heads, bwt_run_lengths);
-    MovePhi move_phi(phi_lengths, phi_interval_permutations, domain, DEFAULT_SPLITTING);
-                using Position = typename MovePhi::Position;
+    size_t phi_domain;
+    ulint max_length;
+    auto [phi_lengths, phi_interval_permutations] = phi::rlbwt_to_phi(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
+    MovePhi move_phi(phi_lengths, phi_interval_permutations, DEFAULT_SPLITTING);
+    using Position = typename MovePhi::Position;
     Position pos = move_phi.first();
     for (size_t i = 0; i < move_phi.domain(); ++i) {
         pos = move_phi.next(pos);
@@ -386,8 +390,10 @@ void test_move_phi_with_splitting(std::vector<uchar> bwt_heads, std::vector<ulin
 }
 
 void test_move_phi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
-        auto [phi_lengths, phi_interval_permutations, domain] = rlbwt_to_phi(bwt_heads, bwt_run_lengths);
-    MovePhi move_phi(phi_lengths, phi_interval_permutations, domain);
+    size_t phi_domain;
+    ulint max_length;
+    auto [phi_lengths, phi_interval_permutations] = phi::rlbwt_to_phi(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
+    MovePhi move_phi(phi_lengths, phi_interval_permutations);
                 using Position = typename MovePhi::Position;
     Position pos = move_phi.first();
     for (size_t i = 0; i < move_phi.domain(); ++i) {
@@ -425,8 +431,10 @@ void test_runperm_invphi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_ru
         run_data[i][1] = i * 3;   // Another dummy value
     }
 
-    auto [invphi_lengths, invphi_interval_permutations, domain] = rlbwt_to_invphi(bwt_heads, bwt_run_lengths);
-    RunPermInvPhi<RunData> runperm_invphi(invphi_lengths, invphi_interval_permutations, domain, run_data);
+    size_t inv_domain;
+    ulint max_length_inv;
+    auto [invphi_lengths, invphi_interval_permutations] = invphi::rlbwt_to_invphi(bwt_heads, bwt_run_lengths, &inv_domain, &max_length_inv);
+    RunPermInvPhi<RunData> runperm_invphi(invphi_lengths, invphi_interval_permutations, run_data);
             
     runperm_invphi.first();
     using Position = typename RunPermPhi<RunData>::Position;
@@ -449,8 +457,10 @@ void test_runperm_invphi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_ru
 }
 
 void test_move_invphi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
-        auto [invphi_lengths, invphi_interval_permutations, domain] = rlbwt_to_invphi(bwt_heads, bwt_run_lengths);
-    MoveInvPhi move_invphi(invphi_lengths, invphi_interval_permutations, domain);
+    size_t inv_domain;
+    ulint max_length_inv;
+    auto [invphi_lengths, invphi_interval_permutations] = invphi::rlbwt_to_invphi(bwt_heads, bwt_run_lengths, &inv_domain, &max_length_inv);
+    MoveInvPhi move_invphi(invphi_lengths, invphi_interval_permutations);
                 using Position = typename MoveInvPhi::Position;
     Position pos = move_invphi.first();
     for (size_t i = 0; i < move_invphi.domain(); ++i) {
@@ -471,8 +481,10 @@ void test_move_invphi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_l
 }
 
 void test_move_invphi_with_splitting(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
-        auto [invphi_lengths, invphi_interval_permutations, domain] = rlbwt_to_invphi(bwt_heads, bwt_run_lengths);
-    MoveInvPhi move_invphi(invphi_lengths, invphi_interval_permutations, domain, DEFAULT_SPLITTING);
+    size_t inv_domain;
+    ulint max_length_inv;
+    auto [invphi_lengths, invphi_interval_permutations] = invphi::rlbwt_to_invphi(bwt_heads, bwt_run_lengths, &inv_domain, &max_length_inv);
+    MoveInvPhi move_invphi(invphi_lengths, invphi_interval_permutations, DEFAULT_SPLITTING);
                 using Position = typename MoveInvPhi::Position;
     Position pos = move_invphi.first();
     for (size_t i = 0; i < move_invphi.domain(); ++i) {

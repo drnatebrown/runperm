@@ -46,11 +46,34 @@
 #ifndef _RLBWT_HPP
 #define _RLBWT_HPP
 
-#include "internal/common.hpp"
+#include "permutation.hpp"
+#include "common.hpp"
 #include "internal/rlbwt/runperm_lf.hpp"
 #include "internal/rlbwt/runperm_fl.hpp"
 #include "internal/rlbwt/runperm_phi.hpp"
 #include "internal/rlbwt/runperm_invphi.hpp"
+#include "internal/rlbwt/rlbwt_helpers.hpp"
+#include "internal/rlbwt/phi_helpers.hpp"
+
+using RLBWTPermutation = RLBWTPermutationImpl<>;
+
+namespace phi {
+    Permutation phi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, SplitParams split_params = SplitParams()) {
+        size_t domain;
+        ulint max_length;
+        auto [phi_lengths, phi_tau_inv] = phi::rlbwt_to_phi_tau_inv(bwt_heads, bwt_run_lengths, &domain, &max_length);
+        return Permutation::from_lengths_and_tau_inv(phi_lengths, phi_tau_inv, domain, max_length, split_params);
+    }
+}
+
+namespace invphi {
+    Permutation invphi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, SplitParams split_params = SplitParams()) {
+        size_t domain;
+        ulint max_length;
+        auto [invphi_lengths, invphi_tau_inv] = invphi::rlbwt_to_invphi_tau_inv(bwt_heads, bwt_run_lengths, &domain, &max_length);
+        return Permutation::from_lengths_and_tau_inv(invphi_lengths, invphi_tau_inv, domain, max_length, split_params);
+    }
+}
 
 // === RunPermLF ===
 template<typename DataColumns,

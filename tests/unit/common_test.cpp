@@ -1,7 +1,7 @@
-// Unit tests for common utilities/macros in `internal/common.hpp`.
+// Unit tests for common utilities/macros in `common.hpp`.
 // These are simple assert-based tests, consistent with the rest of the suite.
 
-#include "internal/common.hpp"
+#include "common.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -72,42 +72,6 @@ void test_enum_helpers() {
         sum += v;
     }
     assert(sum == 60);
-}
-
-void test_permutation_intervals_trivial_and_runs() {
-    {
-        // Empty permutation -> empty intervals.
-        vector<ulint> perm;
-        auto [lengths, intervals] = get_permutation_intervals(perm);
-        assert(lengths.empty());
-        assert(intervals.empty());
-    }
-    {
-        // Single element permutation.
-        vector<ulint> perm = {5};
-        auto [lengths, intervals] = get_permutation_intervals(perm);
-        assert(lengths.size() == 1);
-        assert(intervals.size() == 1);
-        assert(lengths[0] == 1);
-        assert(intervals[0] == 5);
-    }
-    {
-        // Increasing consecutive block followed by a jump.
-        // permutation: [3,4,5, 10,11]
-        vector<ulint> perm = {3, 4, 5, 10, 11};
-        auto [lengths, intervals] = get_permutation_intervals(perm);
-
-        assert(lengths.size() == 2);
-        assert(intervals.size() == 2);
-
-        // First interval [3,4,5] of length 3 starting at 3.
-        assert(lengths[0] == 3);
-        assert(intervals[0] == 3);
-
-        // Second interval [10,11] of length 2 starting at 10.
-        assert(lengths[1] == 2);
-        assert(intervals[1] == 10);
-    }
 }
 
 void test_bwt_to_rlbwt_basic() {
@@ -185,7 +149,6 @@ int main() {
     test_bit_width_basic();
     test_define_run_cols_macro();
     test_enum_helpers();
-    test_permutation_intervals_trivial_and_runs();
     test_bwt_to_rlbwt_basic();
     test_macros_sanity();
 

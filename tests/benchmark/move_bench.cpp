@@ -128,7 +128,7 @@ void bench_move_structure(const std::vector<ulint>& lengths,
                           size_t n) {
     // Creation
     auto t0 = high_resolution_clock::now();
-    auto move_structure = MoveStructType(lengths, interval_permutation, n, split_params);
+    auto move_structure = MoveStructType(lengths, interval_permutation, split_params);
     auto t1 = high_resolution_clock::now();
 
     // Getter phase
@@ -202,11 +202,11 @@ void bench_move_structure_with_splitting(const std::vector<ulint>& lengths,
     auto t0 = high_resolution_clock::now();
 
     SplitParams split_params_split(length_capping_factor, std::nullopt);
-    auto move_structure = MoveStructType(lengths, interval_permutation, n, split_params_split);
+    auto move_structure = MoveStructType(lengths, interval_permutation, split_params_split);
 
     auto t1 = high_resolution_clock::now();
 
-    assert(move_structure.runs() >= lengths.size() && "splitting can only add runs");
+    assert(move_structure.intervals() >= lengths.size() && "splitting can only add runs");
 
     // Benchmark move() in splitting mode
     typename MoveStructType::Position pos;

@@ -1,7 +1,7 @@
 #ifndef _PACKED_VECTOR_ALIGNED_HPP
 #define _PACKED_VECTOR_ALIGNED_HPP
 
-#include "internal/common.hpp"
+#include "common.hpp"
 #include <cassert>
 #include <cstring>
 #include <cstdint>
@@ -9,6 +9,8 @@
 #include <vector>
 #include <array>
 #include <iostream>
+#include <algorithm>
+#include <iterator>
 
 // Column values are rounded to the nearest byte
 // TODO this would be better if definitely fast, using SIMD to unpack entire rows?
@@ -197,8 +199,141 @@ public:
 class IntVectorAligned : public PackedMatrixAligned<1> {
     using Base = PackedMatrixAligned<1>;
 public:
+    using value_type = ulint;
+    using size_type = size_t;
+    using difference_type = std::ptrdiff_t;
+
+    class reference {
+    public:
+        reference(IntVectorAligned* v, size_type i) : vec(v), idx(i) {}
+
+        reference(const reference&) = default;
+        reference& operator=(const reference& other) {
+            return *this = static_cast<ulint>(other);
+        }
+
+        reference& operator=(ulint value) {
+            vec->set(idx, value);
+            return *this;
+        }
+
+        operator ulint() const {
+            return vec->get(idx);
+        }
+
+    private:
+        IntVectorAligned* vec;
+        size_type idx;
+    };
+
+    class const_reference {
+    public:
+        const_reference(const IntVectorAligned* v, size_type i) : vec(v), idx(i) {}
+
+        operator ulint() const {
+            return vec->get(idx);
+        }
+
+    private:
+        const IntVectorAligned* vec;
+        size_type idx;
+    };
+
+    class iterator {
+    public:
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type        = IntVectorAligned::value_type;
+        using difference_type   = IntVectorAligned::difference_type;
+        using reference         = IntVectorAligned::reference;
+        using pointer           = void;
+
+        iterator() : vec(nullptr), idx(0) {}
+        iterator(IntVectorAligned* v, size_type i) : vec(v), idx(i) {}
+
+        reference operator*() const { return reference(vec, idx); }
+
+        iterator& operator++() { ++idx; return *this; }
+        iterator operator++(int) { iterator tmp(*this); ++(*this); return tmp; }
+
+        iterator& operator--() { --idx; return *this; }
+        iterator operator--(int) { iterator tmp(*this); --(*this); return tmp; }
+
+        iterator& operator+=(difference_type n) { idx += n; return *this; }
+        iterator& operator-=(difference_type n) { idx -= n; return *this; }
+
+        iterator operator+(difference_type n) const { return iterator(vec, idx + n); }
+        iterator operator-(difference_type n) const { return iterator(vec, idx - n); }
+
+        difference_type operator-(const iterator& other) const {
+            return static_cast<difference_type>(idx) - static_cast<difference_type>(other.idx);
+        }
+
+        bool operator==(const iterator& other) const { return vec == other.vec && idx == other.idx; }
+        bool operator!=(const iterator& other) const { return !(*this == other); }
+        bool operator<(const iterator& other) const { return idx < other.idx; }
+        bool operator>(const iterator& other) const { return other < *this; }
+        bool operator<=(const iterator& other) const { return !(other < *this); }
+        bool operator>=(const iterator& other) const { return !(*this < other); }
+
+        IntVectorAligned* vec;
+        size_type idx;
+    };
+
+    class const_iterator {
+    public:
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type        = IntVectorAligned::value_type;
+        using difference_type   = IntVectorAligned::difference_type;
+        using reference         = IntVectorAligned::const_reference;
+        using pointer           = void;
+
+        const_iterator() : vec(nullptr), idx(0) {}
+        const_iterator(const IntVectorAligned* v, size_type i) : vec(v), idx(i) {}
+        const_iterator(const iterator& it) : vec(it.vec), idx(it.idx) {}
+
+        reference operator*() const { return reference(vec, idx); }
+
+        const_iterator& operator++() { ++idx; return *this; }
+        const_iterator operator++(int) { const_iterator tmp(*this); ++(*this); return tmp; }
+
+        const_iterator& operator--() { --idx; return *this; }
+        const_iterator operator--(int) { const_iterator tmp(*this); --(*this); return tmp; }
+
+        const_iterator& operator+=(difference_type n) { idx += n; return *this; }
+        const_iterator& operator-=(difference_type n) { idx -= n; return *this; }
+
+        const_iterator operator+(difference_type n) const { return const_iterator(vec, idx + n); }
+        const_iterator operator-(difference_type n) const { return const_iterator(vec, idx - n); }
+
+        difference_type operator-(const const_iterator& other) const {
+            return static_cast<difference_type>(idx) - static_cast<difference_type>(other.idx);
+        }
+
+        bool operator==(const const_iterator& other) const { return vec == other.vec && idx == other.idx; }
+        bool operator!=(const const_iterator& other) const { return !(*this == other); }
+        bool operator<(const const_iterator& other) const { return idx < other.idx; }
+        bool operator>(const const_iterator& other) const { return other < *this; }
+        bool operator<=(const const_iterator& other) const { return !(other < *this); }
+        bool operator>=(const const_iterator& other) const { return !(*this < other); }
+
+        const IntVectorAligned* vec;
+        size_type idx;
+    };
+
     IntVectorAligned() = default;
     IntVectorAligned(size_t rows, uchar width) : Base(rows, {width}) {}
+    IntVectorAligned(std::vector<ulint> data) 
+    : Base(data.size(), {(data.empty() ? static_cast<uchar>(0) : bit_width(*std::max_element(data.begin(), data.end())))}) {
+        for (size_t i = 0; i < data.size(); i++) {
+            set(i, data[i]);
+        }
+    }
+    IntVectorAligned(std::vector<ulint> data, uchar width)
+    : Base(data.size(), {width}) {
+        for (size_t i = 0; i < data.size(); i++) {
+            set(i, data[i]);
+        }
+    }
 
     ulint get(size_t row) const {
         return Base::template get<0>(row);
@@ -207,6 +342,48 @@ public:
     void set(size_t row, ulint val) {
         Base::template set<0>(row, val);
     }
+
+    reference operator[](size_t row) {
+        return reference(this, row);
+    }
+
+    ulint operator[](size_t row) const {
+        return get(row);
+    }
+
+    iterator begin() {
+        return iterator(this, 0);
+    }
+
+    iterator end() {
+        return iterator(this, this->size());
+    }
+
+    const_iterator begin() const {
+        return cbegin();
+    }
+
+    const_iterator end() const {
+        return cend();
+    }
+
+    const_iterator cbegin() const {
+        return const_iterator(this, 0);
+    }
+
+    const_iterator cend() const {
+        return const_iterator(this, this->size());
+    }
 };
+
+// Enable std algorithms that rely on std::iter_swap for IntVectorAligned iterators.
+namespace std {
+    template<>
+    inline void iter_swap(IntVectorAligned::iterator a, IntVectorAligned::iterator b) {
+        ulint tmp = static_cast<ulint>(*a);
+        *a = static_cast<ulint>(*b);
+        *b = tmp;
+    }
+}
 
 #endif // end of include guard: _PACKED_VECTOR_ALIGNED_HPP

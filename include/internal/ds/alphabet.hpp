@@ -1,7 +1,7 @@
 #ifndef _ALPHABET_MAP_HPP
 #define _ALPHABET_MAP_HPP
 
-#include "internal/common.hpp"
+#include "common.hpp"
 #include <cctype>
 #include <cassert>
 #include <ostream>
@@ -43,7 +43,7 @@ public:
         return reverse_alphabet_map[c];
     }
 
-    uchar size() {
+    uchar size() const {
         return reverse_alphabet_map.size();
     }
 

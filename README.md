@@ -4,7 +4,7 @@ Flexible plug-and-play header library implementing data structures for represent
 
 Described in greater detail at [https://arxiv.org/abs/2602.11029](https://arxiv.org/abs/2602.11029).
 
-Alpha Version 0.3.0
+Alpha Version 0.4.0
 
 ## Overview
 

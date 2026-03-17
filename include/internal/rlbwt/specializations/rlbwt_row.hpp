@@ -1,7 +1,7 @@
 #ifndef _RLBWT_ROW_HPP
 #define _RLBWT_ROW_HPP
 
-#include "internal/common.hpp"
+#include "common.hpp"
 #include "internal/rlbwt/specializations/rlbwt_columns.hpp"
 #include "internal/move/move_row.hpp"
 #include <stdexcept>

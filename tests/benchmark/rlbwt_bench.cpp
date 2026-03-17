@@ -231,16 +231,18 @@ void run_lf_fl_benchmarks(const vector<uchar> &bwt_heads,
 // === Phi / InvPhi suffix array benchmarks (move-only, mirroring tests/integration/rlbwt_test.cpp) ===
 
 // Standard Phi (no exponential search)
+template<class Container1, class Container2>
 void bench_move_phi(const string &name,
-                    const vector<ulint> &lengths,
-                    const vector<ulint> &interval_permutation,
+                    const Container1 &lengths,
+                    const Container2 &tau_inv,
                     ulint domain,
                     const vector<ulint> &sa_truth,
                     const SplitParams &split_params) {
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    MovePhi move_phi(lengths, interval_permutation, domain, split_params);
+    auto permutation = Permutation::from_lengths_and_tau_inv(lengths, tau_inv);
+    MovePhi move_phi(permutation);
     auto t1 = high_resolution_clock::now();
 
     using Position = typename MovePhi::Position;
@@ -270,9 +272,10 @@ void bench_move_phi(const string &name,
 }
 
 // Phi with exponential search (absolute positions + ExponentialSearch = true)
+template<class Container1, class Container2>
 void bench_move_phi_exp(const string &name,
-                        const vector<ulint> &lengths,
-                        const vector<ulint> &interval_permutation,
+                        const Container1 &lengths,
+                        const Container2 &tau_inv,
                         ulint domain,
                         const vector<ulint> &sa_truth,
                         const SplitParams &split_params) {
@@ -291,7 +294,8 @@ void bench_move_phi_exp(const string &name,
         ulint SA(Position pos) { return pos.idx; }
     };
 
-    MovePhiExp move_phi(lengths, interval_permutation, domain, split_params);
+    auto permutation = Permutation::from_lengths_and_tau_inv(lengths, tau_inv);
+    MovePhiExp move_phi(permutation);
     auto t1 = high_resolution_clock::now();
 
     using Position = typename MovePhiExp::Position;
@@ -321,16 +325,18 @@ void bench_move_phi_exp(const string &name,
 }
 
 // Standard InvPhi (no exponential search)
+template<class Container1, class Container2>
 void bench_move_invphi(const string &name,
-                       const vector<ulint> &lengths,
-                       const vector<ulint> &interval_permutation,
+                       const Container1 &lengths,
+                       const Container2 &tau_inv,
                        ulint domain,
                        const vector<ulint> &sa_truth,
                        const SplitParams &split_params) {
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    MoveInvPhi move_invphi(lengths, interval_permutation, domain, split_params);
+    auto permutation = Permutation::from_lengths_and_tau_inv(lengths, tau_inv);
+    MoveInvPhi move_invphi(permutation);
     auto t1 = high_resolution_clock::now();
 
     using Position = typename MoveInvPhi::Position;
@@ -359,9 +365,10 @@ void bench_move_invphi(const string &name,
 }
 
 // InvPhi with exponential search (absolute positions + ExponentialSearch = true)
+template<class Container1, class Container2>
 void bench_move_invphi_exp(const string &name,
-                           const vector<ulint> &lengths,
-                           const vector<ulint> &interval_permutation,
+                           const Container1 &lengths,
+                           const Container2 &tau_inv,
                            ulint domain,
                            const vector<ulint> &sa_truth,
                            const SplitParams &split_params) {
@@ -380,7 +387,8 @@ void bench_move_invphi_exp(const string &name,
         ulint SA(Position pos) { return pos.idx; }
     };
 
-    MoveInvPhiExp move_invphi(lengths, interval_permutation, domain, split_params);
+    auto permutation = Permutation::from_lengths_and_tau_inv(lengths, tau_inv);
+    MoveInvPhiExp move_invphi(permutation);
     auto t1 = high_resolution_clock::now();
 
     using Position = typename MoveInvPhiExp::Position;
@@ -417,8 +425,21 @@ void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
     cout << "Domain (SA size): " << sa_truth.size() << endl;
 
     // Build Phi / InvPhi structures from the RLBWT.
-    auto [phi_lengths, phi_interval_permutations, phi_domain] = rlbwt_to_phi<AlphabetType>(bwt_heads, bwt_run_lengths);
-    auto [invphi_lengths, invphi_interval_permutations, invphi_domain] = rlbwt_to_invphi<AlphabetType>(bwt_heads, bwt_run_lengths);
+    size_t phi_domain;
+    ulint max_length;
+    auto t_phi_derive = high_resolution_clock::now();
+    auto [phi_lengths, phi_tau_inv] = phi::rlbwt_to_phi_tau_inv<AlphabetType>(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
+    auto t_phi_derive_end = high_resolution_clock::now();
+    auto phi_derive_duration = duration_cast<microseconds>(t_phi_derive_end - t_phi_derive);
+    cout << "    Phi derivation: " << phi_derive_duration.count() << "us" << endl;
+
+    size_t invphi_domain;
+    ulint max_length_inv;
+    auto t_invphi_derive = high_resolution_clock::now();
+    auto [invphi_lengths, invphi_tau_inv] = invphi::rlbwt_to_invphi_tau_inv<AlphabetType>(bwt_heads, bwt_run_lengths, &invphi_domain, &max_length_inv);
+    auto t_invphi_derive_end = high_resolution_clock::now();
+    auto invphi_derive_duration = duration_cast<microseconds>(t_invphi_derive_end - t_invphi_derive);
+    cout << "    InvPhi derivation: " << invphi_derive_duration.count() << "us" << endl;
 
     assert(phi_domain == sa_truth.size());
     assert(invphi_domain == sa_truth.size());
@@ -430,7 +451,7 @@ void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
     bench_move_phi(
         "MovePhi (no splitting)",
         phi_lengths,
-        phi_interval_permutations,
+        phi_tau_inv,
         phi_domain,
         sa_truth,
         no_splitting);
@@ -438,21 +459,21 @@ void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
     bench_move_phi(
         "MovePhi (split, 8.0)",
         phi_lengths,
-        phi_interval_permutations,
+        phi_tau_inv,
         phi_domain,
         sa_truth,
         splitting);
     bench_move_phi_exp(
         "MovePhiExp (no splitting)",
         phi_lengths,
-        phi_interval_permutations,
+        phi_tau_inv,
         phi_domain,
         sa_truth,
         no_splitting);
     bench_move_phi_exp(
         "MovePhiExp (split, 8.0)",
         phi_lengths,
-        phi_interval_permutations,
+        phi_tau_inv,
         phi_domain,
         sa_truth,
         splitting);
@@ -461,7 +482,7 @@ void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
     bench_move_invphi(
         "MoveInvPhi (no splitting)",
         invphi_lengths,
-        invphi_interval_permutations,
+        invphi_tau_inv,
         invphi_domain,
         sa_truth,
         no_splitting);
@@ -469,7 +490,7 @@ void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
     bench_move_invphi(
         "MoveInvPhi (split, 8.0)",
         invphi_lengths,
-        invphi_interval_permutations,
+        invphi_tau_inv,
         invphi_domain,
         sa_truth,
         splitting);
@@ -477,7 +498,7 @@ void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
     bench_move_invphi_exp(
         "MoveInvPhiExp (no splitting)",
         invphi_lengths,
-        invphi_interval_permutations,
+        invphi_tau_inv,
         invphi_domain,
         sa_truth,
         no_splitting);
@@ -485,7 +506,7 @@ void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
     bench_move_invphi_exp(
         "MoveInvPhiExp (split, 8.0)",
         invphi_lengths,
-        invphi_interval_permutations,
+        invphi_tau_inv,
         invphi_domain,
         sa_truth,
         splitting);

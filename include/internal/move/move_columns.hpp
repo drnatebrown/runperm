@@ -1,7 +1,7 @@
 #ifndef _MOVE_COLUMNS_HPP
 #define _MOVE_COLUMNS_HPP
 
-#include "internal/common.hpp"
+#include "common.hpp"
 
 /* ALL MOVE STRUCTURE MUST REPRESENT AT LEAST ONE OF THESE COLUMNS DEFS */
 
@@ -66,7 +66,6 @@ struct MoveColsTraits;
    - OFFSET: enum class Columns
    - NUM_COLS: size_t
    - Position: struct with interval, offset, and idx (if ABSOLUTE)
-   // TODO couple position type to absolute/relative
 */
 
 template <>

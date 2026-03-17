@@ -1,7 +1,7 @@
 #ifndef _RLBWT_COLUMNS_HPP
 #define _RLBWT_COLUMNS_HPP
 
-#include "internal/common.hpp"
+#include "common.hpp"
 #include "internal/move/move_columns.hpp"
 
 // Supports π = LF or π = FL, using new fields specific to RLBWT

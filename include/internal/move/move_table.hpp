@@ -1,7 +1,7 @@
 #ifndef _MOVE_TABLE_HH
 #define _MOVE_TABLE_HH
 
-#include "internal/common.hpp"
+#include "common.hpp"
 #include "internal/move/move_row.hpp"
 #include "internal/move/move_columns.hpp"
 #include "internal/ds/packed_vector.hpp"

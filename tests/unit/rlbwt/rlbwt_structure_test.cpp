@@ -22,7 +22,7 @@ static void test_rlbwt_move_structure_relative_chars_and_widths() {
     using MS = RLBWTMoveStructure<RLBWTCols>;
     MS ms(rlbwt_chars, lengths, interval_perm, domain, sigma, NO_SPLITTING);
 
-    assert(ms.size() == domain);
+    assert(ms.domain() == domain);
     assert(ms.runs() == lengths.size());
 
     auto widths = ms.get_widths();
@@ -48,23 +48,23 @@ static void test_rlbwt_move_structure_relative_splitting_preserves_chars() {
     // Two runs: a long run (symbol 0) followed by a short run (symbol 1).
     const vector<uchar> rlbwt_chars = {0, 1};
     const vector<ulint> lengths     = {5, 1};
-    const vector<ulint> interval_perm = {1, 0};
+    const vector<ulint> interval_perm = {0, 5};
     const ulint domain = 6;
     const uchar sigma = 4;
 
     using MS = RLBWTMoveStructure<RLBWTCols>;
 
     SplitParams split;
-    split.length_capping_factor = 1.0; // force aggressive splitting if beneficial
+    split.length_capping = 1.0; // force aggressive splitting if beneficial
     MS ms(rlbwt_chars, lengths, interval_perm, domain, sigma, split);
 
-    assert(ms.size() == domain);
+    assert(ms.domain() == domain);
     assert(ms.runs() >= lengths.size()); // first run may be split into multiple
 
     // Sum up lengths per character to ensure splitting preserved run heads.
     ulint sym0_len = 0;
     ulint sym1_len = 0;
-    for (ulint i = 0; i < ms.runs(); ++i) {
+    for (ulint i = 0; i < ms.intervals(); ++i) {
         uchar ch = ms.get_character(i);
         if (ch == 0) {
             sym0_len += ms.get_length(i);
@@ -89,7 +89,7 @@ static void test_rlbwt_move_structure_absolute_chars_and_widths() {
     using MS = RLBWTMoveStructure<RLBWTColsIdx>;
     MS ms(rlbwt_chars, lengths, interval_perm, domain, sigma, NO_SPLITTING);
 
-    assert(ms.size() == domain);
+    assert(ms.domain() == domain);
     assert(ms.runs() == lengths.size());
 
     auto widths = ms.get_widths();

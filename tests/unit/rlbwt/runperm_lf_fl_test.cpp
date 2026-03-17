@@ -124,11 +124,85 @@ void test_runperm_fl_wrapper_equivalence() {
     assert(fl2.offset == iter.offset);
 }
 
+void test_runpermlf_construct_from_precomputed_permutation_no_splitting() {
+    vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
+    vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+
+    auto perm = RLBWTPermutation::lf_permutation(bwt_heads, bwt_run_lengths, NO_SPLITTING);
+
+    enum class RunCols {
+        V,
+        COUNT
+    };
+    using RP = RunPermLF<RunCols>;
+    using RunData = typename RP::RunDataTuple;
+
+    vector<RunData> run_data(perm.intervals());
+    for (size_t i = 0; i < run_data.size(); ++i) {
+        run_data[i][0] = static_cast<ulint>(1000 + i);
+    }
+
+    RP rp_from_perm(perm, run_data);
+    RP rp_direct(bwt_heads, bwt_run_lengths, NO_SPLITTING, run_data);
+
+    assert(rp_from_perm.domain() == rp_direct.domain());
+    assert(rp_from_perm.runs() == rp_direct.runs());
+    assert(rp_from_perm.intervals() == rp_direct.intervals());
+    assert(rp_from_perm.get_split_params() == NO_SPLITTING);
+
+    auto p1 = rp_from_perm.first();
+    auto p2 = rp_direct.first();
+    for (size_t i = 0; i < rp_direct.domain(); ++i) {
+        assert(rp_from_perm.get_character(p1) == rp_direct.get_character(p2));
+        p1 = rp_from_perm.LF(p1);
+        p2 = rp_direct.LF(p2);
+    }
+    assert(p1.interval == 0 && p1.offset == 0);
+    assert(p2.interval == 0 && p2.offset == 0);
+
+    for (size_t i = 0; i < rp_from_perm.intervals(); ++i) {
+        assert(rp_from_perm.template get<RunCols::V>(static_cast<ulint>(i)) == static_cast<ulint>(1000 + i));
+        assert(rp_direct .template get<RunCols::V>(static_cast<ulint>(i)) == static_cast<ulint>(1000 + i));
+    }
+}
+
+void test_runpermlf_construct_from_precomputed_permutation_with_splitting() {
+    vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
+    vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+
+    auto perm = RLBWTPermutation::lf_permutation(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING);
+    assert(perm.intervals() >= perm.runs());
+
+    enum class RunCols {
+        V,
+        COUNT
+    };
+    using RP = RunPermLF<RunCols>;
+    using RunData = typename RP::RunDataTuple;
+
+    vector<RunData> run_data_per_run(perm.runs());
+    for (size_t i = 0; i < run_data_per_run.size(); ++i) {
+        run_data_per_run[i][0] = static_cast<ulint>(2000 + i);
+    }
+    auto run_data_split = perm.split_run_data_with_copy(bwt_run_lengths, run_data_per_run);
+    assert(run_data_split.size() == perm.intervals());
+
+    RP rp_from_perm(perm, run_data_split);
+    assert(rp_from_perm.get_split_params() == DEFAULT_SPLITTING);
+    assert(rp_from_perm.intervals() == perm.intervals());
+
+    for (size_t i = 0; i < rp_from_perm.intervals(); ++i) {
+        assert(rp_from_perm.template get<RunCols::V>(static_cast<ulint>(i)) == run_data_split[i][0]);
+    }
+}
+
 int main() {
     test_move_lf_wrapper_equivalence();
     test_runperm_lf_wrapper_equivalence();
     test_move_fl_wrapper_equivalence();
     test_runperm_fl_wrapper_equivalence();
+    test_runpermlf_construct_from_precomputed_permutation_no_splitting();
+    test_runpermlf_construct_from_precomputed_permutation_with_splitting();
 
     std::cout << "runperm_lf_fl unit tests passed" << std::endl;
     return 0;

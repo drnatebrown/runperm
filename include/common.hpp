@@ -5,6 +5,35 @@
 #include <vector>
 #include <array>
 #include <cmath>
+#include <fstream>
+#include <tuple>
+
+#define VERSION_MAJOR 0
+#define VERSION_MINOR 4
+#define VERSION_PATCH 0
+#define VERSION_STRING VERSION_MAJOR "." VERSION_MINOR "." VERSION_PATCH
+
+size_t serialize_version(std::ostream& out) {
+    size_t written_bytes = 0;
+    size_t major = VERSION_MAJOR;
+    size_t minor = VERSION_MINOR;
+    size_t patch = VERSION_PATCH;
+    out.write(reinterpret_cast<char *>(&major), sizeof(major));
+    written_bytes += sizeof(major);
+    out.write(reinterpret_cast<char *>(&minor), sizeof(minor));
+    written_bytes += sizeof(minor);
+    out.write(reinterpret_cast<char *>(&patch), sizeof(patch));
+    written_bytes += sizeof(patch);
+    return written_bytes;
+}
+
+std::tuple<size_t, size_t, size_t> load_version(std::istream& is) {
+    size_t major, minor, patch;
+    is.read(reinterpret_cast<char *>(&major), sizeof(major));
+    is.read(reinterpret_cast<char *>(&minor), sizeof(minor));
+    is.read(reinterpret_cast<char *>(&patch), sizeof(patch));
+    return {major, minor, patch};
+}
 
 // LEAVE UNCHANGED
 #define MAX_ALPHABET_SIZE 256
@@ -70,21 +99,6 @@ using ColumnsTuple = std::array<T, num_columns<E>()>;
     using ColsTraits = typename ResolveColsTraits<Columns>::type;  \
     static constexpr size_t NumCols = ColsTraits::NUM_COLS; \
     template<typename E> static constexpr Columns to_cols(E e) { return static_cast<Columns>(e); }
-
-/* PERMUTATION UTILITIES */
-inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_intervals(const std::vector<ulint> &permutation) {
-    std::vector<ulint> lengths;
-    std::vector<ulint> interval_permutation;
-    for (size_t i = 0; i < permutation.size(); ++i) {
-        if (i == 0 || permutation[i] != permutation[i - 1] + 1) {
-            lengths.push_back(1);
-            interval_permutation.push_back(permutation[i]);
-        } else {
-            ++lengths.back();
-        }
-    }
-    return {lengths, interval_permutation};
-}
 
 inline std::pair<std::vector<uchar>, std::vector<ulint>> bwt_to_rlbwt(const std::vector<uchar> &bwt_chars) {
     std::vector<uchar> rlbwt_chars;

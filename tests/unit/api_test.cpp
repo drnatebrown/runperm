@@ -20,13 +20,13 @@ void test_move_api() {
     const ulint domain = 4;
 
     // Exercise the public aliases from `move.hpp`.
-    MoveStructureVec ms_vec(lengths, interval_perm, domain, NO_SPLITTING);
-    MoveStructureVecIdx ms_vec_idx(lengths, interval_perm, domain, NO_SPLITTING);
+    MoveStructureVec ms_vec(lengths, interval_perm, NO_SPLITTING);
+    MoveStructureVecIdx ms_vec_idx(lengths, interval_perm, NO_SPLITTING);
 
     // Just touch a couple of basic APIs.
     (void)ms_vec;
     (void)ms_vec_idx;
-    assert(ms_vec.size() == domain);
+    assert(ms_vec.domain() == domain);
     assert(ms_vec_idx.runs() == lengths.size());
 }
 
@@ -69,6 +69,21 @@ void test_rlbwt_api() {
     (void)pos_fl;
     (void)rp_lf.domain();
     (void)rp_fl.domain();
+
+    // Exercise the public Phi / InvPhi convenience wrappers on a known-valid example.
+    // TEXT: GATTACATGATTACATAGATTACATT$
+    // BWT:  TTTTTCCCGGGAAAT$ATTTTAAAAAA
+    // RLBWT: TCGAT$ATA
+    vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
+    vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+
+    auto phi_perm = phi::phi(bwt_heads, bwt_run_lengths, NO_SPLITTING);
+    auto invphi_perm = invphi::invphi(bwt_heads, bwt_run_lengths, NO_SPLITTING);
+
+    assert(phi_perm.domain() == invphi_perm.domain());
+    assert(phi_perm.domain() == 27);
+    assert(phi_perm.get_split_params() == NO_SPLITTING);
+    assert(invphi_perm.get_split_params() == NO_SPLITTING);
 }
 
 void test_runperm_header_is_available() {
@@ -89,8 +104,8 @@ void test_runperm_header_is_available() {
     vector<RunData> data_sep(1);
     vector<RunData> data_int(1);
 
-    RPSeparated rp_sep(lengths, interval_perm, domain, data_sep);
-    RPIntegratedAbs rp_int(lengths, interval_perm, domain, data_int);
+    RPSeparated rp_sep(lengths, interval_perm, data_sep);
+    RPIntegratedAbs rp_int(lengths, interval_perm, data_int);
 
     (void)rp_sep;
     (void)rp_int;

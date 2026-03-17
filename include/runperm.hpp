@@ -34,7 +34,8 @@
 #ifndef _PUBLIC_RUNPERM_HPP
 #define _PUBLIC_RUNPERM_HPP
 
-#include "internal/common.hpp"
+#include "common.hpp"
+#include "internal/move/permutation_impl.hpp"
 #include "internal/runperm/runperm.hpp"
 
 

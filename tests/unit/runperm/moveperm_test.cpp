@@ -27,7 +27,7 @@ static MovePermRelative::Position make_pos_relative(const MovePermRelative &mp,
                                                     ulint idx) {
     MovePermRelative::Position pos{};
     ulint prefix = 0;
-    for (ulint interval = 0; interval < mp.move_runs(); ++interval) {
+    for (ulint interval = 0; interval < mp.runs(); ++interval) {
         ulint len = mp.get_length(interval);
         if (idx < prefix + len) {
             pos.interval = interval;
@@ -46,7 +46,7 @@ static MovePermAbsolute::Position make_pos_absolute(const MovePermAbsolute &mp,
     MovePermAbsolute::Position pos{};
     pos.idx = idx;
     ulint prefix = 0;
-    for (ulint interval = 0; interval < mp.move_runs(); ++interval) {
+    for (ulint interval = 0; interval < mp.runs(); ++interval) {
         ulint len = mp.get_length(interval);
         if (idx < prefix + len) {
             pos.interval = interval;
@@ -80,9 +80,9 @@ static void test_move_perm_absolute_from_lengths() {
 
     auto [lengths, interval_perm] = get_permutation_intervals(perm);
 
-    MovePermAbsolute mp(lengths, interval_perm, domain);
+    MovePermAbsolute mp(lengths, interval_perm);
     assert(mp.domain() == domain);
-    assert(mp.move_runs() == lengths.size());
+    assert(mp.runs() == lengths.size());
 
     // Check that each absolute position maps according to perm.
     for (ulint idx = 0; idx < domain; ++idx) {
@@ -100,7 +100,7 @@ static void test_move_perm_relative_splitting_preserves_permutation() {
     MovePermRelative mp_no_split(perm);
 
     SplitParams split;
-    split.length_capping_factor = 1.0; // Strong capping to force splitting if beneficial.
+    split.length_capping = 1.0; // Strong capping to force splitting if beneficial.
     MovePermRelative mp_split(perm, split);
 
     assert(mp_no_split.domain() == domain);
@@ -126,7 +126,7 @@ static void test_move_perm_serialize_roundtrip_absolute() {
     const ulint domain = static_cast<ulint>(perm.size());
     auto [lengths, interval_perm] = get_permutation_intervals(perm);
 
-    MovePermAbsolute mp(lengths, interval_perm, domain);
+    MovePermAbsolute mp(lengths, interval_perm);
 
     std::stringstream ss;
     size_t bytes = mp.serialize(ss);
@@ -136,7 +136,7 @@ static void test_move_perm_serialize_roundtrip_absolute() {
     loaded.load(ss);
 
     assert(loaded.domain() == mp.domain());
-    assert(loaded.move_runs() == mp.move_runs());
+    assert(loaded.runs() == mp.runs());
 
     for (ulint idx = 0; idx < domain; ++idx) {
         auto pos = make_pos_absolute(loaded, idx);

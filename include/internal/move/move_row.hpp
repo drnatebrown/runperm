@@ -1,7 +1,7 @@
 #ifndef _MOVE_ROW_HPP
 #define _MOVE_ROW_HPP
 
-#include "internal/common.hpp"
+#include "common.hpp"
 #include "internal/move/move_columns.hpp"
 #include <stdexcept>
 #include <array>

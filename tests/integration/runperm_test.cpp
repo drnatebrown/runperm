@@ -25,7 +25,7 @@ static typename RP::Position make_pos_absolute(const RP &rp, ulint idx) {
     Position pos{};
     pos.idx = idx;
     ulint prefix = 0;
-    for (ulint interval = 0; interval < rp.move_runs(); ++interval) {
+    for (ulint interval = 0; interval < rp.intervals(); ++interval) {
         ulint len = rp.get_length(interval);
         if (idx < prefix + len) {
             pos.interval = interval;
@@ -62,13 +62,13 @@ static void integration_runperm_separated_and_integrated_absolute() {
     using RPSeparatedAbs = RunPermSeparatedAbsolute<TestRunColsInt>;
     using RPIntegratedAbs = RunPermIntegratedAbsolute<TestRunColsInt>;
 
-    RPSeparatedAbs rp_sep(lengths, interval_perm, domain, run_data);
-    RPIntegratedAbs rp_int(lengths, interval_perm, domain, run_data);
+    RPSeparatedAbs rp_sep(lengths, interval_perm, run_data);
+    RPIntegratedAbs rp_int(lengths, interval_perm, run_data);
 
     assert(rp_sep.domain() == domain);
     assert(rp_int.domain() == domain);
-    assert(rp_sep.move_runs() == lengths.size());
-    assert(rp_int.move_runs() == lengths.size());
+    assert(rp_sep.intervals() == lengths.size());
+    assert(rp_int.intervals() == lengths.size());
 
     // Both configurations must represent the same permutation and run data.
     for (ulint idx = 0; idx < domain; ++idx) {

@@ -35,7 +35,7 @@ static void assert_pointer_offset_correct(
     const vector<ulint>& interval_permutation
 ) {
     const auto starts = compute_starts(lengths);
-    assert(starts.back() == ms.size());
+    assert(starts.back() == ms.domain());
     assert(ms.runs() == lengths.size());
 
     for (size_t j = 0; j < lengths.size(); ++j) {
@@ -55,8 +55,8 @@ static void test_move_structure_relative_build_invariants() {
     const vector<ulint> perm = {4, 0, 9, 2, 7};
     const ulint domain = 10;
 
-    MoveStructure<MoveCols> ms(lengths, perm, domain, NO_SPLITTING);
-    assert(ms.size() == domain);
+    MoveStructure<MoveCols> ms(lengths, perm, NO_SPLITTING);
+    assert(ms.domain() == domain);
     assert(ms.runs() == lengths.size());
 
     for (size_t i = 0; i < lengths.size(); ++i) {
@@ -72,8 +72,8 @@ static void test_move_structure_absolute_build_invariants() {
     const vector<ulint> perm = {4, 0, 9, 2, 7};
     const ulint domain = 10;
 
-    MoveStructure<MoveColsIdx> ms(lengths, perm, domain, NO_SPLITTING);
-    assert(ms.size() == domain);
+    MoveStructure<MoveColsIdx> ms(lengths, perm, NO_SPLITTING);
+    assert(ms.domain() == domain);
     assert(ms.runs() == lengths.size());
 
     const auto starts = compute_starts(lengths);
@@ -91,7 +91,7 @@ static void test_move_structure_serialize_roundtrip() {
     const vector<ulint> perm = {4, 0, 9, 2, 7};
     const ulint domain = 10;
 
-    MoveStructure<MoveColsIdx> ms(lengths, perm, domain, NO_SPLITTING);
+    MoveStructure<MoveColsIdx> ms(lengths, perm, NO_SPLITTING);
 
     std::stringstream ss;
     const size_t bytes = ms.serialize(ss);
@@ -100,7 +100,7 @@ static void test_move_structure_serialize_roundtrip() {
     MoveStructure<MoveColsIdx> loaded;
     loaded.load(ss);
 
-    assert(loaded.size() == ms.size());
+    assert(loaded.domain() == ms.domain());
     assert(loaded.runs() == ms.runs());
 
     for (size_t i = 0; i < lengths.size(); ++i) {
@@ -117,7 +117,7 @@ static void test_move_structure_widths_relative_and_absolute_with_and_without_sp
     const ulint domain = 10;
 
     // Relative, no splitting.
-    MoveStructure<MoveCols> ms_rel(lengths, perm, domain, NO_SPLITTING);
+    MoveStructure<MoveCols> ms_rel(lengths, perm, NO_SPLITTING);
     auto widths_rel = ms_rel.get_widths();
 
     // PRIMARY and OFFSET widths should match for relative representation.
@@ -130,7 +130,7 @@ static void test_move_structure_widths_relative_and_absolute_with_and_without_sp
 
     // Relative, with length-capping splitting.
     SplitParams split = ONLY_LENGTH_CAPPING;
-    MoveStructure<MoveCols> ms_rel_split(lengths, perm, domain, split);
+    MoveStructure<MoveCols> ms_rel_split(lengths, perm, split);
     auto widths_rel_split = ms_rel_split.get_widths();
 
     uchar w_primary_rel_split =
@@ -146,7 +146,7 @@ static void test_move_structure_widths_relative_and_absolute_with_and_without_sp
     assert(w_pointer_rel_split >= bit_width(ms_rel_split.runs()));
 
     // Absolute, no splitting.
-    MoveStructure<MoveColsIdx> ms_abs(lengths, perm, domain, NO_SPLITTING);
+    MoveStructure<MoveColsIdx> ms_abs(lengths, perm, NO_SPLITTING);
     auto widths_abs = ms_abs.get_widths();
 
     uchar w_primary_abs =

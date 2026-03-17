@@ -9,7 +9,7 @@ void print_run_data(RunPermType& rp) {
     using RunCols = typename RunPermType::RunCols;
     std::cout << "Intervals:" << std::endl;
     auto pos = rp.first();
-    for (ulint i = 0; i < rp.move_runs(); ++i) {
+    for (ulint i = 0; i < rp.intervals(); ++i) {
         std::cout << "Interval: " << pos.interval << ", Length: " << rp.get_length(pos.interval) << " --> ";
         std::cout << "Run Data: " << rp.template get<RunCols::VAL1>(pos) << ", " << rp.template get<RunCols::VAL2>(pos);
         if constexpr (std::is_same_v<RunPermType, RunPerm<RunCols, true, true>>) {
@@ -53,7 +53,7 @@ template<typename MovePermType>
 void print_move_permutation(MovePermType& mp) {
     std::cout << "Intervals:" << std::endl;
     auto pos = mp.first();
-    for (ulint i = 0; i < mp.move_runs(); ++i) {
+    for (ulint i = 0; i < mp.intervals(); ++i) {
         std::cout << "Interval: " << pos.interval << ", Length: " << mp.get_length(pos.interval);
         if constexpr (std::is_same_v<MovePermType, MovePermAbsolute>) {
             std::cout << ", Absolute Position: " << pos.idx;
@@ -117,7 +117,6 @@ void example1() {
 
     std::vector<ulint> lengths =     { 2, 3, 1,  2, 2,  1, 1,  1, 3};        // Length of runs
     std::vector<ulint> permutation = { 1, 9, 3, 12, 4, 14, 0, 15, 6};       // Permutation of runs
-    ulint domain = 16; // Total domain size
 
     // Some example data columns to store alongside these runs.
     DEFINE_COLUMNS(RunCols, VAL1, VAL2);
@@ -139,7 +138,7 @@ void example1() {
     }
 
     // Basic construction
-    RunPerm<RunCols> rp(lengths, permutation, domain, run_data);
+    RunPerm<RunCols> rp(lengths, permutation, run_data);
     print_run_data(rp);
 }
 
@@ -158,7 +157,7 @@ void example2() {
     auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
     ulint domain = permutation.size();
     // MovePermAbsolute also stores the absolute position in the permutation
-    MovePermAbsolute mp_absolute(lengths, interval_permutation, domain);
+    MovePermAbsolute mp_absolute(lengths, interval_permutation);
     print_move_permutation(mp_absolute);
 }
 
@@ -171,7 +170,7 @@ void example3() {
 
     // Original move permutation
     std::cout << "Original Move Permutation (Relative):" << std::endl;
-    MovePermRelative mp_relative(lengths, interval_permutation, domain);
+    MovePermRelative mp_relative(lengths, interval_permutation);
     print_move_permutation(mp_relative);
 
     std::cout << "\n\nSplitting..." << std::endl;
@@ -180,18 +179,18 @@ void example3() {
     std::cout << "n/r: " << static_cast<double>(domain) / static_cast<double>(lengths.size()) << std::endl;
 
     SplitParams split_params;
-    split_params.length_capping_factor = 1;
+    split_params.length_capping = 1;
 
-    std::cout << "Length Capping Factor: " << split_params.length_capping_factor.value() << std::endl;
-    std::cout << "Capped Length (n/r * length_capping_factor): " << static_cast<ulint>(std::ceil(static_cast<double>(domain) / static_cast<double>(lengths.size()) * split_params.length_capping_factor.value())) << std::endl;
-    std::cout << "Round up to use all log2(n/r * length_capping_factor) bits: " << MAX_VAL(bit_width(static_cast<ulint>(std::ceil(static_cast<double>(domain) / static_cast<double>(lengths.size()) * split_params.length_capping_factor.value())))) << std::endl;
+    std::cout << "Length Capping Factor: " << split_params.length_capping.value() << std::endl;
+    std::cout << "Capped Length (n/r * length_capping_factor): " << static_cast<ulint>(std::ceil(static_cast<double>(domain) / static_cast<double>(lengths.size()) * split_params.length_capping.value())) << std::endl;
+    std::cout << "Round up to use all log2(n/r * length_capping_factor) bits: " << MAX_VAL(bit_width(static_cast<ulint>(std::ceil(static_cast<double>(domain) / static_cast<double>(lengths.size()) * split_params.length_capping.value())))) << std::endl;
 
     std::cout << "\nMove Permutation (Relative):" << std::endl;
-    MovePermRelative mp_relative_split(lengths, interval_permutation, domain, split_params);
+    MovePermRelative mp_relative_split(lengths, interval_permutation, split_params);
     print_move_permutation(mp_relative_split);
 
     std::cout << "\n\nMove Permutation (Absolute):" << std::endl;
-    MovePermAbsolute mp_absolute_split(lengths, interval_permutation, domain, split_params);
+    MovePermAbsolute mp_absolute_split(lengths, interval_permutation, split_params);
     print_move_permutation(mp_absolute_split);
 }
 
@@ -253,11 +252,12 @@ void example6() {
     std::cout << "Example 6: " << example_names[5] << std::endl;
     std::vector<uchar> bwt_heads =       {'T','C','G','A','T', 0 ,'A','T','A'};
     std::vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+    size_t domain = std::accumulate(bwt_run_lengths.begin(), bwt_run_lengths.end(), 0);
 
     std::cout << "Input RLBWT: (T, 5), (C, 3), (G, 3), (A, 3), (T, 1), ($, 1), (A, 1), (T, 4), (A, 6)" << std::endl;
 
-    auto [phi_lengths, phi_interval_permutations, domain] = rlbwt_to_phi(bwt_heads, bwt_run_lengths);
-    MoveInvPhi move_invphi(phi_lengths, phi_interval_permutations, domain);
+    auto [phi_lengths, phi_interval_permutations] = phi::rlbwt_to_phi(bwt_heads, bwt_run_lengths);
+    MoveInvPhi move_invphi(phi_lengths, phi_interval_permutations);
     auto pos = move_invphi.last();
     std::vector<ulint> sa_recovered(domain);
     for (size_t i = 0; i < domain; ++i) {
