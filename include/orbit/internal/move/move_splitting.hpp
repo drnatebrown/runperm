@@ -74,19 +74,19 @@ inline split_params ONLY_BALANCING = split_params(std::nullopt, DEFAULT_BALANCIN
 template<class int_vector_t>
 struct split_result {
     int_vector_t lengths;
-    int_vector_t tau_inv;
+    int_vector_t img_rank_inv;
     ulint max_length;
 };
 
 template<class int_vector_t>
 inline void split_by_length_capping(
     const int_vector_t& lengths, 
-    const int_vector_t& tau_inv, 
+    const int_vector_t& img_rank_inv, 
     const ulint domain, 
     const double length_capping_factor, 
     split_result<int_vector_t>& result
 ) {
-    assert(lengths.size() == tau_inv.size());
+    assert(lengths.size() == img_rank_inv.size());
     assert(length_capping_factor > 0.0);
 
     double avg_run_length = static_cast<double>(domain) / static_cast<double>(lengths.size());
@@ -96,19 +96,19 @@ inline void split_by_length_capping(
 
     size_t new_intervals_upper_bound = std::ceil(static_cast<double>(lengths.size()) / length_capping_factor);
 
-    split_by_max_allowed_length(lengths, tau_inv, domain, max_allowed_length, result, new_intervals_upper_bound);
+    split_by_max_allowed_length(lengths, img_rank_inv, domain, max_allowed_length, result, new_intervals_upper_bound);
 }
 
 template<class int_vector_t>
 inline void split_by_max_allowed_length(
     const int_vector_t& lengths, 
-    const int_vector_t& tau_inv,
+    const int_vector_t& img_rank_inv,
     const ulint domain,
     const ulint max_allowed_length, 
     split_result<int_vector_t>& result,
     const size_t new_intervals_upper_bound = 0
 ) {
-    assert(lengths.size() == tau_inv.size());
+    assert(lengths.size() == img_rank_inv.size());
     assert(max_allowed_length > 0);
     size_t intervals_after_splitting_upper_bound = 
         (new_intervals_upper_bound == 0) ? domain - 1 : lengths.size() + new_intervals_upper_bound - 1;
@@ -142,12 +142,12 @@ inline void split_by_max_allowed_length(
     }
 
     result.lengths = int_vector_t(num_intervals_after_splitting, bit_width(result.max_length));
-    result.tau_inv = int_vector_t(num_intervals_after_splitting, bit_width(num_intervals_after_splitting - 1));
+    result.img_rank_inv = int_vector_t(num_intervals_after_splitting, bit_width(num_intervals_after_splitting - 1));
 
-    // Second pass to fill the lengths and tau_inv arrays, in output order
-    size_t curr_tau_inv_idx = 0;
+    // Second pass to fill the lengths and img_rank_inv arrays, in output order
+    size_t curr_img_rank_inv_idx = 0;
     for (size_t i = 0; i < lengths.size(); ++i) {
-        size_t j = tau_inv[i];
+        size_t j = img_rank_inv[i];
         size_t length = lengths[j];
         size_t num_splits = 0;
         if (length > max_allowed_length) {
@@ -163,21 +163,21 @@ inline void split_by_max_allowed_length(
             result.lengths[j + input_splits_exclusive_cumsum[j]] = length;
         }
         
-        // Fill the tau_inv array
-        size_t curr_tau_inv_val = j + input_splits_exclusive_cumsum[j];
+        // Fill the img_rank_inv array
+        size_t curr_img_rank_inv_val = j + input_splits_exclusive_cumsum[j];
         for (size_t k = 0; k < num_splits + 1; ++k) {
-            result.tau_inv[curr_tau_inv_idx] = curr_tau_inv_val + k;
-            ++curr_tau_inv_idx;
+            result.img_rank_inv[curr_img_rank_inv_idx] = curr_img_rank_inv_val + k;
+            ++curr_img_rank_inv_idx;
         }
     }
 }
 
 template<class int_vector_t>
-inline void split_by_balancing(const int_vector_t& lengths, const int_vector_t& tau_inv, const ulint domain, const ulint balancing_factor, split_result<int_vector_t>& result) {
-    assert(lengths.size() == tau_inv.size());
+inline void split_by_balancing(const int_vector_t& lengths, const int_vector_t& img_rank_inv, const ulint domain, const ulint balancing_factor, split_result<int_vector_t>& result) {
+    assert(lengths.size() == img_rank_inv.size());
     // TODO
     result.lengths = lengths;
-    result.tau_inv = tau_inv;
+    result.img_rank_inv = img_rank_inv;
     // result.max_length = 0;
 }
 

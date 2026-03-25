@@ -2,7 +2,7 @@
  *
  * Loads precomputed BWT + SA (4-byte little-endian) and runs:
  * - LF / FL text reconstruction (standard + exponential, split + unsplit)
- * - phi / invphi suffix array recovery (standard + exponential, split + unsplit)
+ * - phi / phi_inv suffix array recovery (standard + exponential, split + unsplit)
  *
  * Datasets (run from the `runperm/` directory):
  * - `tests/data/dna.{txt,bwt,sa}` using `nucleotide`
@@ -231,20 +231,20 @@ void run_lf_fl_benchmarks(const vector<uchar> &bwt_heads,
     cout << endl;
 }
 
-// === phi / invphi suffix array benchmarks (move-only, mirroring tests/integration/rlbwt_test.cpp) ===
+// === phi / phi_inv suffix array benchmarks (move-only, mirroring tests/integration/rlbwt_test.cpp) ===
 
 // Standard phi (no exponential search)
 template<class Container1, class Container2>
 void bench_move_phi(const string &name,
                     const Container1 &lengths,
-                    const Container2 &tau_inv,
+                    const Container2 &img_rank_inv,
                     ulint domain,
                     const vector<ulint> &sa_truth,
                     const split_params &split_params) {
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    auto permutation = permutation_impl<>::from_lengths_and_tau_inv(lengths, tau_inv);
+    auto permutation = permutation_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
     move_phi<> move_phi(permutation);
     auto t1 = high_resolution_clock::now();
 
@@ -278,7 +278,7 @@ void bench_move_phi(const string &name,
 template<class Container1, class Container2>
 void bench_move_phi_exp(const string &name,
                         const Container1 &lengths,
-                        const Container2 &tau_inv,
+                        const Container2 &img_rank_inv,
                         ulint domain,
                         const vector<ulint> &sa_truth,
                         const split_params &split_params) {
@@ -287,7 +287,7 @@ void bench_move_phi_exp(const string &name,
     auto t0 = high_resolution_clock::now();
     using MovePhiExp = move_phi<true>;
 
-    auto permutation = permutation_impl<>::from_lengths_and_tau_inv(lengths, tau_inv);
+    auto permutation = permutation_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
     MovePhiExp move_phi(permutation);
     auto t1 = high_resolution_clock::now();
 
@@ -317,28 +317,28 @@ void bench_move_phi_exp(const string &name,
     cout << "    Size:           " << move_phi.serialize(ss) << " bytes" << endl;
 }
 
-// Standard invphi (no exponential search)
+// Standard phi_inv (no exponential search)
 template<class Container1, class Container2>
-void bench_move_invphi(const string &name,
+void bench_move_phi_inv(const string &name,
                        const Container1 &lengths,
-                       const Container2 &tau_inv,
+                       const Container2 &img_rank_inv,
                        ulint domain,
                        const vector<ulint> &sa_truth,
                        const split_params &split_params) {
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    auto permutation = permutation_impl<>::from_lengths_and_tau_inv(lengths, tau_inv);
-    move_invphi<> move_invphi(permutation);
+    auto permutation = permutation_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
+    move_phi_inv<> move_phi_inv(permutation);
     auto t1 = high_resolution_clock::now();
 
-    using position = typename move_invphi<>::position;
+    using position = typename move_phi_inv<>::position;
     vector<ulint> sa_recovered(sa_truth.size());
 
-    position pos = move_invphi.last();
+    position pos = move_phi_inv.last();
     for (size_t i = 0; i < sa_recovered.size(); ++i) {
-        sa_recovered[i] = move_invphi.SA(pos);
-        pos = move_invphi.invphi(pos);
+        sa_recovered[i] = move_phi_inv.SA(pos);
+        pos = move_phi_inv.phi_inv(pos);
     }
 
     for (size_t i = 0; i < sa_recovered.size(); ++i) {
@@ -354,33 +354,33 @@ void bench_move_invphi(const string &name,
     cout << "    SA recovery:    " << sa_duration.count() << "us" << endl;
     cout << "    Total:          " << total_duration.count() << "us" << endl;
     stringstream ss;
-    cout << "    Size:           " << move_invphi.serialize(ss) << " bytes" << endl;
+    cout << "    Size:           " << move_phi_inv.serialize(ss) << " bytes" << endl;
 }
 
-// invphi with exponential search (absolute positions + ExponentialSearch = true)
+// phi_inv with exponential search (absolute positions + ExponentialSearch = true)
 template<class Container1, class Container2>
-void bench_move_invphi_exp(const string &name,
+void bench_move_phi_inv_exp(const string &name,
                            const Container1 &lengths,
-                           const Container2 &tau_inv,
+                           const Container2 &img_rank_inv,
                            ulint domain,
                            const vector<ulint> &sa_truth,
                            const split_params &split_params) {
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    using MoveInvPhiExp = move_invphi<true>;
+    using Movephi_invExp = move_phi_inv<true>;
 
-    auto perm = permutation_impl<>::from_lengths_and_tau_inv(lengths, tau_inv);
-    MoveInvPhiExp move_invphi(perm);
+    auto perm = permutation_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
+    Movephi_invExp move_phi_inv(perm);
     auto t1 = high_resolution_clock::now();
 
-    using position = typename MoveInvPhiExp::position;
+    using position = typename Movephi_invExp::position;
     vector<ulint> sa_recovered(sa_truth.size());
 
-    position pos = move_invphi.last();
+    position pos = move_phi_inv.last();
     for (size_t i = 0; i < sa_recovered.size(); ++i) {
-        sa_recovered[i] = move_invphi.SA(pos);
-        pos = move_invphi.invphi(pos);
+        sa_recovered[i] = move_phi_inv.SA(pos);
+        pos = move_phi_inv.phi_inv(pos);
     }
 
     for (size_t i = 0; i < sa_recovered.size(); ++i) {
@@ -396,36 +396,36 @@ void bench_move_invphi_exp(const string &name,
     cout << "    SA recovery:    " << sa_duration.count() << "us" << endl;
     cout << "    Total:          " << total_duration.count() << "us" << endl;
     stringstream ss;
-    cout << "    Size:           " << move_invphi.serialize(ss) << " bytes" << endl;
+    cout << "    Size:           " << move_phi_inv.serialize(ss) << " bytes" << endl;
 }
 
 template<typename AlphabetType=nucleotide>
-void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
+void run_phi_phi_inv_benchmarks(const vector<uchar> &bwt_heads,
                                const vector<ulint> &bwt_run_lengths,
                                const vector<ulint> &sa_truth) {
-    cout << "=== phi / invphi SA benchmarks ===" << endl;
+    cout << "=== phi / phi_inv SA benchmarks ===" << endl;
 
     cout << "Domain (SA size): " << sa_truth.size() << endl;
 
-    // Build phi / invphi structures from the RLBWT.
+    // Build phi / phi_inv structures from the RLBWT.
     size_t phi_domain;
     ulint max_length;
     auto t_phi_derive = high_resolution_clock::now();
-    auto [phi_lengths, phi_tau_inv] = rlbwt_to_phi_tau_inv<AlphabetType>(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
+    auto [phi_lengths, phi_img_rank_inv] = rlbwt_to_phi_img_rank_inv<AlphabetType>(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
     auto t_phi_derive_end = high_resolution_clock::now();
     auto phi_derive_duration = duration_cast<microseconds>(t_phi_derive_end - t_phi_derive);
     cout << "    phi derivation: " << phi_derive_duration.count() << "us" << endl;
 
-    size_t invphi_domain;
+    size_t phi_inv_domain;
     ulint max_length_inv;
-    auto t_invphi_derive = high_resolution_clock::now();
-    auto [invphi_lengths, invphi_tau_inv] = rlbwt_to_invphi_tau_inv<AlphabetType>(bwt_heads, bwt_run_lengths, &invphi_domain, &max_length_inv);
-    auto t_invphi_derive_end = high_resolution_clock::now();
-    auto invphi_derive_duration = duration_cast<microseconds>(t_invphi_derive_end - t_invphi_derive);
-    cout << "    invphi derivation: " << invphi_derive_duration.count() << "us" << endl;
+    auto t_phi_inv_derive = high_resolution_clock::now();
+    auto [phi_inv_lengths, phi_inv_img_rank_inv] = rlbwt_to_phi_inv_img_rank_inv<AlphabetType>(bwt_heads, bwt_run_lengths, &phi_inv_domain, &max_length_inv);
+    auto t_phi_inv_derive_end = high_resolution_clock::now();
+    auto phi_inv_derive_duration = duration_cast<microseconds>(t_phi_inv_derive_end - t_phi_inv_derive);
+    cout << "    phi_inv derivation: " << phi_inv_derive_duration.count() << "us" << endl;
 
     assert(phi_domain == sa_truth.size());
-    assert(invphi_domain == sa_truth.size());
+    assert(phi_inv_domain == sa_truth.size());
 
     split_params no_splitting = NO_SPLITTING;
     split_params splitting(8.0, std::nullopt); // length_capping_factor = 8.0
@@ -434,7 +434,7 @@ void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
     bench_move_phi(
         "MovePhi (no splitting)",
         phi_lengths,
-        phi_tau_inv,
+        phi_img_rank_inv,
         phi_domain,
         sa_truth,
         no_splitting);
@@ -442,55 +442,55 @@ void run_phi_invphi_benchmarks(const vector<uchar> &bwt_heads,
     bench_move_phi(
         "MovePhi (split, 8.0)",
         phi_lengths,
-        phi_tau_inv,
+        phi_img_rank_inv,
         phi_domain,
         sa_truth,
         splitting);
     bench_move_phi_exp(
         "MovePhiExp (no splitting)",
         phi_lengths,
-        phi_tau_inv,
+        phi_img_rank_inv,
         phi_domain,
         sa_truth,
         no_splitting);
     bench_move_phi_exp(
         "MovePhiExp (split, 8.0)",
         phi_lengths,
-        phi_tau_inv,
+        phi_img_rank_inv,
         phi_domain,
         sa_truth,
         splitting);
 
-    // Move-only invphi (standard + exponential)
-    bench_move_invphi(
-        "MoveInvPhi (no splitting)",
-        invphi_lengths,
-        invphi_tau_inv,
-        invphi_domain,
+    // Move-only phi_inv (standard + exponential)
+    bench_move_phi_inv(
+        "Movephi_inv (no splitting)",
+        phi_inv_lengths,
+        phi_inv_img_rank_inv,
+        phi_inv_domain,
         sa_truth,
         no_splitting);
 
-    bench_move_invphi(
-        "MoveInvPhi (split, 8.0)",
-        invphi_lengths,
-        invphi_tau_inv,
-        invphi_domain,
+    bench_move_phi_inv(
+        "Movephi_inv (split, 8.0)",
+        phi_inv_lengths,
+        phi_inv_img_rank_inv,
+        phi_inv_domain,
         sa_truth,
         splitting);
 
-    bench_move_invphi_exp(
-        "MoveInvPhiExp (no splitting)",
-        invphi_lengths,
-        invphi_tau_inv,
-        invphi_domain,
+    bench_move_phi_inv_exp(
+        "Movephi_invExp (no splitting)",
+        phi_inv_lengths,
+        phi_inv_img_rank_inv,
+        phi_inv_domain,
         sa_truth,
         no_splitting);
 
-    bench_move_invphi_exp(
-        "MoveInvPhiExp (split, 8.0)",
-        invphi_lengths,
-        invphi_tau_inv,
-        invphi_domain,
+    bench_move_phi_inv_exp(
+        "Movephi_invExp (split, 8.0)",
+        phi_inv_lengths,
+        phi_inv_img_rank_inv,
+        phi_inv_domain,
         sa_truth,
         splitting);
 
@@ -552,7 +552,7 @@ int main() {
                 run_lf_fl_benchmarks<LFStd, LFExp, FLStd, FLExp>(bwt_heads, bwt_run_lengths, text);
 
                 using LFPhi = move_lf<>;
-                run_phi_invphi_benchmarks<nucleotide>(bwt_heads, bwt_run_lengths, sa_truth);
+                run_phi_phi_inv_benchmarks<nucleotide>(bwt_heads, bwt_run_lengths, sa_truth);
             } else {
                 using LFStd = move_lf_impl<false, false, alphabet>;
                 using LFExp = move_lf_impl<true, true, alphabet>;
@@ -561,7 +561,7 @@ int main() {
                 run_lf_fl_benchmarks<LFStd, LFExp, FLStd, FLExp>(bwt_heads, bwt_run_lengths, text);
 
                 using LFPhi = move_lf_impl<false, false, alphabet>;
-                run_phi_invphi_benchmarks<alphabet>(bwt_heads, bwt_run_lengths, sa_truth);
+                run_phi_phi_inv_benchmarks<alphabet>(bwt_heads, bwt_run_lengths, sa_truth);
             }
         }
 

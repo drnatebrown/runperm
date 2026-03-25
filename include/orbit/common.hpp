@@ -69,7 +69,7 @@ inline constexpr uchar bit_width(ulint value) {
     return value == 0 ? 1 : 64 - __builtin_clzll(value);
 }
 
-//
+// ENUM HELPERS ===============================================================
 // ENUM REPRESENTS COLUMNS, USE ENUM HELPERS TO ENFORCE STRUCTURE
 // in common.hpp (or an internal traits header
 template<class, class = void>

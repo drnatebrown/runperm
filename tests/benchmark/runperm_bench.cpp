@@ -120,12 +120,12 @@ std::string get_runperm_type_name() {
 
 template<typename RunData, typename RunPermType>
 void bench_runperm(const std::vector<ulint>& lengths, 
-                   const std::vector<ulint>& interval_permutation, 
+                   const std::vector<ulint>& images, 
                    const std::vector<std::array<ulint, 2>>& run_data, 
                    size_t n) {
 
     auto start_time = high_resolution_clock::now();
-    auto runperm = RunPermType(lengths, interval_permutation, sp, run_data);
+    auto runperm = RunPermType(lengths, images, sp, run_data);
     auto creation_time = high_resolution_clock::now();
 
     auto pos = runperm.first();
@@ -169,7 +169,7 @@ void run_benchmarks() {
                 continue;
             }
                 
-            auto [lengths, interval_permutation] = get_permutation_intervals(test_perm);
+            auto [lengths, images] = get_permutation_intervals(test_perm);
 
             size_t val1_max = max_val(32);
             size_t val2_max = max_val(55);
@@ -188,10 +188,10 @@ void run_benchmarks() {
 
             std::cout << "Testing n=" << n << ", r=" << r << " (n/r=" << n/r << "):" << std::endl;
 
-            bench_runperm<RunData, runperm<RunData, true, true>>(lengths, interval_permutation, run_data, n);
-            bench_runperm<RunData, runperm<RunData, true, false>>(lengths, interval_permutation, run_data, n);
-            bench_runperm<RunData, runperm<RunData, false, true>>(lengths, interval_permutation, run_data, n);
-            bench_runperm<RunData, runperm<RunData, false, false>>(lengths, interval_permutation, run_data, n);
+            bench_runperm<RunData, runperm<RunData, true, true>>(lengths, images, run_data, n);
+            bench_runperm<RunData, runperm<RunData, true, false>>(lengths, images, run_data, n);
+            bench_runperm<RunData, runperm<RunData, false, true>>(lengths, images, run_data, n);
+            bench_runperm<RunData, runperm<RunData, false, false>>(lengths, images, run_data, n);
 
             std::cout << std::endl;
         }

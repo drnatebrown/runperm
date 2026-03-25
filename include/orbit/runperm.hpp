@@ -86,17 +86,17 @@ using runperm_integrated_absolute = runperm<data_columns_t, true, true>;
 *
 *    // === Basic Constructors ===
 *    // lengths -> length of each interval which permutes contiguously
-*    // interval_permutation -> permutation position of the first position of each interval
+*    // images -> permutation position of the first position of each interval
 *    // domain -> domain of the permutation, i.e. a permutatation over 1..n has domain n
 *    // run_data -> run data for each interval, the size of this vector should be the same as the number of intervals
 *    // split_params -> parameters for splitting the move structure, (max_allowed_length, balancing_factor)
      // !!! NOTE: If using splitting, user data will be copied by default. See Splitting Constructor if this is not desired.
      // !!!       For this reason, splitting is turned off by default when using the simplified interface.
-*    runperm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const std::vector<data_tuple> &run_data, split_params split_params = NO_SPLITTING);
-*    runperm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const split_params &split_params, const std::vector<data_tuple> &run_data);
+*    runperm(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const std::vector<data_tuple> &run_data, split_params split_params = NO_SPLITTING);
+*    runperm(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const split_params &split_params, const std::vector<data_tuple> &run_data);
 *
 *    // === Splitting Constructor ===
-*    // permutation -> object built by passing lengths, interval_permutation to permutation constructor
+*    // permutation -> object built by passing lengths, images to permutation constructor
 *    // run_data -> run data for each interval, the size of this vector should be the same as the number of intervals after splitting by modifiying based on the permutation object
 *    runperm(const permutation &perm, const std::vector<data_tuple> &run_data);
 *
@@ -104,7 +104,7 @@ using runperm_integrated_absolute = runperm<data_columns_t, true, true>;
 *    // get_run_cols_data -> function to get run data for each interval, (orig_interval, orig_interval_length, new_offset_from_orig_start, new_length) -> run data
 *    // structure -> pre-computed move structure stored in packed_vector
 *    // ms -> pre-computed move structure stored in move_structure
-*    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const SplitParams &split_params, std::function<RunData(ulint, ulint, ulint, ulint)> get_run_cols_data);
+*    RunPerm(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const SplitParams &split_params, std::function<RunData(ulint, ulint, ulint, ulint)> get_run_cols_data);
 *    runperm from_structure(packed_vector<columns> &&structure, const size_t domain, const size_t runs);
 *    runperm from_structure(packed_vector<base_columns> &&structure, std::vector<data_tuple> &run_data, const size_t domain, const size_t runs);
 *    runperm from_move_structure(move_structure_perm &&ms);
@@ -174,7 +174,7 @@ using moveperm_relative = moveperm<false>; // Same as moveperm<>, the default
 *    
 *    // === Constructors ===
 *    MovePermImpl(std::vector<ulint>& permutation, split_params split_params = split_params()); // Constructor from permutation vector
-*    MovePermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, split_params split_params = split_params()); // Splitting on by default
+*    MovePermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, split_params split_params = split_params()); // Splitting on by default
 *    MovePermImpl(const permutation &perm); // Constructor from permutation object
 *    
 *    // === Navigation methods ===

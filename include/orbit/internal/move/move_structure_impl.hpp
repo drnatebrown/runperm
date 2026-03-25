@@ -29,8 +29,8 @@ public:
     move_structure() = default;
     
     // Constructor from permutation data
-    move_structure(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const split_params& split_params = split_params())
-    : move_structure(permutation_impl<>::from_lengths_and_interval_permutation(lengths, interval_permutation, split_params)) {}
+    move_structure(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const split_params& split_params = split_params())
+    : move_structure(permutation_impl<>::from_lengths_and_images(lengths, images, split_params)) {}
 
     template<typename permutation_t>
     move_structure(const permutation_t& permutation, const split_params& split_params = split_params()) {
@@ -233,7 +233,7 @@ protected:
     static void populate_structure(packed_vector<columns>& structure, const permutation_t& permutation) {
         size_t start_val = 0;
         size_t output_start_val = 0;
-        size_t tau_inv_idx = 0;
+        size_t img_rank_inv_idx = 0;
         for (size_t i = 0; i < permutation.intervals(); ++i) {
             size_t length = permutation.get_length(i);
             if constexpr (cols_traits::RELATIVE) {
@@ -243,12 +243,12 @@ protected:
                 structure.template set<to_cols(cols_traits::PRIMARY)>(i, start_val);
             }
 
-            while (tau_inv_idx < permutation.intervals() && output_start_val < start_val + length) {
-                ulint tau_inv_val = permutation.get_tau_inv(tau_inv_idx);
-                structure.template set<to_cols(cols_traits::POINTER)>(tau_inv_val, i);
-                structure.template set<to_cols(cols_traits::OFFSET)>(tau_inv_val, output_start_val - start_val);
-                output_start_val += permutation.get_length(tau_inv_val);
-                ++tau_inv_idx;
+            while (img_rank_inv_idx < permutation.intervals() && output_start_val < start_val + length) {
+                ulint img_rank_inv_val = permutation.get_img_rank_inv(img_rank_inv_idx);
+                structure.template set<to_cols(cols_traits::POINTER)>(img_rank_inv_val, i);
+                structure.template set<to_cols(cols_traits::OFFSET)>(img_rank_inv_val, output_start_val - start_val);
+                output_start_val += permutation.get_length(img_rank_inv_val);
+                ++img_rank_inv_idx;
             }
             start_val += length;
         }

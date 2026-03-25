@@ -19,8 +19,8 @@ public:
 
     rlbwt_move_structure() = default;
 
-    rlbwt_move_structure(const std::vector<uchar>& head_chars, const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const uchar sigma, const split_params& split_params = split_params())
-    : base(find_structure(head_chars, lengths, interval_permutation, domain, sigma, split_params), domain, lengths.size()) {}
+    rlbwt_move_structure(const std::vector<uchar>& head_chars, const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const uchar sigma, const split_params& split_params = split_params())
+    : base(find_structure(head_chars, lengths, images, domain, sigma, split_params), domain, lengths.size()) {}
 
     template<typename rlbwt_permutation_t>
     rlbwt_move_structure(const rlbwt_permutation_t& permutation) {
@@ -31,13 +31,13 @@ public:
 
     rlbwt_move_structure(packed_vector<columns> &&structure, const size_t domain, ulint runs) : base(std::move(structure), domain, runs) {}
 
-    static packed_vector<columns> find_structure(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const uchar char_width, const split_params& split_params = split_params()) = delete;
+    static packed_vector<columns> find_structure(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const uchar char_width, const split_params& split_params = split_params()) = delete;
 
     // When the permutation is not already computed
-    static packed_vector<columns> find_structure(const std::vector<uchar>& head_chars, const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const uchar sigma, const split_params& sp = split_params()) {
+    static packed_vector<columns> find_structure(const std::vector<uchar>& head_chars, const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const uchar sigma, const split_params& sp = split_params()) {
         assert(head_chars.size() == lengths.size());
 
-        permutation_impl<> permutation(lengths, interval_permutation, sp);
+        permutation_impl<> permutation(lengths, images, sp);
         assert(permutation.runs() == lengths.size());
         assert(permutation.domain() == domain);
 

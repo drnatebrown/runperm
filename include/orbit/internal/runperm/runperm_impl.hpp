@@ -92,19 +92,19 @@ public:
 
     /**
      * lengths -> length of each interval which permutes contiguously
-     * interval_permutation -> permutation position of the first position of each interval
+     * images -> permutation position of the first position of each interval
      * domain -> domain of the permutation, i.e. a permutatation over 1..n has domain n
      * run_data -> run data for each interval, the size of this vector should be the same as the number of intervals
      */
      // When user doesn't pass splitting params without providing permutation object input, use NO_SPLITTING
     template<typename container1_t, typename container2_t>
-     runperm_impl(const container1_t &lengths, const container2_t &interval_permutation, const std::vector<data_tuple> &run_data)
-     : runperm_impl(lengths, interval_permutation, NO_SPLITTING, run_data) {}
+     runperm_impl(const container1_t &lengths, const container2_t &images, const std::vector<data_tuple> &run_data)
+     : runperm_impl(lengths, images, NO_SPLITTING, run_data) {}
 
     // If splitting, copy the run data by default
     template<typename container1_t, typename container2_t>
-    runperm_impl(const container1_t &lengths, const container2_t &interval_permutation, const split_params &sp, const std::vector<data_tuple> &run_data)
-        : runperm_impl(lengths, interval_permutation, sp, run_data,
+    runperm_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, const std::vector<data_tuple> &run_data)
+        : runperm_impl(lengths, images, sp, run_data,
             [&run_data](ulint orig_interval, ulint orig_interval_length, ulint new_offset_from_orig_start, ulint new_length) {
                 return run_data[orig_interval];
             }
@@ -113,12 +113,12 @@ public:
     // Path for constructor above, see below constructor for more details
     // This exists as a fast path in case no splitting is set and we do not need to call extend_run_data
     template<typename container1_t, typename container2_t>
-    runperm_impl(const container1_t &lengths, const container2_t &interval_permutation, const split_params &sp, const std::vector<data_tuple> &run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
-        assert(lengths.size() == interval_permutation.size());
+    runperm_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, const std::vector<data_tuple> &run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+        assert(lengths.size() == images.size());
         split_params_ = sp;
 
         // Find the base structure (move structure without run data)
-        auto permutation = permutation_impl<>::from_lengths_and_interval_permutation(lengths, interval_permutation, sp);
+        auto permutation = permutation_impl<>::from_lengths_and_images(lengths, images, sp);
         size_t domain = permutation.domain();
         size_t runs = permutation.runs();
         packed_vector<base_columns> base_structure = move_structure_base::find_structure(permutation);
@@ -141,12 +141,12 @@ public:
      * and returns the values to be stored in the new interval (run data) for that new row
      */
     template<typename container1_t, typename container2_t>
-    runperm_impl(const container1_t &lengths, const container2_t &interval_permutation, const split_params &sp, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
-        assert(lengths.size() == interval_permutation.size());
+    runperm_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+        assert(lengths.size() == images.size());
         split_params_ = sp;
 
         // Find the base structure (move structure without run data)
-        auto permutation = permutation_impl<>::from_lengths_and_interval_permutation(lengths, interval_permutation, sp);
+        auto permutation = permutation_impl<>::from_lengths_and_images(lengths, images, sp);
         size_t domain = permutation.domain();
         size_t runs = permutation.runs();
         packed_vector<base_columns> base_structure = move_structure_base::find_structure(permutation);
@@ -494,9 +494,9 @@ public:
     
     // Constructor from permutation vector
     moveperm_impl(std::vector<ulint>& permutation, const split_params& sp = split_params()) {
-        auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
+        auto [lengths, images] = get_permutation_intervals(permutation);
         std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
-        run_perm = runperm_t(lengths, interval_permutation, sp, empty_run_data);
+        run_perm = runperm_t(lengths, images, sp, empty_run_data);
     }
 
     template<typename permutation_t>
@@ -507,9 +507,9 @@ public:
     
     // Constructor from lengths and interval permutation
     template<typename container1_t, typename container2_t>
-    moveperm_impl(const container1_t& lengths, const container2_t& interval_permutation, const split_params& sp = split_params()) {
+    moveperm_impl(const container1_t& lengths, const container2_t& images, const split_params& sp = split_params()) {
         std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
-        run_perm = runperm_t(lengths, interval_permutation, sp, empty_run_data);
+        run_perm = runperm_t(lengths, images, sp, empty_run_data);
     }
     
     // Delegate all RunPerm methods

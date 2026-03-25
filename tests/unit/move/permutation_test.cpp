@@ -19,12 +19,12 @@ using namespace orbit;
 using test_int_vector = int_vector;
 using test_permutation = permutation_impl<test_int_vector>;
 
-// Basic helper to check that tau_inv is a permutation of [0, n).
-static void assert_tau_inv_is_permutation(test_permutation &perm) {
+// Basic helper to check that img_rank_inv is a permutation of [0, n).
+static void assert_img_rank_inv_is_permutation(test_permutation &perm) {
     const size_t r = perm.runs();
     vector<bool> seen(r, false);
     for (size_t i = 0; i < r; ++i) {
-        ulint v = perm.get_tau_inv(i);
+        ulint v = perm.get_img_rank_inv(i);
         assert(v < r);
         assert(!seen[v]);
         seen[v] = true;
@@ -96,14 +96,14 @@ static void test_permutation_helpers() {
         assert(max_val == 5);
     }
 
-    // get_tau_inv
+    // get_img_rank_inv
     {
         const vector<ulint> interval_starts = {5, 1, 10};
-        auto tau_inv = compute_tau_inv(interval_starts);
+        auto img_rank_inv = compute_img_rank_inv(interval_starts);
         // Sorted by interval_starts: indices [1, 0, 2].
-        const vector<ulint> expected_tau_inv = {1, 0, 2};
-        for (size_t i = 0; i < tau_inv.size(); ++i) {
-            assert(tau_inv[i] == expected_tau_inv[i]);
+        const vector<ulint> expected_img_rank_inv = {1, 0, 2};
+        for (size_t i = 0; i < img_rank_inv.size(); ++i) {
+            assert(img_rank_inv[i] == expected_img_rank_inv[i]);
         }
     }
 
@@ -131,15 +131,15 @@ static void test_all_construction_paths_no_splitting() {
     // 0 must appear in interval_perm since 0 cannot be consecutive with a predecessor.
     assert(std::find(interval_perm.begin(), interval_perm.end(), 0) != interval_perm.end());
 
-    // tau_inv as defined by the library (ranks intervals by their output start).
-    auto tau_inv_packed_vector = compute_tau_inv(interval_perm);
-    std::vector<ulint> tau_inv(tau_inv_packed_vector.size());
-    for (size_t i = 0; i < tau_inv_packed_vector.size(); ++i) {
-        tau_inv[i] = tau_inv_packed_vector.get(i);
+    // img_rank_inv as defined by the library (ranks intervals by their output start).
+    auto img_rank_inv_packed_vector = compute_img_rank_inv(interval_perm);
+    std::vector<ulint> img_rank_inv(img_rank_inv_packed_vector.size());
+    for (size_t i = 0; i < img_rank_inv_packed_vector.size(); ++i) {
+        img_rank_inv[i] = img_rank_inv_packed_vector.get(i);
     }
 
-    // tau is the inverse of tau_inv: tau[rank] = original_interval_index.
-    vector<ulint> tau = get_inverse_permutation(tau_inv);
+    // img_rank is the inverse of img_rank_inv: img_rank[rank] = original_interval_index.
+    vector<ulint> img_rank = get_inverse_permutation(img_rank_inv);
 
     // starts derived from lengths.
     vector<ulint> starts;
@@ -151,10 +151,10 @@ static void test_all_construction_paths_no_splitting() {
     }
     assert(pref == domain);
 
-    // 1) lengths + tau_inv (with and without explicit domain/max_length)
+    // 1) lengths + img_rank_inv (with and without explicit domain/max_length)
     {
-        test_permutation p1 = test_permutation::from_lengths_and_tau_inv(
-            lengths, tau_inv, NO_SPLITTING
+        test_permutation p1 = test_permutation::from_lengths_and_img_rank_inv(
+            lengths, img_rank_inv, NO_SPLITTING
         );
         assert(p1.domain() == domain);
         assert(p1.runs() == lengths.size());
@@ -162,12 +162,12 @@ static void test_all_construction_paths_no_splitting() {
         assert(p1.max_length() == max_length);
         for (size_t i = 0; i < lengths.size(); ++i) {
             assert(p1.get_length(i) == lengths[i]);
-            assert(p1.get_tau_inv(i) == tau_inv[i]);
+            assert(p1.get_img_rank_inv(i) == img_rank_inv[i]);
         }
-        assert_tau_inv_is_permutation(p1);
+        assert_img_rank_inv_is_permutation(p1);
 
-        test_permutation p2 = test_permutation::from_lengths_and_tau_inv(
-            lengths, tau_inv, domain, max_length, NO_SPLITTING
+        test_permutation p2 = test_permutation::from_lengths_and_img_rank_inv(
+            lengths, img_rank_inv, domain, max_length, NO_SPLITTING
         );
         assert(p2.domain() == domain);
         assert(p2.runs() == lengths.size());
@@ -175,22 +175,22 @@ static void test_all_construction_paths_no_splitting() {
         assert(p2.max_length() == max_length);
         for (size_t i = 0; i < lengths.size(); ++i) {
             assert(p2.get_length(i) == lengths[i]);
-            assert(p2.get_tau_inv(i) == tau_inv[i]);
+            assert(p2.get_img_rank_inv(i) == img_rank_inv[i]);
         }
-        assert_tau_inv_is_permutation(p2);
+        assert_img_rank_inv_is_permutation(p2);
     }
 
-    // 2) lengths + tau (with and without explicit domain/max_length)
+    // 2) lengths + img_rank (with and without explicit domain/max_length)
     {
-        // Expected tau_inv is inverse of tau (and must match the one we computed above).
-        vector<ulint> expected_tau_inv(tau.size());
-        for (size_t rank = 0; rank < tau.size(); ++rank) {
-            expected_tau_inv[tau[rank]] = static_cast<ulint>(rank);
+        // Expected img_rank_inv is inverse of img_rank (and must match the one we computed above).
+        vector<ulint> expected_img_rank_inv(img_rank.size());
+        for (size_t rank = 0; rank < img_rank.size(); ++rank) {
+            expected_img_rank_inv[img_rank[rank]] = static_cast<ulint>(rank);
         }
-        assert(expected_tau_inv == tau_inv);
+        assert(expected_img_rank_inv == img_rank_inv);
 
-        test_permutation p1 = test_permutation::from_lengths_and_tau(
-            lengths, tau, NO_SPLITTING
+        test_permutation p1 = test_permutation::from_lengths_and_img_rank(
+            lengths, img_rank, NO_SPLITTING
         );
         assert(p1.domain() == domain);
         assert(p1.runs() == lengths.size());
@@ -198,12 +198,12 @@ static void test_all_construction_paths_no_splitting() {
         assert(p1.max_length() == max_length);
         for (size_t i = 0; i < lengths.size(); ++i) {
             assert(p1.get_length(i) == lengths[i]);
-            assert(p1.get_tau_inv(i) == expected_tau_inv[i]);
+            assert(p1.get_img_rank_inv(i) == expected_img_rank_inv[i]);
         }
-        assert_tau_inv_is_permutation(p1);
+        assert_img_rank_inv_is_permutation(p1);
 
-        test_permutation p2 = test_permutation::from_lengths_and_tau(
-            lengths, tau, domain, max_length, NO_SPLITTING
+        test_permutation p2 = test_permutation::from_lengths_and_img_rank(
+            lengths, img_rank, domain, max_length, NO_SPLITTING
         );
         assert(p2.domain() == domain);
         assert(p2.runs() == lengths.size());
@@ -211,36 +211,36 @@ static void test_all_construction_paths_no_splitting() {
         assert(p2.max_length() == max_length);
         for (size_t i = 0; i < lengths.size(); ++i) {
             assert(p2.get_length(i) == lengths[i]);
-            assert(p2.get_tau_inv(i) == expected_tau_inv[i]);
+            assert(p2.get_img_rank_inv(i) == expected_img_rank_inv[i]);
         }
-        assert_tau_inv_is_permutation(p2);
+        assert_img_rank_inv_is_permutation(p2);
     }
 
-    // 3) lengths + interval_permutation
+    // 3) lengths + image
     {
-        test_permutation p1 = test_permutation::from_lengths_and_interval_permutation(
+        test_permutation p1 = test_permutation::from_lengths_and_images(
             lengths, interval_perm, NO_SPLITTING
         );
         assert(p1.domain() == domain);
         assert(p1.runs() == lengths.size());
         assert(p1.intervals() == lengths.size());
         assert(p1.max_length() == max_length);
-        assert_tau_inv_is_permutation(p1);
+        assert_img_rank_inv_is_permutation(p1);
 
-        test_permutation p2 = test_permutation::from_lengths_and_interval_permutation(
+        test_permutation p2 = test_permutation::from_lengths_and_images(
             lengths, interval_perm, domain, max_length, NO_SPLITTING
         );
         assert(p2.domain() == domain);
         assert(p2.runs() == lengths.size());
         assert(p2.intervals() == lengths.size());
         assert(p2.max_length() == max_length);
-        assert_tau_inv_is_permutation(p2);
+        assert_img_rank_inv_is_permutation(p2);
     }
 
-    // 4) starts + tau_inv
+    // 4) starts + img_rank_inv
     {
-        test_permutation p1 = test_permutation::from_starts_and_tau_inv(
-            starts, tau_inv, domain, NO_SPLITTING
+        test_permutation p1 = test_permutation::from_starts_and_img_rank_inv(
+            starts, img_rank_inv, domain, NO_SPLITTING
         );
         assert(p1.domain() == domain);
         assert(p1.runs() == lengths.size());
@@ -248,12 +248,12 @@ static void test_all_construction_paths_no_splitting() {
         assert(p1.max_length() == max_length);
         for (size_t i = 0; i < lengths.size(); ++i) {
             assert(p1.get_length(i) == lengths[i]);
-            assert(p1.get_tau_inv(i) == tau_inv[i]);
+            assert(p1.get_img_rank_inv(i) == img_rank_inv[i]);
         }
-        assert_tau_inv_is_permutation(p1);
+        assert_img_rank_inv_is_permutation(p1);
 
-        test_permutation p2 = test_permutation::from_starts_and_tau_inv(
-            starts, tau_inv, domain, max_length, NO_SPLITTING
+        test_permutation p2 = test_permutation::from_starts_and_img_rank_inv(
+            starts, img_rank_inv, domain, max_length, NO_SPLITTING
         );
         assert(p2.domain() == domain);
         assert(p2.runs() == lengths.size());
@@ -261,21 +261,21 @@ static void test_all_construction_paths_no_splitting() {
         assert(p2.max_length() == max_length);
         for (size_t i = 0; i < lengths.size(); ++i) {
             assert(p2.get_length(i) == lengths[i]);
-            assert(p2.get_tau_inv(i) == tau_inv[i]);
+            assert(p2.get_img_rank_inv(i) == img_rank_inv[i]);
         }
-        assert_tau_inv_is_permutation(p2);
+        assert_img_rank_inv_is_permutation(p2);
     }
 
-    // 5) starts + tau
+    // 5) starts + img_rank
     {
-        vector<ulint> expected_tau_inv(tau.size());
-        for (size_t rank = 0; rank < tau.size(); ++rank) {
-            expected_tau_inv[tau[rank]] = static_cast<ulint>(rank);
+        vector<ulint> expected_img_rank_inv(img_rank.size());
+        for (size_t rank = 0; rank < img_rank.size(); ++rank) {
+            expected_img_rank_inv[img_rank[rank]] = static_cast<ulint>(rank);
         }
-        assert(expected_tau_inv == tau_inv);
+        assert(expected_img_rank_inv == img_rank_inv);
 
-        test_permutation p1 = test_permutation::from_starts_and_tau(
-            starts, tau, domain, NO_SPLITTING
+        test_permutation p1 = test_permutation::from_starts_and_img_rank(
+            starts, img_rank, domain, NO_SPLITTING
         );
         assert(p1.domain() == domain);
         assert(p1.runs() == lengths.size());
@@ -283,12 +283,12 @@ static void test_all_construction_paths_no_splitting() {
         assert(p1.max_length() == max_length);
         for (size_t i = 0; i < lengths.size(); ++i) {
             assert(p1.get_length(i) == lengths[i]);
-            assert(p1.get_tau_inv(i) == expected_tau_inv[i]);
+            assert(p1.get_img_rank_inv(i) == expected_img_rank_inv[i]);
         }
-        assert_tau_inv_is_permutation(p1);
+        assert_img_rank_inv_is_permutation(p1);
 
-        test_permutation p2 = test_permutation::from_starts_and_tau(
-            starts, tau, domain, max_length, NO_SPLITTING
+        test_permutation p2 = test_permutation::from_starts_and_img_rank(
+            starts, img_rank, domain, max_length, NO_SPLITTING
         );
         assert(p2.domain() == domain);
         assert(p2.runs() == lengths.size());
@@ -296,30 +296,30 @@ static void test_all_construction_paths_no_splitting() {
         assert(p2.max_length() == max_length);
         for (size_t i = 0; i < lengths.size(); ++i) {
             assert(p2.get_length(i) == lengths[i]);
-            assert(p2.get_tau_inv(i) == expected_tau_inv[i]);
+            assert(p2.get_img_rank_inv(i) == expected_img_rank_inv[i]);
         }
-        assert_tau_inv_is_permutation(p2);
+        assert_img_rank_inv_is_permutation(p2);
     }
 
-    // 6) starts + interval_permutation
+    // 6) starts + image
     {
-        test_permutation p1 = test_permutation::from_starts_and_interval_permutation(
+        test_permutation p1 = test_permutation::from_starts_and_images(
             starts, interval_perm, domain, NO_SPLITTING
         );
         assert(p1.domain() == domain);
         assert(p1.runs() == lengths.size());
         assert(p1.intervals() == lengths.size());
         assert(p1.max_length() == max_length);
-        assert_tau_inv_is_permutation(p1);
+        assert_img_rank_inv_is_permutation(p1);
 
-        test_permutation p2 = test_permutation::from_starts_and_interval_permutation(
+        test_permutation p2 = test_permutation::from_starts_and_images(
             starts, interval_perm, domain, max_length, NO_SPLITTING
         );
         assert(p2.domain() == domain);
         assert(p2.runs() == lengths.size());
         assert(p2.intervals() == lengths.size());
         assert(p2.max_length() == max_length);
-        assert_tau_inv_is_permutation(p2);
+        assert_img_rank_inv_is_permutation(p2);
     }
 }
 
@@ -337,28 +337,28 @@ static void test_from_permutation_and_split_run_data() {
     assert(perm_no_split.intervals() == 3);
 
     const vector<ulint> expected_lengths = {3, 4, 1};
-    const vector<ulint> expected_tau_inv = {0, 1, 2};
+    const vector<ulint> expected_img_rank_inv = {0, 1, 2};
     assert(perm_no_split.max_length() == 4);
     for (size_t i = 0; i < expected_lengths.size(); ++i) {
         assert(perm_no_split.get_length(i) == expected_lengths[i]);
-        assert(perm_no_split.get_tau_inv(i) == expected_tau_inv[i]);
+        assert(perm_no_split.get_img_rank_inv(i) == expected_img_rank_inv[i]);
     }
-    assert_tau_inv_is_permutation(perm_no_split);
+    assert_img_rank_inv_is_permutation(perm_no_split);
 
     // Now build a permutation where splitting should occur and test split_run_data_with_copy.
     const vector<ulint> original_lengths = {2, 10, 3};
-    const vector<ulint> tau_inv = {0, 1, 2};
+    const vector<ulint> img_rank_inv = {0, 1, 2};
     const ulint domain2 = 15;
     const ulint max_length2 = 10;
 
-    test_permutation perm_split = test_permutation::from_lengths_and_tau_inv(
-        original_lengths, tau_inv, domain2, max_length2, DEFAULT_SPLITTING
+    test_permutation perm_split = test_permutation::from_lengths_and_img_rank_inv(
+        original_lengths, img_rank_inv, domain2, max_length2, DEFAULT_SPLITTING
     );
 
     assert(perm_split.domain() == domain2);
     assert(perm_split.runs() == original_lengths.size());
     assert(perm_split.intervals() >= perm_split.runs());
-    assert_tau_inv_is_permutation(perm_split);
+    assert_img_rank_inv_is_permutation(perm_split);
 
     // Run data: just store the original run index.
     vector<ulint> run_data(original_lengths.size());

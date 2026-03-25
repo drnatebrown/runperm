@@ -34,14 +34,14 @@ template <typename ColumnsT>
 static void assert_pointer_offset_correct(
     const move_structure<ColumnsT>& ms,
     const vector<ulint>& lengths,
-    const vector<ulint>& interval_permutation
+    const vector<ulint>& image
 ) {
     const auto starts = compute_starts(lengths);
     assert(starts.back() == ms.domain());
     assert(ms.runs() == lengths.size());
 
     for (size_t j = 0; j < lengths.size(); ++j) {
-        const ulint mapped_start = interval_permutation[j];
+        const ulint mapped_start = image[j];
         const size_t k = interval_of(starts, mapped_start);
         const ulint expected_offset = mapped_start - starts[k];
 

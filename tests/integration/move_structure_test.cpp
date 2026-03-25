@@ -31,7 +31,7 @@ static ulint compute_global_index(
     }
 }
 
-static void test_move_structure_move_matches_interval_permutation_relative() {
+static void test_move_structure_move_matches_image_relative() {
     const vector<ulint> lengths = {3, 2, 1, 2, 2};
     const vector<ulint> perm = {4, 0, 9, 2, 7};
     const ulint domain = 10;
@@ -54,7 +54,7 @@ static void test_move_structure_move_matches_interval_permutation_relative() {
     }
 }
 
-static void test_move_structure_move_matches_interval_permutation_absolute() {
+static void test_move_structure_move_matches_image_absolute() {
     const vector<ulint> lengths = {3, 2, 1, 2, 2};
     const vector<ulint> perm = {4, 0, 9, 2, 7};
     const ulint domain = 10;
@@ -166,8 +166,8 @@ static void test_move_structure_splitting_preserves_semantics_relative() {
 }
 
 int main() {
-    test_move_structure_move_matches_interval_permutation_relative();
-    test_move_structure_move_matches_interval_permutation_absolute();
+    test_move_structure_move_matches_image_relative();
+    test_move_structure_move_matches_image_absolute();
     test_move_structure_move_exponential_agrees_with_move_absolute();
     test_move_structure_splitting_preserves_semantics_relative();
 

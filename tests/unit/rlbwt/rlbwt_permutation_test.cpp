@@ -88,8 +88,8 @@ void test_rlbwt_fl_permutation_heads_and_alphabet() {
     (void)max_length;
     assert(n == perm.domain());
 
-    auto [F_heads, F_lens, F_tau_inv] = get_FL_runs_and_tau_inv(heads.size(), F_lens_and_origin_run);
-    (void)F_tau_inv;
+    auto [F_heads, F_lens, F_img_rank_inv] = get_FL_runs_and_img_rank_inv(heads.size(), F_lens_and_origin_run);
+    (void)F_img_rank_inv;
     assert(F_heads.size() == heads.size());
     assert(F_lens.size() == lengths.size());
 

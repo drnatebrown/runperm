@@ -23,9 +23,9 @@ public:
 
         auto [head_counts, n, max_length] = get_LF_head_counts(rlbwt_heads, rlbwt_run_lengths);
         permutation.set_initial_values(n, rlbwt_heads.size(), max_length, split_params);
-        std::vector<ulint> tau_inv = get_LF_tau_inv(rlbwt_heads, head_counts);
+        std::vector<ulint> img_rank_inv = get_LF_img_rank_inv(rlbwt_heads, head_counts);
 
-        permutation.init_tau_inv(rlbwt_run_lengths, tau_inv);
+        permutation.init_img_rank_inv(rlbwt_run_lengths, img_rank_inv);
 
         permutation.alphabet_ = alphabet_t(head_counts);
         permutation.init_heads(rlbwt_heads, rlbwt_run_lengths);
@@ -40,8 +40,8 @@ public:
         auto [head_counts, F_lens_and_origin_run, n, max_length] = get_FL_head_counts(rlbwt_heads, rlbwt_run_lengths);
         permutation.set_initial_values(n, rlbwt_heads.size(), max_length, split_params);
 
-        auto [F_heads, F_lens, F_tau_inv] = get_FL_runs_and_tau_inv(rlbwt_heads.size(), F_lens_and_origin_run);
-        permutation.init_tau_inv(F_lens, F_tau_inv);
+        auto [F_heads, F_lens, F_img_rank_inv] = get_FL_runs_and_img_rank_inv(rlbwt_heads.size(), F_lens_and_origin_run);
+        permutation.init_img_rank_inv(F_lens, F_img_rank_inv);
 
         permutation.alphabet_ = alphabet_t(head_counts);
         permutation.init_heads(F_heads, F_lens);

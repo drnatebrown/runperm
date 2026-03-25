@@ -122,7 +122,7 @@ std::string get_type_name() {
 // Benchmark function template (no splitting: reference data matches unsplit layout)
 template<typename MoveStructType>
 void bench_move_structure(const std::vector<ulint>& lengths, 
-                          const std::vector<ulint>& interval_permutation,
+                          const std::vector<ulint>& images,
                           const std::vector<ulint>& starts,
                           const std::vector<ulint>& pointers,
                           const std::vector<ulint>& offsets,
@@ -130,7 +130,7 @@ void bench_move_structure(const std::vector<ulint>& lengths,
                           size_t n) {
     // Creation
     auto t0 = high_resolution_clock::now();
-    auto move_structure = MoveStructType(lengths, interval_permutation, sp);
+    auto move_structure = MoveStructType(lengths, images, sp);
     auto t1 = high_resolution_clock::now();
 
     // Getter phase
@@ -198,13 +198,13 @@ void bench_move_structure(const std::vector<ulint>& lengths,
 // Splitting-aware benchmark: measures both move() and move_exponential() under splitting.
 template<typename MoveStructType>
 void bench_move_structure_with_splitting(const std::vector<ulint>& lengths, 
-                                         const std::vector<ulint>& interval_permutation,
+                                         const std::vector<ulint>& images,
                                          const std::vector<ulint>& test_perm,
                                          size_t n) {
     auto t0 = high_resolution_clock::now();
 
     split_params split_params_split(length_capping_factor, std::nullopt);
-    auto move_structure = MoveStructType(lengths, interval_permutation, split_params_split);
+    auto move_structure = MoveStructType(lengths, images, split_params_split);
 
     auto t1 = high_resolution_clock::now();
 
@@ -266,7 +266,7 @@ void run_benchmarks() {
                 continue;
             }
                 
-            auto [lengths, interval_permutation] = get_permutation_intervals(test_perm);
+            auto [lengths, images] = get_permutation_intervals(test_perm);
             std::vector<ulint> starts(lengths.size());
             size_t start = 0;
             for (size_t i = 0; i < lengths.size(); ++i) {
@@ -277,27 +277,27 @@ void run_benchmarks() {
             vector<ulint> pointers(lengths.size());
             vector<ulint> offsets(lengths.size());
             for (size_t i = 0; i < lengths.size(); ++i) {
-                assert(interval_permutation[i] == test_perm[starts[i]]);
-                auto it = std::upper_bound(starts.begin(), starts.end(), interval_permutation[i]);
+                assert(images[i] == test_perm[starts[i]]);
+                auto it = std::upper_bound(starts.begin(), starts.end(), images[i]);
                 if (it != starts.begin()) {
                     size_t index = std::distance(starts.begin(), it) - 1;
                     size_t element = starts[index];
                     pointers[i] = index;
-                    offsets[i] = interval_permutation[i] - element;
+                    offsets[i] = images[i] - element;
                 }
             }
 
             std::cout << "Testing n=" << n << ", r=" << r << " (n/r=" << n/r << "):" << std::endl;
             
             // Benchmark all table types (no splitting + splitting)
-            bench_move_structure<move_structure_tbl>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
-            bench_move_structure_with_splitting<move_structure_tbl>(lengths, interval_permutation, test_perm, n);
-            bench_move_structure<move_structure_vec>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
-            bench_move_structure_with_splitting<move_structure_vec>(lengths, interval_permutation, test_perm, n);
-            bench_move_structure<move_structure_tbl_idx>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
-            bench_move_structure_with_splitting<move_structure_tbl_idx>(lengths, interval_permutation, test_perm, n);
-            bench_move_structure<move_structure_vec_idx>(lengths, interval_permutation, starts, pointers, offsets, test_perm, n);
-            bench_move_structure_with_splitting<move_structure_vec_idx>(lengths, interval_permutation, test_perm, n);
+            bench_move_structure<move_structure_tbl>(lengths, images, starts, pointers, offsets, test_perm, n);
+            bench_move_structure_with_splitting<move_structure_tbl>(lengths, images, test_perm, n);
+            bench_move_structure<move_structure_vec>(lengths, images, starts, pointers, offsets, test_perm, n);
+            bench_move_structure_with_splitting<move_structure_vec>(lengths, images, test_perm, n);
+            bench_move_structure<move_structure_tbl_idx>(lengths, images, starts, pointers, offsets, test_perm, n);
+            bench_move_structure_with_splitting<move_structure_tbl_idx>(lengths, images, test_perm, n);
+            bench_move_structure<move_structure_vec_idx>(lengths, images, starts, pointers, offsets, test_perm, n);
+            bench_move_structure_with_splitting<move_structure_vec_idx>(lengths, images, test_perm, n);
 
             std::cout << std::endl;
         }

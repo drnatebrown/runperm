@@ -344,8 +344,8 @@ void test_runperm_phi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_l
 
     size_t phi_domain;
     ulint max_length;
-    auto [phi_lengths, phi_interval_permutations] = rlbwt_to_phi_interval_permutation(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
-    runperm_phi<RunData> runperm_phi_obj(phi_lengths, phi_interval_permutations, run_data);
+    auto [phi_lengths, phi_images] = rlbwt_to_phi_images(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
+    runperm_phi<RunData> runperm_phi_obj(phi_lengths, phi_images, run_data);
             
     using position = typename runperm_phi<RunData>::position;
     position pos = runperm_phi_obj.first();
@@ -370,8 +370,8 @@ void test_runperm_phi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_l
 void test_move_phi_with_splitting(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
     size_t phi_domain;
     ulint max_length;
-    auto [phi_lengths, phi_interval_permutations] = rlbwt_to_phi_interval_permutation(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
-    move_phi<> move_phi_obj(phi_lengths, phi_interval_permutations, DEFAULT_SPLITTING);
+    auto [phi_lengths, phi_images] = rlbwt_to_phi_images(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
+    move_phi<> move_phi_obj(phi_lengths, phi_images, DEFAULT_SPLITTING);
     using position = typename move_phi<>::position;
     position pos = move_phi_obj.first();
     for (size_t i = 0; i < move_phi_obj.domain(); ++i) {
@@ -395,8 +395,8 @@ void test_move_phi_with_splitting(std::vector<uchar> bwt_heads, std::vector<ulin
 void test_move_phi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
     size_t phi_domain;
     ulint max_length;
-    auto [phi_lengths, phi_interval_permutations] = rlbwt_to_phi_interval_permutation(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
-    move_phi<> move_phi_obj(phi_lengths, phi_interval_permutations);
+    auto [phi_lengths, phi_images] = rlbwt_to_phi_images(bwt_heads, bwt_run_lengths, &phi_domain, &max_length);
+    move_phi<> move_phi_obj(phi_lengths, phi_images);
     using position = typename move_phi<>::position;
     position pos = move_phi_obj.first();
     for (size_t i = 0; i < move_phi_obj.domain(); ++i) {
@@ -417,7 +417,7 @@ void test_move_phi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_leng
     }
 }
 
-void test_runperm_invphi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
+void test_runperm_phi_inv(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
         
     // Define dummy run data similar to RunPerm tests
     enum class RunData {
@@ -436,71 +436,71 @@ void test_runperm_invphi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_ru
 
     size_t inv_domain;
     ulint max_length_inv;
-    auto [invphi_lengths, invphi_interval_permutations] = rlbwt_to_invphi_interval_permutation(bwt_heads, bwt_run_lengths, &inv_domain, &max_length_inv);
-    runperm_invphi<RunData> runperm_invphi_obj(invphi_lengths, invphi_interval_permutations, run_data);
+    auto [phi_inv_lengths, phi_inv_images] = rlbwt_to_phi_inv_images(bwt_heads, bwt_run_lengths, &inv_domain, &max_length_inv);
+    runperm_phi_inv<RunData> runperm_phi_inv_obj(phi_inv_lengths, phi_inv_images, run_data);
             
-    runperm_invphi_obj.first();
-    using position = typename runperm_invphi<RunData>::position;
-    position pos = runperm_invphi_obj.first();
-    for (size_t i = 0; i < runperm_invphi_obj.domain(); ++i) {
-        pos = runperm_invphi_obj.next(pos);
+    runperm_phi_inv_obj.first();
+    using position = typename runperm_phi_inv<RunData>::position;
+    position pos = runperm_phi_inv_obj.first();
+    for (size_t i = 0; i < runperm_phi_inv_obj.domain(); ++i) {
+        pos = runperm_phi_inv_obj.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     
-    pos = runperm_invphi_obj.last();
+    pos = runperm_phi_inv_obj.last();
     std::vector<ulint> sa_recovered(sa.size());
     for (size_t i = 0; i < sa_recovered.size(); ++i) {
-        sa_recovered[i] = runperm_invphi_obj.SA(pos);
-        pos = runperm_invphi_obj.invphi(pos);
-    }
-    for (size_t i = 0; i < sa_recovered.size(); ++i) {
-        assert(sa_recovered[i] == sa[i]);
-    }
-}
-
-void test_move_invphi(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
-    size_t inv_domain;
-    ulint max_length_inv;
-    auto [invphi_lengths, invphi_interval_permutations] = rlbwt_to_invphi_interval_permutation(bwt_heads, bwt_run_lengths, &inv_domain, &max_length_inv);
-    move_invphi<> move_invphi_obj(invphi_lengths, invphi_interval_permutations);
-    using position = typename move_invphi<>::position;
-    position pos = move_invphi_obj.first();
-    for (size_t i = 0; i < move_invphi_obj.domain(); ++i) {
-        pos = move_invphi_obj.next(pos);
-    }
-    assert(pos.interval == 0);
-    assert(pos.offset == 0);
-    
-    pos = move_invphi_obj.last();
-    std::vector<ulint> sa_recovered(sa.size());
-    for (size_t i = 0; i < move_invphi_obj.domain(); ++i) {
-        sa_recovered[i] = move_invphi_obj.SA(pos);
-        pos = move_invphi_obj.invphi(pos);
+        sa_recovered[i] = runperm_phi_inv_obj.SA(pos);
+        pos = runperm_phi_inv_obj.phi_inv(pos);
     }
     for (size_t i = 0; i < sa_recovered.size(); ++i) {
         assert(sa_recovered[i] == sa[i]);
     }
 }
 
-void test_move_invphi_with_splitting(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
+void test_move_phi_inv(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
     size_t inv_domain;
     ulint max_length_inv;
-    auto [invphi_lengths, invphi_interval_permutations] = rlbwt_to_invphi_interval_permutation(bwt_heads, bwt_run_lengths, &inv_domain, &max_length_inv);
-    move_invphi<> move_invphi_obj(invphi_lengths, invphi_interval_permutations, DEFAULT_SPLITTING);
-    using position = typename move_invphi<>::position;
-    position pos = move_invphi_obj.first();
-    for (size_t i = 0; i < move_invphi_obj.domain(); ++i) {
-        pos = move_invphi_obj.next(pos);
+    auto [phi_inv_lengths, phi_inv_images] = rlbwt_to_phi_inv_images(bwt_heads, bwt_run_lengths, &inv_domain, &max_length_inv);
+    move_phi_inv<> move_phi_inv_obj(phi_inv_lengths, phi_inv_images);
+    using position = typename move_phi_inv<>::position;
+    position pos = move_phi_inv_obj.first();
+    for (size_t i = 0; i < move_phi_inv_obj.domain(); ++i) {
+        pos = move_phi_inv_obj.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     
-    pos = move_invphi_obj.last();
+    pos = move_phi_inv_obj.last();
     std::vector<ulint> sa_recovered(sa.size());
-    for (size_t i = 0; i < move_invphi_obj.domain(); ++i) {
-        sa_recovered[i] = move_invphi_obj.SA(pos);
-        pos = move_invphi_obj.invphi(pos);
+    for (size_t i = 0; i < move_phi_inv_obj.domain(); ++i) {
+        sa_recovered[i] = move_phi_inv_obj.SA(pos);
+        pos = move_phi_inv_obj.phi_inv(pos);
+    }
+    for (size_t i = 0; i < sa_recovered.size(); ++i) {
+        assert(sa_recovered[i] == sa[i]);
+    }
+}
+
+void test_move_phi_inv_with_splitting(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
+    size_t inv_domain;
+    ulint max_length_inv;
+    auto [phi_inv_lengths, phi_inv_images] = rlbwt_to_phi_inv_images(bwt_heads, bwt_run_lengths, &inv_domain, &max_length_inv);
+    move_phi_inv<> move_phi_inv_obj(phi_inv_lengths, phi_inv_images, DEFAULT_SPLITTING);
+    using position = typename move_phi_inv<>::position;
+    position pos = move_phi_inv_obj.first();
+    for (size_t i = 0; i < move_phi_inv_obj.domain(); ++i) {
+        pos = move_phi_inv_obj.next(pos);
+    }
+    assert(pos.interval == 0);
+    assert(pos.offset == 0);
+    
+    pos = move_phi_inv_obj.last();
+    std::vector<ulint> sa_recovered(sa.size());
+    for (size_t i = 0; i < move_phi_inv_obj.domain(); ++i) {
+        sa_recovered[i] = move_phi_inv_obj.SA(pos);
+        pos = move_phi_inv_obj.phi_inv(pos);
     }
     for (size_t i = 0; i < sa_recovered.size(); ++i) {
         assert(sa_recovered[i] == sa[i]);
@@ -528,9 +528,9 @@ int main() {
     test_runperm_phi(bwt_heads, bwt_run_lengths, sa);
     test_move_phi(bwt_heads, bwt_run_lengths, sa);
     test_move_phi_with_splitting(bwt_heads, bwt_run_lengths, sa);
-    test_runperm_invphi(bwt_heads, bwt_run_lengths, sa);
-    test_move_invphi(bwt_heads, bwt_run_lengths, sa);
-    test_move_invphi_with_splitting(bwt_heads, bwt_run_lengths, sa);
+    test_runperm_phi_inv(bwt_heads, bwt_run_lengths, sa);
+    test_move_phi_inv(bwt_heads, bwt_run_lengths, sa);
+    test_move_phi_inv_with_splitting(bwt_heads, bwt_run_lengths, sa);
     std::cout << "rlbwt integration tests passed" << std::endl;
     return 0;
 }

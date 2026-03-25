@@ -25,7 +25,7 @@ inline std::vector<ulint> get_inverse_permutation(const container_t& permutation
 
 inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_intervals(const std::vector<ulint> &permutation, ulint* max_length_ret = nullptr) {
     std::vector<ulint> lengths;
-    std::vector<ulint> interval_permutation;
+    std::vector<ulint> images;
     ulint max_length = 0;
     for (size_t i = 0; i < permutation.size(); ++i) {
         if (i == 0 || permutation[i] != permutation[i - 1] + 1) {
@@ -33,7 +33,7 @@ inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_interva
                 max_length = std::max(max_length, lengths.back());
             }
             lengths.push_back(1);
-            interval_permutation.push_back(permutation[i]);
+            images.push_back(permutation[i]);
         } else {
             ++lengths.back();
         }
@@ -44,7 +44,7 @@ inline std::pair<std::vector<ulint>, std::vector<ulint>> get_permutation_interva
     if (max_length_ret) {
         *max_length_ret = max_length;
     }
-    return {lengths, interval_permutation};
+    return {lengths, images};
 }
 
 template<typename container_t, typename int_vector_t = int_vector_aligned>
@@ -72,13 +72,13 @@ inline std::tuple<ulint, ulint> sum_and_max(const container_t& data) {
 }
 
 template<typename int_vector_t = int_vector_aligned, typename container_t>
-inline int_vector_t compute_tau_inv(const container_t& interval_output_starts) {
-    int_vector_t tau_inv(interval_output_starts.size(), bit_width(interval_output_starts.size() - 1));
-    std::iota(tau_inv.begin(), tau_inv.end(), 0);
-    std::sort(tau_inv.begin(), tau_inv.end(), [&](ulint a, ulint b) { 
+inline int_vector_t compute_img_rank_inv(const container_t& interval_output_starts) {
+    int_vector_t img_rank_inv(interval_output_starts.size(), bit_width(interval_output_starts.size() - 1));
+    std::iota(img_rank_inv.begin(), img_rank_inv.end(), 0);
+    std::sort(img_rank_inv.begin(), img_rank_inv.end(), [&](ulint a, ulint b) { 
         return static_cast<ulint>(interval_output_starts[a]) < static_cast<ulint>(interval_output_starts[b]); 
     });
-    return tau_inv;
+    return img_rank_inv;
 }
 
 template<typename int_vector_t = int_vector_aligned>
@@ -90,115 +90,115 @@ public:
     permutation_impl(const std::vector<ulint>& permutation, const split_params& split_params = split_params()) {
         *this = from_permutation(permutation, split_params);
     }
-    permutation_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const split_params& split_params = split_params()) {
-        *this = from_lengths_and_interval_permutation(lengths, interval_permutation, split_params);
+    permutation_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const split_params& split_params = split_params()) {
+        *this = from_lengths_and_images(lengths, images, split_params);
     }
-    permutation_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& interval_permutation, const ulint domain, const ulint max_length, const split_params& split_params = split_params()) {
-        *this = from_lengths_and_interval_permutation(lengths, interval_permutation, domain, max_length, split_params);
+    permutation_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const ulint max_length, const split_params& split_params = split_params()) {
+        *this = from_lengths_and_images(lengths, images, domain, max_length, split_params);
     }
 
     static permutation_impl<int_vector_t> from_permutation(const std::vector<ulint>& permutation, const split_params& split_params = split_params()) {
         ulint max_length = 0;
-        auto [lengths, interval_permutation] = get_permutation_intervals(permutation, &max_length);
-        assert(lengths.size() == interval_permutation.size());
+        auto [lengths, images] = get_permutation_intervals(permutation, &max_length);
+        assert(lengths.size() == images.size());
 
-        return from_lengths_and_interval_permutation(lengths, interval_permutation, permutation.size(), max_length, split_params);
+        return from_lengths_and_images(lengths, images, permutation.size(), max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_tau_inv(const container1_t& lengths, const container2_t& tau_inv, const split_params& split_params = split_params()) {
-        assert(lengths.size() == tau_inv.size());
+    static permutation_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const split_params& split_params = split_params()) {
+        assert(lengths.size() == img_rank_inv.size());
         auto [domain, max_length] = sum_and_max(lengths);
         
-        return from_lengths_and_tau_inv(lengths, tau_inv, domain, max_length, split_params);
+        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, split_params);
     }
     
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_tau_inv(const container1_t& lengths, const container2_t& tau_inv, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
-        assert(lengths.size() == tau_inv.size());
+    static permutation_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+        assert(lengths.size() == img_rank_inv.size());
         permutation_impl<int_vector_t> permutation;
         permutation.set_initial_values(domain, lengths.size(), max_length, split_params);
-        permutation.init_tau_inv(lengths, tau_inv);
+        permutation.init_img_rank_inv(lengths, img_rank_inv);
         return permutation;
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_tau(const container1_t& lengths, const container2_t& tau, const split_params& split_params = split_params()) {
-        assert(lengths.size() == tau.size());
+    static permutation_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const split_params& split_params = split_params()) {
+        assert(lengths.size() == img_rank.size());
 
         auto [domain, max_length] = sum_and_max(lengths);
-        return from_lengths_and_tau(lengths, tau, domain, max_length, split_params);
+        return from_lengths_and_img_rank(lengths, img_rank, domain, max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_tau(const container1_t& lengths, const container2_t& tau, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
-        assert(lengths.size() == tau.size());
+    static permutation_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+        assert(lengths.size() == img_rank.size());
 
         permutation_impl<int_vector_t> permutation;
         permutation.set_initial_values(domain, lengths.size(), max_length, split_params);
-        permutation.init_tau(lengths, tau);
+        permutation.init_img_rank(lengths, img_rank);
         return permutation;
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_interval_permutation(const container1_t& lengths, const container2_t& interval_permutation, const split_params& split_params = split_params()) {
-        assert(lengths.size() == interval_permutation.size());
+    static permutation_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const split_params& split_params = split_params()) {
+        assert(lengths.size() == images.size());
 
         auto [domain, max_length] = sum_and_max(lengths);
-        return from_lengths_and_interval_permutation(lengths, interval_permutation, domain, max_length, split_params);
+        return from_lengths_and_images(lengths, images, domain, max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_interval_permutation(const container1_t& lengths, const container2_t& interval_permutation, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
-        assert(lengths.size() == interval_permutation.size());
+    static permutation_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+        assert(lengths.size() == images.size());
 
-        int_vector_t tau_inv = compute_tau_inv<int_vector_t>(interval_permutation);
-        return from_lengths_and_tau_inv(lengths, tau_inv, domain, max_length, split_params);
+        int_vector_t img_rank_inv = compute_img_rank_inv<int_vector_t>(images);
+        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_tau_inv(const container1_t& starts, const container2_t& tau_inv, const size_t domain, const split_params& split_params = split_params()) {
-        assert(starts.size() == tau_inv.size());
+    static permutation_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const split_params& split_params = split_params()) {
+        assert(starts.size() == img_rank_inv.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
-        return from_lengths_and_tau_inv(lengths, tau_inv, domain, max_length, split_params);
+        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_tau_inv(const container1_t& starts, const container2_t& tau_inv, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
-        assert(starts.size() == tau_inv.size());
+    static permutation_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+        assert(starts.size() == img_rank_inv.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
-        return from_lengths_and_tau_inv(lengths, tau_inv, domain, calculated_max_length, split_params);
+        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, calculated_max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_tau(const container1_t& starts, const container2_t& tau, const size_t domain, const split_params& split_params = split_params()) {
-        assert(starts.size() == tau.size());
+    static permutation_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const split_params& split_params = split_params()) {
+        assert(starts.size() == img_rank.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
-        return from_lengths_and_tau(lengths, tau, domain, max_length, split_params);
+        return from_lengths_and_img_rank(lengths, img_rank, domain, max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_tau(const container1_t& starts, const container2_t& tau, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
-        assert(starts.size() == tau.size());
+    static permutation_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+        assert(starts.size() == img_rank.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
-        return from_lengths_and_tau(lengths, tau, domain, calculated_max_length, split_params);
+        return from_lengths_and_img_rank(lengths, img_rank, domain, calculated_max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_interval_permutation(const container1_t& starts, const container2_t& interval_permutation, const size_t domain, const split_params& split_params = split_params()) {
-        assert(starts.size() == interval_permutation.size());
+    static permutation_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const split_params& split_params = split_params()) {
+        assert(starts.size() == images.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
-        return from_lengths_and_interval_permutation(lengths, interval_permutation, domain, max_length, split_params);
+        return from_lengths_and_images(lengths, images, domain, max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_interval_permutation(const container1_t& starts, const container2_t& interval_permutation, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
-        assert(starts.size() == interval_permutation.size());
+    static permutation_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+        assert(starts.size() == images.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
-        return from_lengths_and_interval_permutation(lengths, interval_permutation, domain, calculated_max_length, split_params);
+        return from_lengths_and_images(lengths, images, domain, calculated_max_length, split_params);
     }
 
     template<typename T, typename container_t>
@@ -225,8 +225,8 @@ public:
     ulint get_length(size_t i) const {
         return lengths[i];
     }
-    ulint get_tau_inv(size_t i) const {
-        return tau_inv[i];
+    ulint get_img_rank_inv(size_t i) const {
+        return img_rank_inv[i];
     }
     size_t domain() const {
         return domain_;
@@ -246,7 +246,7 @@ public:
 
 protected:
     int_vector_t lengths;
-    int_vector_t tau_inv;
+    int_vector_t img_rank_inv;
     split_params split_params_;
     size_t domain_;
     size_t runs_;
@@ -261,48 +261,48 @@ protected:
     }
     
     template<typename container1_t, typename container2_t>
-    void init_tau(const container1_t& lengths, const container2_t& tau) {
+    void init_img_rank(const container1_t& lengths, const container2_t& img_rank) {
         uchar length_bits = bit_width(this->max_length_);
-        uchar tau_inv_bits = bit_width(this->runs_ - 1);
+        uchar img_rank_inv_bits = bit_width(this->runs_ - 1);
 
         int_vector_t curr_lengths(this->runs_, length_bits);
-        int_vector_t curr_tau_inv(this->runs_, tau_inv_bits);
+        int_vector_t curr_img_rank_inv(this->runs_, img_rank_inv_bits);
         for (size_t i = 0; i < this->runs_; ++i) {
             curr_lengths[i] = lengths[i];
-            curr_tau_inv[tau[i]] = i;
+            curr_img_rank_inv[img_rank[i]] = i;
         }
 
         ulint new_max_length = 0;
-        apply_splitting(curr_lengths, curr_tau_inv, new_max_length);
+        apply_splitting(curr_lengths, curr_img_rank_inv, new_max_length);
 
         this->lengths = std::move(curr_lengths);
-        this->tau_inv = std::move(curr_tau_inv);
+        this->img_rank_inv = std::move(curr_img_rank_inv);
         this->max_length_ = new_max_length;
         this->intervals_ = this->lengths.size();
     }
 
     template<typename container1_t, typename container2_t>
-    void init_tau_inv(const container1_t& lengths, const container2_t& tau_inv) { 
+    void init_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv) { 
         uchar length_bits = bit_width(this->max_length_);
-        uchar tau_inv_bits = bit_width(this->runs_ - 1);
+        uchar img_rank_inv_bits = bit_width(this->runs_ - 1);
 
         int_vector_t curr_lengths(this->runs_, length_bits);
-        int_vector_t curr_tau_inv(this->runs_, tau_inv_bits);
+        int_vector_t curr_img_rank_inv(this->runs_, img_rank_inv_bits);
         for (size_t i = 0; i < this->runs_; ++i) {
             curr_lengths[i] = lengths[i];
-            curr_tau_inv[i] = tau_inv[i];
+            curr_img_rank_inv[i] = img_rank_inv[i];
         }
 
         ulint new_max_length = 0;
-        apply_splitting(curr_lengths, curr_tau_inv, new_max_length);
+        apply_splitting(curr_lengths, curr_img_rank_inv, new_max_length);
 
         this->lengths = std::move(curr_lengths);
-        this->tau_inv = std::move(curr_tau_inv);
+        this->img_rank_inv = std::move(curr_img_rank_inv);
         this->max_length_ = new_max_length;
         this->intervals_ = this->lengths.size();
     }
 
-    void apply_splitting(int_vector_t& curr_lengths, int_vector_t& curr_tau_inv, ulint& new_max_length) {
+    void apply_splitting(int_vector_t& curr_lengths, int_vector_t& curr_img_rank_inv, ulint& new_max_length) {
         if (this->split_params_ == NO_SPLITTING) {
             new_max_length = this->max_length_;
             return;
@@ -311,15 +311,15 @@ protected:
         split_result<int_vector_t> split_result;
         
         if (this->split_params_.length_capping) {
-            split_by_length_capping(curr_lengths, curr_tau_inv, this->domain_, *this->split_params_.length_capping, split_result);
+            split_by_length_capping(curr_lengths, curr_img_rank_inv, this->domain_, *this->split_params_.length_capping, split_result);
             curr_lengths = std::move(split_result.lengths);
-            curr_tau_inv = std::move(split_result.tau_inv);
+            curr_img_rank_inv = std::move(split_result.img_rank_inv);
             new_max_length = split_result.max_length;
         }
         if (this->split_params_.balancing) {
-            split_by_balancing(curr_lengths, curr_tau_inv, this->domain_, *this->split_params_.balancing, split_result);
+            split_by_balancing(curr_lengths, curr_img_rank_inv, this->domain_, *this->split_params_.balancing, split_result);
             curr_lengths = std::move(split_result.lengths);
-            curr_tau_inv = std::move(split_result.tau_inv);
+            curr_img_rank_inv = std::move(split_result.img_rank_inv);
             new_max_length = split_result.max_length;
         }
     }

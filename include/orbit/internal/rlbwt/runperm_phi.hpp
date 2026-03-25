@@ -47,11 +47,11 @@ public:
     : base([&] {
         size_t domain = 0;
         ulint max_length = 0;
-        auto [phi_lengths, phi_tau_inv] =
-            rlbwt_to_phi_tau_inv<>(rlbwt_heads, rlbwt_run_lengths,
+        auto [phi_lengths, phi_img_rank_inv] =
+            rlbwt_to_phi_img_rank_inv<>(rlbwt_heads, rlbwt_run_lengths,
                                         &domain, &max_length);
-        return permutation_impl<>::from_lengths_and_tau_inv(
-            phi_lengths, phi_tau_inv, domain, max_length, split_params);
+        return permutation_impl<>::from_lengths_and_img_rank_inv(
+            phi_lengths, phi_img_rank_inv, domain, max_length, split_params);
       }()) {}
 
     position phi(position pos) {

@@ -54,7 +54,7 @@ inline std::tuple<std::vector<size_t>, size_t, ulint> get_LF_head_counts(const s
 }
 
 inline std::vector<ulint> get_LF_head_permutations(const std::vector<uchar> &rlbwt_heads, const std::vector<size_t> &char_count, const std::vector<size_t> &head_ranks) {
-    std::vector<ulint> interval_permutation(head_ranks.size());
+    std::vector<ulint> images(head_ranks.size());
     
     std::vector<size_t> C_array(char_count.size(), 0);
     size_t seen = 0;
@@ -65,14 +65,14 @@ inline std::vector<ulint> get_LF_head_permutations(const std::vector<uchar> &rlb
 
     for (size_t i = 0; i < rlbwt_heads.size(); i++) {
         uchar c = rlbwt_heads[i];
-        interval_permutation[i] = C_array[c] + head_ranks[i];
+        images[i] = C_array[c] + head_ranks[i];
     }
-    return interval_permutation;
+    return images;
 }
 
-inline std::vector<ulint> get_LF_tau_inv(const std::vector<uchar> &rlbwt_heads, const std::vector<size_t> &head_counts) {
-    // TODO use int_vector for tau_inv
-    std::vector<ulint> tau_inv(rlbwt_heads.size());
+inline std::vector<ulint> get_LF_img_rank_inv(const std::vector<uchar> &rlbwt_heads, const std::vector<size_t> &head_counts) {
+    // TODO use int_vector for img_rank_inv
+    std::vector<ulint> img_rank_inv(rlbwt_heads.size());
     std::vector<size_t> seen_heads(head_counts.size(), 0);
 
     std::vector<size_t> C_head_array(head_counts.size(), 0);
@@ -84,11 +84,11 @@ inline std::vector<ulint> get_LF_tau_inv(const std::vector<uchar> &rlbwt_heads, 
 
     for (size_t i = 0; i < rlbwt_heads.size(); i++) {
         uchar c = rlbwt_heads[i];
-        tau_inv[C_head_array[c] + seen_heads[c]] = i;
+        img_rank_inv[C_head_array[c] + seen_heads[c]] = i;
         ++seen_heads[c];
     }
 
-    return tau_inv;
+    return img_rank_inv;
 }
 
 inline std::tuple<std::vector<size_t>, std::vector<std::vector<std::pair<size_t, size_t>>>, ulint> get_FL_char_counts(const std::vector<uchar> &rlbwt_heads, const std::vector<ulint> &rlbwt_run_lengths) {
@@ -129,38 +129,38 @@ inline std::tuple<std::vector<size_t>, std::vector<std::vector<std::pair<size_t,
     return {head_counts, F_lens_and_origin_run, bwt_length, max_length};
 }
 
-inline std::tuple<std::vector<uchar>, std::vector<ulint>, std::vector<ulint>> get_FL_runs_and_interval_permutation(const size_t runs, const std::vector<std::vector<std::pair<size_t, size_t>>> &F_lens_and_origins) {
+inline std::tuple<std::vector<uchar>, std::vector<ulint>, std::vector<ulint>> get_FL_runs_and_images(const size_t runs, const std::vector<std::vector<std::pair<size_t, size_t>>> &F_lens_and_origins) {
     std::vector<uchar> F_heads(runs);
     std::vector<ulint> F_lens(runs);
-    std::vector<ulint> interval_permutation(runs);
+    std::vector<ulint> images(runs);
 
     size_t curr_run = 0;
     for (size_t c = 0; c < F_lens_and_origins.size(); ++c) {
         for (size_t j = 0; j < F_lens_and_origins[c].size(); ++j) {
             F_heads[curr_run] = c;
             F_lens[curr_run] = F_lens_and_origins[c][j].first;
-            interval_permutation[curr_run] = F_lens_and_origins[c][j].second;
+            images[curr_run] = F_lens_and_origins[c][j].second;
             curr_run++;
         }
     }
-    return {F_heads, F_lens, interval_permutation};
+    return {F_heads, F_lens, images};
 }
 
-inline std::tuple<std::vector<uchar>, std::vector<ulint>, std::vector<ulint>> get_FL_runs_and_tau_inv(const size_t runs, const std::vector<std::vector<std::pair<size_t, size_t>>> &F_lens_and_origins) {
+inline std::tuple<std::vector<uchar>, std::vector<ulint>, std::vector<ulint>> get_FL_runs_and_img_rank_inv(const size_t runs, const std::vector<std::vector<std::pair<size_t, size_t>>> &F_lens_and_origins) {
     std::vector<uchar> F_heads(runs);
     std::vector<ulint> F_lens(runs);
-    std::vector<ulint> F_tau_inv(runs);
+    std::vector<ulint> F_img_rank_inv(runs);
 
     size_t curr_run = 0;
     for (size_t c = 0; c < F_lens_and_origins.size(); ++c) {
         for (size_t j = 0; j < F_lens_and_origins[c].size(); ++j) {
             F_heads[curr_run] = c;
             F_lens[curr_run] = F_lens_and_origins[c][j].first;
-            F_tau_inv[F_lens_and_origins[c][j].second] = curr_run;
+            F_img_rank_inv[F_lens_and_origins[c][j].second] = curr_run;
             curr_run++;
         }
     }
-    return {F_heads, F_lens, F_tau_inv};
+    return {F_heads, F_lens, F_img_rank_inv};
 }
     
 } // namespace orbit::rlbwt

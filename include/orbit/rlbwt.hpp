@@ -3,7 +3,7 @@
 // This header exposes high-level wrappers for working with run-length BWT
 // permutations:
 //   - LF / FL navigation over an RLBWT (`move_lf`, `move_fl`, `runperm_lf`, `runperm_fl`)
-//   - Phi / InvPhi permutations for suffix-array based locate queries
+//   - Phi / phi_inv permutations for suffix-array based locate queries
 //
 // Usage overview:
 //   - You start from a run-length BWT, given as:
@@ -20,18 +20,18 @@
 //       runperm_lf<data_columns> lf_rp(bwt_heads, bwt_run_lengths, run_data);
 //       runperm_fl<data_columns> fl_rp(bwt_heads, bwt_run_lengths, run_data);
 //
-//   - Phi / InvPhi structures are built from an RLBWT via helpers
+//   - Phi / phi_inv structures are built from an RLBWT via helpers
 //     declared in the internal headers (see README for examples):
 //       auto [phi_lengths, phi_interval_perm, n] =
 //           rlbwt_to_phi(bwt_heads, bwt_run_lengths);
 //       auto [inv_lengths, inv_interval_perm, n2] =
-//           rlbwt_to_invphi(bwt_heads, bwt_run_lengths);
+//           rlbwt_to_phi_inv(bwt_heads, bwt_run_lengths);
 //
 //     and then wrapped by:
 //       MovePhi phi(phi_lengths, phi_interval_perm, n);
-//       MoveInvPhi invphi(inv_lengths, inv_interval_perm, n2);
+//       Movephi_inv phi_inv(inv_lengths, inv_interval_perm, n2);
 //       RunPermPhi<data_columns> rp_phi(phi_lengths, phi_interval_perm, n, run_data);
-//       RunPermInvPhi<data_columns> rp_inv(inv_lengths, inv_interval_perm, n2, run_data);
+//       RunPermphi_inv<data_columns> rp_inv(inv_lengths, inv_interval_perm, n2, run_data);
 //
 // Aliases:
 //   - *Separated* vs *Integrated* controls whether run data is stored in a
@@ -51,7 +51,7 @@
 #include "orbit/internal/rlbwt/runperm_lf.hpp"
 #include "orbit/internal/rlbwt/runperm_fl.hpp"
 #include "orbit/internal/rlbwt/runperm_phi.hpp"
-#include "orbit/internal/rlbwt/runperm_invphi.hpp"
+#include "orbit/internal/rlbwt/runperm_phi_inv.hpp"
 #include "orbit/internal/rlbwt/rlbwt_helpers.hpp"
 #include "orbit/internal/rlbwt/phi_helpers.hpp"
 
@@ -62,15 +62,15 @@ using rlbwt_permutation = rlbwt_permutation_impl<>;
 permutation_impl<> rlbwt_to_phi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params()) {
     size_t domain;
     ulint max_length;
-    auto [phi_lengths, phi_tau_inv] = rlbwt_to_phi_tau_inv(bwt_heads, bwt_run_lengths, &domain, &max_length);
-    return permutation_impl<>::from_lengths_and_tau_inv(phi_lengths, phi_tau_inv, domain, max_length, sp);
+    auto [phi_lengths, phi_img_rank_inv] = rlbwt_to_phi_img_rank_inv(bwt_heads, bwt_run_lengths, &domain, &max_length);
+    return permutation_impl<>::from_lengths_and_img_rank_inv(phi_lengths, phi_img_rank_inv, domain, max_length, sp);
 }
 
-permutation_impl<> rlbwt_to_invphi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params()) {
+permutation_impl<> rlbwt_to_phi_inv(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params()) {
     size_t domain;
     ulint max_length;
-    auto [invphi_lengths, invphi_tau_inv] = rlbwt_to_invphi_tau_inv(bwt_heads, bwt_run_lengths, &domain, &max_length);
-    return permutation_impl<>::from_lengths_and_tau_inv(invphi_lengths, invphi_tau_inv, domain, max_length, sp);
+    auto [phi_inv_lengths, phi_inv_img_rank_inv] = rlbwt_to_phi_inv_img_rank_inv(bwt_heads, bwt_run_lengths, &domain, &max_length);
+    return permutation_impl<>::from_lengths_and_img_rank_inv(phi_inv_lengths, phi_inv_img_rank_inv, domain, max_length, sp);
 }
 
 // === runperm_lf ===
@@ -171,14 +171,14 @@ public:
 // === num_bits_type ===
 // See above
 
-// === runperm_invphi ===
-// Need to call rlbwt_to_invphi(rlbwt_heads, rlbwt_run_lengths) to get interval encoding
+// === runperm_phi_inv ===
+// Need to call rlbwt_to_phi_inv(rlbwt_heads, rlbwt_run_lengths) to get interval encoding
 // Otherwise, same as runperm -->
-// runperm_invphi is just a named specilization which sets store_absolute_positions to true
+// runperm_phi_inv is just a named specilization which sets store_absolute_positions to true
 // also lets set exponential_search to true or false
-// Also implements invphi(pos), invphi(pos, steps), sa(pos)
+// Also implements phi_inv(pos), phi_inv(pos, steps), sa(pos)
 
-// === move_invphi<> ===
+// === move_phi_inv<> ===
 // See above
 
 } // end namespace orbit::rlbwt
