@@ -1,7 +1,7 @@
 // Unit tests for PermutationImpl and permutation helpers.
 // Simple assert-based tests, no external framework.
 
-#include "orbit/permutation.hpp"
+#include "orbit/interval_encoding.hpp"
 #include "orbit/common.hpp"
 #include "orbit/internal/ds/packed_vector.hpp"
 #include "orbit/internal/move/move_splitting.hpp"
@@ -17,7 +17,7 @@ using namespace orbit;
 
 // Use the packed int_vector as IntVectorType for tests.
 using test_int_vector = int_vector;
-using test_permutation = permutation_impl<test_int_vector>;
+using test_permutation = interval_encoding_impl<test_int_vector>;
 
 // Basic helper to check that img_rank_inv is a permutation of [0, n).
 static void assert_img_rank_inv_is_permutation(test_permutation &perm) {

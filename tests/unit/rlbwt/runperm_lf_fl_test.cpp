@@ -131,7 +131,7 @@ void test_runpermlf_construct_from_precomputed_permutation_no_splitting() {
     vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
     vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
-    auto perm = rlbwt_permutation::lf_permutation(bwt_heads, bwt_run_lengths, NO_SPLITTING);
+    auto perm = rlbwt_interval_encoding<>::lf_interval_encoding(bwt_heads, bwt_run_lengths, NO_SPLITTING);
 
     enum class RunCols {
         V,
@@ -173,7 +173,7 @@ void test_runpermlf_construct_from_precomputed_permutation_with_splitting() {
     vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
     vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
-    auto perm = rlbwt_permutation::lf_permutation(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING);
+    auto perm = rlbwt_interval_encoding<>::lf_interval_encoding(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING);
     assert(perm.intervals() >= perm.runs());
 
     enum class RunCols {

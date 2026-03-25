@@ -34,7 +34,7 @@ UNIT_TESTS = $(UNIT_BUILD_DIR)/packed_vector_test \
              $(UNIT_BUILD_DIR)/columns_test \
              $(UNIT_BUILD_DIR)/api_test \
              $(UNIT_BUILD_DIR)/common_test \
-             $(UNIT_BUILD_DIR)/permutation_test \
+             $(UNIT_BUILD_DIR)/interval_encoding_test \
              $(UNIT_BUILD_DIR)/move_table_test \
              $(UNIT_BUILD_DIR)/move_splitting_test \
              $(UNIT_BUILD_DIR)/move_structure_test \
@@ -44,8 +44,8 @@ UNIT_TESTS = $(UNIT_BUILD_DIR)/packed_vector_test \
              $(UNIT_BUILD_DIR)/rlbwt_row_test \
              $(UNIT_BUILD_DIR)/rlbwt_structure_test \
              $(UNIT_BUILD_DIR)/runperm_lf_fl_test \
-             $(UNIT_BUILD_DIR)/runperm_phi_invphi_test \
-             $(UNIT_BUILD_DIR)/rlbwt_permutation_test
+             $(UNIT_BUILD_DIR)/runperm_phi_phi_inv_test \
+             $(UNIT_BUILD_DIR)/rlbwt_interval_encoding_test
 INTEGRATION_TESTS = $(INTEGRATION_BUILD_DIR)/rlbwt_test \
                     $(INTEGRATION_BUILD_DIR)/move_structure_test \
                     $(INTEGRATION_BUILD_DIR)/moveperm_test \
@@ -63,7 +63,7 @@ test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	$(UNIT_BUILD_DIR)/packed_vector_test
 	$(UNIT_BUILD_DIR)/alphabet_test
 	$(UNIT_BUILD_DIR)/columns_test
-	$(UNIT_BUILD_DIR)/permutation_test
+	$(UNIT_BUILD_DIR)/interval_encoding_test
 	$(UNIT_BUILD_DIR)/common_test
 	$(UNIT_BUILD_DIR)/api_test
 	$(UNIT_BUILD_DIR)/move_table_test
@@ -75,8 +75,8 @@ test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	$(UNIT_BUILD_DIR)/rlbwt_row_test
 	$(UNIT_BUILD_DIR)/rlbwt_structure_test
 	$(UNIT_BUILD_DIR)/runperm_lf_fl_test
-	$(UNIT_BUILD_DIR)/runperm_phi_invphi_test
-	$(UNIT_BUILD_DIR)/rlbwt_permutation_test
+	$(UNIT_BUILD_DIR)/runperm_phi_phi_inv_test
+	$(UNIT_BUILD_DIR)/rlbwt_interval_encoding_test
 	$(INTEGRATION_BUILD_DIR)/rlbwt_test
 	$(INTEGRATION_BUILD_DIR)/move_structure_test
 	$(INTEGRATION_BUILD_DIR)/moveperm_test
@@ -108,7 +108,7 @@ $(UNIT_BUILD_DIR)/columns_test: ./tests/unit/columns_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(UNIT_BUILD_DIR)/permutation_test: ./tests/unit/move/permutation_test.cpp $(HEADERS)
+$(UNIT_BUILD_DIR)/interval_encoding_test: ./tests/unit/move/interval_encoding_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
@@ -148,11 +148,11 @@ $(UNIT_BUILD_DIR)/runperm_lf_fl_test: ./tests/unit/rlbwt/runperm_lf_fl_test.cpp 
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(UNIT_BUILD_DIR)/runperm_phi_invphi_test: ./tests/unit/rlbwt/runperm_phi_invphi_test.cpp $(HEADERS)
+$(UNIT_BUILD_DIR)/runperm_phi_phi_inv_test: ./tests/unit/rlbwt/runperm_phi_phi_inv_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(UNIT_BUILD_DIR)/rlbwt_permutation_test: ./tests/unit/rlbwt/rlbwt_permutation_test.cpp $(HEADERS)
+$(UNIT_BUILD_DIR)/rlbwt_interval_encoding_test: ./tests/unit/rlbwt/rlbwt_interval_encoding_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 

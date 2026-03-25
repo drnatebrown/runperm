@@ -4,7 +4,7 @@
 #include "orbit/common.hpp"
 #include "orbit/internal/move/move_structure_impl.hpp"
 #include "orbit/internal/rlbwt/specializations/rlbwt_columns.hpp"
-#include "orbit/internal/rlbwt/specializations/rlbwt_permutation.hpp"
+#include "orbit/internal/rlbwt/specializations/rlbwt_interval_encoding.hpp"
 
 namespace orbit::rlbwt {
 
@@ -37,24 +37,24 @@ public:
     static packed_vector<columns> find_structure(const std::vector<uchar>& head_chars, const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const uchar sigma, const split_params& sp = split_params()) {
         assert(head_chars.size() == lengths.size());
 
-        permutation_impl<> permutation(lengths, images, sp);
-        assert(permutation.runs() == lengths.size());
-        assert(permutation.domain() == domain);
+        interval_encoding_impl<> enc(lengths, images, sp);
+        assert(enc.runs() == lengths.size());
+        assert(enc.domain() == domain);
 
-        packed_vector<columns> structure(permutation.intervals(), get_move_widths(domain, permutation.intervals(), permutation.max_length(), sigma));
-        base::populate_structure(structure, permutation);
+        packed_vector<columns> structure(enc.intervals(), get_move_widths(domain, enc.intervals(), enc.max_length(), sigma));
+        base::populate_structure(structure, enc);
         set_characters(structure, head_chars, lengths, domain);
 
         return structure; 
     }
 
-    template<typename permutation_t>
-    static packed_vector<columns> find_structure(const std::vector<uchar>& rlbwt_chars, const permutation_t& permutation, const uchar sigma) {
-        assert(rlbwt_chars.size() == permutation.intervals());
+    template<typename interval_encoding_t>
+    static packed_vector<columns> find_structure(const std::vector<uchar>& rlbwt_chars, const interval_encoding_t& enc, const uchar sigma) {
+        assert(rlbwt_chars.size() == enc.intervals());
 
         // Also initialize with the character width
-        packed_vector<columns> structure(permutation.intervals(), get_move_widths(permutation.domain(), permutation.intervals(), permutation.max_length(), sigma));
-        base::populate_structure(structure, permutation);
+        packed_vector<columns> structure(enc.intervals(), get_move_widths(enc.domain(), enc.intervals(), enc.max_length(), sigma));
+        base::populate_structure(structure, enc);
         // Set the character field
         set_characters(structure, rlbwt_chars);
 

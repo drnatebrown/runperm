@@ -3,7 +3,7 @@
 
 #include "orbit/common.hpp"
 #include "orbit/internal/move/move_splitting.hpp"
-#include "orbit/internal/move/permutation_impl.hpp"
+#include "orbit/internal/move/interval_encoding_impl.hpp"
 #include "orbit/internal/move/move_structure_impl.hpp"
 #include "orbit/internal/runperm/data_columns.hpp"
 
@@ -76,14 +76,14 @@ public:
     runperm_impl() = default;
 
     // Intended constructor for manual splitting of run data
-    template<typename permutation_t>
-    runperm_impl(const permutation_t& permutation, const std::vector<data_tuple> &run_data) {
-        split_params_ = permutation.get_split_params();
-        packed_vector<base_columns> base_structure = move_structure_base::find_structure(permutation);
-        if (run_data.size() == permutation.intervals()) {
-            populate_structure(std::move(base_structure), run_data, permutation.domain(), permutation.runs());
+    template<typename interval_encoding_t>
+    runperm_impl(const interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
+        split_params_ = enc.get_split_params();
+        packed_vector<base_columns> base_structure = move_structure_base::find_structure(enc);
+        if (run_data.size() == enc.intervals()) {
+            populate_structure(std::move(base_structure), run_data, enc.domain(), enc.runs());
         }
-        else if (run_data.size() == permutation.runs()) {
+        else if (run_data.size() == enc.runs()) {
             throw std::invalid_argument("Run data size is same as number of runs, not intervals after splitting; avoid splitting, manually split run data, or use permutation copy split.");
         } else {
             throw std::invalid_argument("Run data size must be the same as the number of intervals (user defined splits) or number of runs (no splitting).");
@@ -118,10 +118,10 @@ public:
         split_params_ = sp;
 
         // Find the base structure (move structure without run data)
-        auto permutation = permutation_impl<>::from_lengths_and_images(lengths, images, sp);
-        size_t domain = permutation.domain();
-        size_t runs = permutation.runs();
-        packed_vector<base_columns> base_structure = move_structure_base::find_structure(permutation);
+        auto enc = interval_encoding_impl<>::from_lengths_and_images(lengths, images, sp);
+        size_t domain = enc.domain();
+        size_t runs = enc.runs();
+        packed_vector<base_columns> base_structure = move_structure_base::find_structure(enc);
 
         if (split_params_ == NO_SPLITTING) {
             populate_structure(std::move(base_structure), run_data, domain, runs);
@@ -146,10 +146,10 @@ public:
         split_params_ = sp;
 
         // Find the base structure (move structure without run data)
-        auto permutation = permutation_impl<>::from_lengths_and_images(lengths, images, sp);
-        size_t domain = permutation.domain();
-        size_t runs = permutation.runs();
-        packed_vector<base_columns> base_structure = move_structure_base::find_structure(permutation);
+        auto enc = interval_encoding_impl<>::from_lengths_and_images(lengths, images, sp);
+        size_t domain = enc.domain();
+        size_t runs = enc.runs();
+        packed_vector<base_columns> base_structure = move_structure_base::find_structure(enc);
 
         std::vector<data_tuple> final_run_data = extend_run_data(lengths, base_structure, domain, get_run_cols_data);
         populate_structure(std::move(base_structure), final_run_data, domain, runs);
@@ -499,10 +499,10 @@ public:
         run_perm = runperm_t(lengths, images, sp, empty_run_data);
     }
 
-    template<typename permutation_t>
-    moveperm_impl(const permutation_t& permutation) {
-        std::vector<std::array<ulint, 0>> empty_run_data(permutation.intervals());
-        run_perm = runperm_t(permutation, empty_run_data);
+    template<typename interval_encoding_t>
+    moveperm_impl(const interval_encoding_t& enc) {
+        std::vector<std::array<ulint, 0>> empty_run_data(enc.intervals());
+        run_perm = runperm_t(enc, empty_run_data);
     }
     
     // Constructor from lengths and interval permutation

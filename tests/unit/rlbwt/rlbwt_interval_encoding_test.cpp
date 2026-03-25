@@ -1,7 +1,7 @@
 // Unit tests for RLBWT-specific permutation builder (`RLBWTPermutationImpl`).
 // Focus: construction invariants and head/alphabet mapping (with/without splitting).
 
-#include "orbit/internal/rlbwt/specializations/rlbwt_permutation.hpp"
+#include "orbit/internal/rlbwt/specializations/rlbwt_interval_encoding.hpp"
 #include "orbit/rlbwt.hpp"
 
 #include <cassert>
@@ -42,7 +42,7 @@ void test_rlbwt_lf_permutation_heads_and_alphabet() {
     vector<ulint> lengths  =    { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
     // No splitting: intervals == runs == original runs.
-    auto perm = rlbwt_permutation::lf_permutation(heads, lengths, NO_SPLITTING);
+    auto perm = rlbwt_interval_encoding<>::lf_interval_encoding(heads, lengths, NO_SPLITTING);
     assert(perm.domain() == 27);
     assert(perm.runs() == heads.size());
     assert(perm.intervals() == heads.size());
@@ -56,7 +56,7 @@ void test_rlbwt_lf_permutation_heads_and_alphabet() {
     }
 
     // With splitting: heads must be expanded consistently with new intervals.
-    auto perm_split = rlbwt_permutation::lf_permutation(heads, lengths, DEFAULT_SPLITTING);
+    auto perm_split = rlbwt_interval_encoding<>::lf_interval_encoding(heads, lengths, DEFAULT_SPLITTING);
     assert(perm_split.domain() == 27);
     assert(perm_split.runs() == heads.size());
     assert(perm_split.intervals() >= heads.size());
@@ -78,7 +78,7 @@ void test_rlbwt_fl_permutation_heads_and_alphabet() {
     vector<ulint> lengths  =    { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
     // For FL, the internal builder derives "F runs" (different heads/lengths).
-    auto perm = rlbwt_permutation::fl_permutation(heads, lengths, NO_SPLITTING);
+    auto perm = rlbwt_interval_encoding<>::fl_interval_encoding(heads, lengths, NO_SPLITTING);
     assert(perm.domain() == 27);
     assert(perm.runs() == heads.size());
     assert(perm.sigma() == nucleotide::size());

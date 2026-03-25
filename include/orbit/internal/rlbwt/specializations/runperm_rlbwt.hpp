@@ -7,7 +7,7 @@
 #include "orbit/internal/rlbwt/specializations/rlbwt_columns.hpp"
 #include "orbit/internal/rlbwt/specializations/rlbwt_structure.hpp"
 #include "orbit/internal/rlbwt/specializations/rlbwt_row.hpp"
-#include "orbit/internal/rlbwt/specializations/rlbwt_permutation.hpp"
+#include "orbit/internal/rlbwt/specializations/rlbwt_interval_encoding.hpp"
 
 namespace orbit::rlbwt {
 
@@ -23,7 +23,7 @@ class runperm_rlbwt : public runperm_impl<data_columns_t, integrated_move_struct
 protected:
     using base_columns = typename base::base_columns;
     using move_structure_perm = typename base::move_structure_perm;
-    using rlbwt_permutation = rlbwt_permutation_impl<int_vector_aligned, alphabet_t>;
+    using rlbwt_interval_encoding = rlbwt_interval_encoding_impl<int_vector_aligned, alphabet_t>;
 public:
     // Sets Columns, ColsTraits, and NumCols
     MOVE_CLASS_TRAITS(data_columns_t)
@@ -33,17 +33,17 @@ public:
 
     runperm_rlbwt() = default;
 
-    template<typename rlbwt_permutation_t>
-    runperm_rlbwt(const rlbwt_permutation_t& permutation, const std::vector<data_tuple> &run_data) {
-        static_assert(std::is_same_v<alphabet_t, typename rlbwt_permutation_t::alphabet_tag>, "alphabet_t must be the same as the alphabet type used to create the permutation");
+    template<typename rlbwt_interval_encoding_t>
+    runperm_rlbwt(const rlbwt_interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
+        static_assert(std::is_same_v<alphabet_t, typename rlbwt_interval_encoding_t::alphabet_tag>, "alphabet_t must be the same as the alphabet type used to create the interval encoding");
 
-        base::split_params_ = permutation.get_split_params();
-        alphabet_ = permutation.get_alphabet();
-        packed_vector<base_columns> base_structure = base::move_structure_base::find_structure(permutation);
-        if (run_data.size() == permutation.intervals()) {
-            base::populate_structure(std::move(base_structure), run_data, permutation.domain(), permutation.runs());
+        base::split_params_ = enc.get_split_params();
+        alphabet_ = enc.get_alphabet();
+        packed_vector<base_columns> base_structure = base::move_structure_base::find_structure(enc);
+        if (run_data.size() == enc.intervals()) {
+            base::populate_structure(std::move(base_structure), run_data, enc.domain(), enc.runs());
         }
-        else if (run_data.size() == permutation.runs()) {
+        else if (run_data.size() == enc.runs()) {
             throw std::invalid_argument("Run data size is same as number of runs, not intervals after splitting; avoid splitting, manually split run data, or use permutation copy split.");
         } else {
             throw std::invalid_argument("Run data size must be the same as the number of intervals (user defined splits) or number of runs (no splitting).");
@@ -67,16 +67,16 @@ public:
     runperm_rlbwt(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, const split_params& sp, const std::vector<data_tuple> &run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
 
-        rlbwt_permutation permutation = find_permutation(rlbwt_heads, rlbwt_run_lengths, sp);
-        alphabet_ = permutation.get_alphabet();
+        rlbwt_interval_encoding enc = find_interval_encoding(rlbwt_heads, rlbwt_run_lengths, sp);
+        alphabet_ = enc.get_alphabet();
         base::split_params_ = sp;
-        packed_vector<base_columns> base_structure = base::move_structure_base::find_structure(permutation);
+        packed_vector<base_columns> base_structure = base::move_structure_base::find_structure(enc);
 
         if (sp == NO_SPLITTING) {
-            base::populate_structure(std::move(base_structure), run_data, permutation.domain(), permutation.runs());
+            base::populate_structure(std::move(base_structure), run_data, enc.domain(), enc.runs());
         } else {
-            std::vector<data_tuple> final_run_data = base::extend_run_data(rlbwt_run_lengths, base_structure, permutation.domain(), get_run_cols_data);
-            base::populate_structure(std::move(base_structure), final_run_data, permutation.domain(), permutation.runs());
+            std::vector<data_tuple> final_run_data = base::extend_run_data(rlbwt_run_lengths, base_structure, enc.domain(), get_run_cols_data);
+            base::populate_structure(std::move(base_structure), final_run_data, enc.domain(), enc.runs());
         }
     }
 
@@ -84,15 +84,15 @@ public:
     runperm_rlbwt(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, const split_params& sp, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
 
-        rlbwt_permutation permutation = find_permutation(rlbwt_heads, rlbwt_run_lengths, sp);
-        alphabet_ = permutation.get_alphabet();
+        rlbwt_interval_encoding enc = find_interval_encoding(rlbwt_heads, rlbwt_run_lengths, sp);
+        alphabet_ = enc.get_alphabet();
         base::split_params_ = sp;
-        packed_vector<base_columns> base_structure = base::move_structure_base::find_structure(permutation);
+        packed_vector<base_columns> base_structure = base::move_structure_base::find_structure(enc);
 
         /* extend_run_data is required when find_structure applies splitting:
            base_structure may have more rows than run_data; we copy run_data[orig_interval] for each split row */
-        std::vector<data_tuple> final_run_data = base::extend_run_data(rlbwt_run_lengths, base_structure, permutation.domain(), get_run_cols_data);
-        base::populate_structure(std::move(base_structure), final_run_data, permutation.domain(), permutation.runs());
+        std::vector<data_tuple> final_run_data = base::extend_run_data(rlbwt_run_lengths, base_structure, enc.domain(), get_run_cols_data);
+        base::populate_structure(std::move(base_structure), final_run_data, enc.domain(), enc.runs());
     }
 
     static runperm_rlbwt from_structure(packed_vector<base_columns> &&structure, const size_t domain, const size_t runs) {
@@ -139,12 +139,12 @@ protected:
     alphabet_t alphabet_;
 
     // Special logic for LF or FL
-    rlbwt_permutation find_permutation(
+    rlbwt_interval_encoding find_interval_encoding(
         const std::vector<uchar>& rlbwt_heads,
         const std::vector<ulint>& rlbwt_run_lengths,
         const split_params& sp
     ) {
-        return static_cast<derived*>(this)->find_permutation(rlbwt_heads, rlbwt_run_lengths, sp);
+        return static_cast<derived*>(this)->find_interval_encoding(rlbwt_heads, rlbwt_run_lengths, sp);
     }
 };
 

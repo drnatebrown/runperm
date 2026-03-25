@@ -50,7 +50,7 @@ public:
         auto [phi_lengths, phi_img_rank_inv] =
             rlbwt_to_phi_img_rank_inv<>(rlbwt_heads, rlbwt_run_lengths,
                                         &domain, &max_length);
-        return permutation_impl<>::from_lengths_and_img_rank_inv(
+        return interval_encoding_impl<>::from_lengths_and_img_rank_inv(
             phi_lengths, phi_img_rank_inv, domain, max_length, split_params);
       }()) {}
 

@@ -104,9 +104,9 @@ void print_vector(std::vector<ulint> vec) {
 
 /************** EXAMPLES **************/
 std::vector<std::string> example_names = {
-    "RunPerm",
-    "MovePerm",
-    "MovePerm with splitting",
+    "Permutation",
+    "Move Permutation",
+    "Move Permutation with splitting",
     "LF from RLBWT",
     "Text from RLBWT using FL",
     "SA from RLBWT using Inverse Phi"
@@ -155,9 +155,9 @@ void example2() {
 
     std::cout << "\n\nMove Permutation (Absolute):" << std::endl;
     // Or, can create from lengths and interval permutation
-    auto [lengths, interval_permutation] = orbit::get_permutation_intervals(permutation);
+    auto [lengths, images] = orbit::get_permutation_intervals(permutation);
     // moveperm_absolute also stores the absolute position in the permutation
-    orbit::moveperm_absolute mp_absolute(lengths, interval_permutation);
+    orbit::moveperm_absolute mp_absolute(lengths, images);
     print_move_permutation(mp_absolute);
 }
 
@@ -165,11 +165,11 @@ void example2() {
 void example3() {
     std::cout << "Example 3: " << example_names[2] << std::endl;
     std::vector<ulint> lengths = {2, 1, 8};
-    std::vector<ulint> interval_permutation = {9, 0, 1};
+    std::vector<ulint> images = {9, 0, 1};
 
     // Original move permutation
     std::cout << "Original Move Permutation (Relative):" << std::endl;
-    orbit::moveperm_relative mp_relative(lengths, interval_permutation);
+    orbit::moveperm_relative mp_relative(lengths, images);
     print_move_permutation(mp_relative);
 
     std::cout << "\n\nSplitting..." << std::endl;
@@ -185,11 +185,11 @@ void example3() {
     std::cout << "Round up to use all log2(n/r * length_capping_factor) bits: " << orbit::max_val(orbit::bit_width(static_cast<ulint>(std::ceil(static_cast<double>(mp_relative.domain()) / static_cast<double>(lengths.size()) * sp.length_capping.value())))) << std::endl;
 
     std::cout << "\nMove Permutation (Relative):" << std::endl;
-    orbit::moveperm_relative mp_relative_split(lengths, interval_permutation, sp);
+    orbit::moveperm_relative mp_relative_split(lengths, images, sp);
     print_move_permutation(mp_relative_split);
 
     std::cout << "\n\nMove Permutation (Absolute):" << std::endl;
-    orbit::moveperm_absolute mp_absolute_split(lengths, interval_permutation, sp);
+    orbit::moveperm_absolute mp_absolute_split(lengths, images, sp);
     print_move_permutation(mp_absolute_split);
 }
 
@@ -207,8 +207,8 @@ void example4() {
     orbit::rlbwt::move_lf<> move_lf(bwt_heads, bwt_run_lengths);
     print_move_permutation(move_lf);
 
-    // LF with RunPerm + run data columns
-    std::cout << "\n\nLF with RunPerm + run data columns" << std::endl;
+    // LF with user data columns
+    std::cout << "\n\nLF with with user data columns columns" << std::endl;
     // Alternative to example 1, without using the macro
     enum class run_cols {
         VAL1,
@@ -256,12 +256,12 @@ void example6() {
     std::cout << "Input RLBWT: (T, 5), (C, 3), (G, 3), (A, 3), (T, 1), ($, 1), (A, 1), (T, 4), (A, 6)" << std::endl;
 
     auto permutation = orbit::rlbwt::rlbwt_to_phi(bwt_heads, bwt_run_lengths);
-    orbit::rlbwt::move_invphi<> move_invphi(permutation);
-    auto pos = move_invphi.last();
+    orbit::rlbwt::move_phi_inv<> move_phi_inv(permutation);
+    auto pos = move_phi_inv.last();
     std::vector<ulint> sa_recovered(domain);
     for (size_t i = 0; i < domain; ++i) {
-        sa_recovered[i] = move_invphi.SA(pos);
-        pos = move_invphi.invphi(pos);
+        sa_recovered[i] = move_phi_inv.SA(pos);
+        pos = move_phi_inv.phi_inv(pos);
     }
     std::cout << "Recovered SA: ";
     print_vector(sa_recovered);

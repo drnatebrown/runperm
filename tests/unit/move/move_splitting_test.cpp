@@ -3,7 +3,7 @@
 
 #include "orbit/internal/move/move_splitting.hpp"
 #include "orbit/internal/ds/packed_vector.hpp"
-#include "orbit/permutation.hpp"
+#include "orbit/interval_encoding.hpp"
 
 #include <cassert>
 #include <iostream>

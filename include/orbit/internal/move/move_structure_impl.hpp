@@ -12,7 +12,7 @@
 #include <numeric>
 
 #include "orbit/common.hpp"
-#include "orbit/internal/move/permutation_impl.hpp"
+#include "orbit/internal/move/interval_encoding_impl.hpp"
 #include "orbit/internal/move/move_table.hpp"
 #include "orbit/internal/move/move_splitting.hpp"
 
@@ -30,23 +30,23 @@ public:
     
     // Constructor from permutation data
     move_structure(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const split_params& split_params = split_params())
-    : move_structure(permutation_impl<>::from_lengths_and_images(lengths, images, split_params)) {}
+    : move_structure(interval_encoding_impl<>::from_lengths_and_images(lengths, images, split_params)) {}
 
-    template<typename permutation_t>
-    move_structure(const permutation_t& permutation, const split_params& split_params = split_params()) {
-        n = permutation.domain();
-        r = permutation.runs();
-        table = find_structure(permutation);
+    template<typename interval_encoding_t>
+    move_structure(const interval_encoding_t& enc, const split_params& split_params = split_params()) {
+        n = enc.domain();
+        r = enc.runs();
+        table = find_structure(enc);
     }
 
     // Constructor from pre-computed table (move semantics) for advanced users
     move_structure(packed_vector<columns> &&structure, const size_t domain, const ulint runs) 
         : table(std::move(structure)), n(domain), r(runs) {}
 
-    template<typename permutation_t>
-    static packed_vector<columns> find_structure(const permutation_t& permutation) {
-        packed_vector<columns> structure(permutation.intervals(), get_move_widths(permutation.domain(), permutation.intervals(), permutation.max_length()));
-        populate_structure(structure, permutation);
+    template<typename interval_encoding_t>
+    static packed_vector<columns> find_structure(const interval_encoding_t& enc) {
+        packed_vector<columns> structure(enc.intervals(), get_move_widths(enc.domain(), enc.intervals(), enc.max_length()));
+        populate_structure(structure, enc);
         return structure;
     }
 
@@ -229,13 +229,13 @@ protected:
         return widths;
     }
     
-    template<typename permutation_t>
-    static void populate_structure(packed_vector<columns>& structure, const permutation_t& permutation) {
+    template<typename interval_encoding_t>
+    static void populate_structure(packed_vector<columns>& structure, const interval_encoding_t& enc) {
         size_t start_val = 0;
         size_t output_start_val = 0;
         size_t img_rank_inv_idx = 0;
-        for (size_t i = 0; i < permutation.intervals(); ++i) {
-            size_t length = permutation.get_length(i);
+        for (size_t i = 0; i < enc.intervals(); ++i) {
+            size_t length = enc.get_length(i);
             if constexpr (cols_traits::RELATIVE) {
                 structure.template set<to_cols(cols_traits::PRIMARY)>(i, length);
             }
@@ -243,11 +243,11 @@ protected:
                 structure.template set<to_cols(cols_traits::PRIMARY)>(i, start_val);
             }
 
-            while (img_rank_inv_idx < permutation.intervals() && output_start_val < start_val + length) {
-                ulint img_rank_inv_val = permutation.get_img_rank_inv(img_rank_inv_idx);
+            while (img_rank_inv_idx < enc.intervals() && output_start_val < start_val + length) {
+                ulint img_rank_inv_val = enc.get_img_rank_inv(img_rank_inv_idx);
                 structure.template set<to_cols(cols_traits::POINTER)>(img_rank_inv_val, i);
                 structure.template set<to_cols(cols_traits::OFFSET)>(img_rank_inv_val, output_start_val - start_val);
-                output_start_val += permutation.get_length(img_rank_inv_val);
+                output_start_val += enc.get_length(img_rank_inv_val);
                 ++img_rank_inv_idx;
             }
             start_val += length;

@@ -11,7 +11,7 @@
 //       std::vector<ulint> lengths;          // lengths of contiguous intervals
 //       std::vector<ulint> interval_perm;    // perm position of each interval head
 //   - Or, from its interval encoding given by the permutation class:
-//       orbit::permutation perm;
+//       orbit::interval_encoding enc;
 //   - Define an enum for run data columns and a columns_tuple alias:
 //       enum class data_columns { VAL1, VAL2, COUNT };
 //       // Must include COUNT as the last entry to signal number of fields.
@@ -38,7 +38,7 @@
 #define _PUBLIC_RUNPERM_HPP
 
 #include "orbit/common.hpp"
-#include "orbit/internal/move/permutation_impl.hpp"
+#include "orbit/internal/move/interval_encoding_impl.hpp"
 #include "orbit/internal/runperm/runperm_impl.hpp"
 
 namespace orbit {
@@ -96,9 +96,9 @@ using runperm_integrated_absolute = runperm<data_columns_t, true, true>;
 *    runperm(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const split_params &split_params, const std::vector<data_tuple> &run_data);
 *
 *    // === Splitting Constructor ===
-*    // permutation -> object built by passing lengths, images to permutation constructor
+*    // interval_encoding -> object built by passing lengths, images to interval_encoding constructor
 *    // run_data -> run data for each interval, the size of this vector should be the same as the number of intervals after splitting by modifiying based on the permutation object
-*    runperm(const permutation &perm, const std::vector<data_tuple> &run_data);
+*    runperm(const interval_encoding &enc, const std::vector<data_tuple> &run_data);
 *
 *    // === Advanced Constructors ===
 *    // get_run_cols_data -> function to get run data for each interval, (orig_interval, orig_interval_length, new_offset_from_orig_start, new_length) -> run data
@@ -175,7 +175,7 @@ using moveperm_relative = moveperm<false>; // Same as moveperm<>, the default
 *    // === Constructors ===
 *    MovePermImpl(std::vector<ulint>& permutation, split_params split_params = split_params()); // Constructor from permutation vector
 *    MovePermImpl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, split_params split_params = split_params()); // Splitting on by default
-*    MovePermImpl(const permutation &perm); // Constructor from permutation object
+*    MovePermImpl(const interval_encoding &enc); // Constructor from permutation object
 *    
 *    // === Navigation methods ===
 *    position next(position pos); // Apply permutation

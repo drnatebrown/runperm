@@ -244,7 +244,7 @@ void bench_move_phi(const string &name,
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    auto permutation = permutation_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
+    auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
     move_phi<> move_phi(permutation);
     auto t1 = high_resolution_clock::now();
 
@@ -287,7 +287,7 @@ void bench_move_phi_exp(const string &name,
     auto t0 = high_resolution_clock::now();
     using MovePhiExp = move_phi<true>;
 
-    auto permutation = permutation_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
+    auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
     MovePhiExp move_phi(permutation);
     auto t1 = high_resolution_clock::now();
 
@@ -328,7 +328,7 @@ void bench_move_phi_inv(const string &name,
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    auto permutation = permutation_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
+    auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
     move_phi_inv<> move_phi_inv(permutation);
     auto t1 = high_resolution_clock::now();
 
@@ -370,7 +370,7 @@ void bench_move_phi_inv_exp(const string &name,
     auto t0 = high_resolution_clock::now();
     using Movephi_invExp = move_phi_inv<true>;
 
-    auto perm = permutation_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
+    auto perm = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
     Movephi_invExp move_phi_inv(perm);
     auto t1 = high_resolution_clock::now();
 

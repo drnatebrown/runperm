@@ -12,7 +12,7 @@ RunPerm provides compact representations of run-length encoded permutations, wit
 
 - **RunPerm**: Core run-length permutation data structure allowing user defined fields stored alongside permutation intervals.
 - **MovePerm**: Simplified permutation representation using move structures, no user data.
-- **RLBWT**: Specialized run-length Burrows-Wheeler Transform permutations (LF/FL and Phi/InvPhi) built on RunPerm and MovePerm.
+- **RLBWT**: Specialized run-length Burrows-Wheeler Transform permutations (LF/FL and Phi/phi_inv) built on RunPerm and MovePerm.
 
 ## Features
 
@@ -21,8 +21,8 @@ RunPerm provides compact representations of run-length encoded permutations, wit
 - **Move Structures**: Advanced data structures for fast and cache efficient navigation of permutations.
 - **RLBWT Specializations**:
   - LF/FL navigation with character access.
-  - Phi/InvPhi navigation with SA retrieval.
-  - Helpers to derive Phi/InvPhi structures from run-length BWT.
+  - Phi/phi_inv navigation with SA retrieval.
+  - Helpers to derive Phi/phi_inv structures from run-length BWT.
 - **Flexible Configuration**: Multiple template parameters for various move structure representations.
 - **Advanced Storage** Allows efficient storage and retrieval of additional information alongside permutations.
 
@@ -34,7 +34,7 @@ This library is header-only. Just add `include/` to your compiler's include path
 
 - `runperm.hpp` loads RunPerm and MovePerm.
 - `move.hpp` loads the underlying move structure implementation only.
-- `rlbwt.hpp` loads specialized classes to represent LF/FL and Phi/InvPhi.
+- `rlbwt.hpp` loads specialized classes to represent LF/FL and Phi/phi_inv.
 
 The provided `makefile` only builds example/test executables:
 
@@ -114,7 +114,7 @@ std::vector<unsigned long int> permutation = {1, 2, 9, 10, 11, 3, 12, 13, 4, 5, 
 MovePermRelative mp(permutation); 
 
 // Or from run structure
-auto [lengths, interval_permutation] = get_permutation_intervals(permutation);
+auto [lengths, images] = get_permutation_intervals(permutation);
 ulint domain = permutation.size();
 // Also stores the absolute position in the permutation
 MovePermAbsolute mp_abs(lengths, permutation, domain);
@@ -150,7 +150,7 @@ MoveFL<> move_fl(bwt_heads, bwt_run_lengths);
 ...
 ```
 
-#### RLBWT: Phi/InvPhi
+#### RLBWT: Phi/phi_inv
 
 By including `rlbwt.hpp`, we can also build the permutations from an RLBWT for $\phi$ and $\phi^{-1}$ needed for locate queries.
 
@@ -170,8 +170,8 @@ RunPermPhi<PhiCols> phi(phi_lengths, phi_interval_perm, domain, phi_run_data);
 auto [phi_lens2, phi_perm2, domain2] = rlbwt_to_phi(bwt_heads, bwt_run_lengths);
 MovePhi mphi(phi_lens2, phi_perm2, domain2);
 
-// Build InvPhi similarly...
-auto [invphi_lengths, invphi_interval_perm, domain_inv] = rlbwt_to_invphi(bwt_heads, bwt_run_lengths);
+// Build phi_inv similarly...
+auto [phi_inv_lengths, phi_inv_interval_perm, domain_inv] = rlbwt_to_phi_inv(bwt_heads, bwt_run_lengths);
 ...
 
 ```

@@ -1,5 +1,5 @@
-#ifndef _PERMUTATION_HPP
-#define _PERMUTATION_HPP
+#ifndef _INTERVAL_ENCODING_IMPL_HPP
+#define _INTERVAL_ENCODING_IMPL_HPP
 
 #include "orbit/common.hpp"
 #include "orbit/internal/ds/packed_vector.hpp"
@@ -82,22 +82,21 @@ inline int_vector_t compute_img_rank_inv(const container_t& interval_output_star
 }
 
 template<typename int_vector_t = int_vector_aligned>
-class permutation_impl {
+class interval_encoding_impl {
 public:
 
-    permutation_impl() = default;
-
-    permutation_impl(const std::vector<ulint>& permutation, const split_params& split_params = split_params()) {
+    interval_encoding_impl() = default;
+    interval_encoding_impl(const std::vector<ulint>& permutation, const split_params& split_params = split_params()) {
         *this = from_permutation(permutation, split_params);
     }
-    permutation_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const split_params& split_params = split_params()) {
+    interval_encoding_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const split_params& split_params = split_params()) {
         *this = from_lengths_and_images(lengths, images, split_params);
     }
-    permutation_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const ulint max_length, const split_params& split_params = split_params()) {
+    interval_encoding_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const ulint max_length, const split_params& split_params = split_params()) {
         *this = from_lengths_and_images(lengths, images, domain, max_length, split_params);
     }
 
-    static permutation_impl<int_vector_t> from_permutation(const std::vector<ulint>& permutation, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_permutation(const std::vector<ulint>& permutation, const split_params& split_params = split_params()) {
         ulint max_length = 0;
         auto [lengths, images] = get_permutation_intervals(permutation, &max_length);
         assert(lengths.size() == images.size());
@@ -106,7 +105,7 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const split_params& split_params = split_params()) {
         assert(lengths.size() == img_rank_inv.size());
         auto [domain, max_length] = sum_and_max(lengths);
         
@@ -114,16 +113,16 @@ public:
     }
     
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
         assert(lengths.size() == img_rank_inv.size());
-        permutation_impl<int_vector_t> permutation;
-        permutation.set_initial_values(domain, lengths.size(), max_length, split_params);
-        permutation.init_img_rank_inv(lengths, img_rank_inv);
-        return permutation;
+        interval_encoding_impl<int_vector_t> enc;
+        enc.set_initial_values(domain, lengths.size(), max_length, split_params);
+        enc.init_img_rank_inv(lengths, img_rank_inv);
+        return enc;
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const split_params& split_params = split_params()) {
         assert(lengths.size() == img_rank.size());
 
         auto [domain, max_length] = sum_and_max(lengths);
@@ -131,17 +130,17 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
         assert(lengths.size() == img_rank.size());
 
-        permutation_impl<int_vector_t> permutation;
-        permutation.set_initial_values(domain, lengths.size(), max_length, split_params);
-        permutation.init_img_rank(lengths, img_rank);
-        return permutation;
+        interval_encoding_impl<int_vector_t> enc;
+        enc.set_initial_values(domain, lengths.size(), max_length, split_params);
+        enc.init_img_rank(lengths, img_rank);
+        return enc;
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const split_params& split_params = split_params()) {
         assert(lengths.size() == images.size());
 
         auto [domain, max_length] = sum_and_max(lengths);
@@ -149,7 +148,7 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
         assert(lengths.size() == images.size());
 
         int_vector_t img_rank_inv = compute_img_rank_inv<int_vector_t>(images);
@@ -157,14 +156,14 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const split_params& split_params = split_params()) {
         assert(starts.size() == img_rank_inv.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
         return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
         assert(starts.size() == img_rank_inv.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
@@ -172,14 +171,14 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const split_params& split_params = split_params()) {
         assert(starts.size() == img_rank.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
         return from_lengths_and_img_rank(lengths, img_rank, domain, max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
         assert(starts.size() == img_rank.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
@@ -187,14 +186,14 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const split_params& split_params = split_params()) {
         assert(starts.size() == images.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
         return from_lengths_and_images(lengths, images, domain, max_length, split_params);
     }
 
     template<typename container1_t, typename container2_t>
-    static permutation_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
         assert(starts.size() == images.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
@@ -327,4 +326,4 @@ protected:
 
 } // namespace orbit
 
-#endif // end include guard _PERMUTATION_HPP
+#endif // end include guard _INTERVAL_ENCODING_IMPL_HPP

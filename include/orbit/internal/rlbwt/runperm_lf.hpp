@@ -4,7 +4,7 @@
 #include "orbit/common.hpp"
 #include "orbit/internal/rlbwt/specializations/runperm_rlbwt.hpp"
 #include "orbit/internal/ds/alphabet.hpp"
-#include "orbit/internal/rlbwt/specializations/rlbwt_permutation.hpp"
+#include "orbit/internal/rlbwt/specializations/rlbwt_interval_encoding.hpp"
 #include "orbit/internal/rlbwt/rlbwt_helpers.hpp"
 
 namespace orbit::rlbwt {
@@ -19,7 +19,7 @@ template<typename data_columns_t,
 class runperm_lf_impl : public runperm_rlbwt<runperm_lf_impl<data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, alphabet_t, table_t>,
                          data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, alphabet_t, table_t> {
     using base = runperm_rlbwt<runperm_lf_impl, data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, alphabet_t, table_t>;
-    using rlbwt_permutation = typename base::rlbwt_permutation;
+    using rlbwt_interval_encoding = typename base::rlbwt_interval_encoding;
 public:
     using data_columns = typename base::data_columns;
     using base::base;
@@ -27,12 +27,12 @@ public:
     using position = typename base::position;
 
     // TODO use int_vector and container templates here
-    rlbwt_permutation find_permutation(
+    rlbwt_interval_encoding find_interval_encoding(
         const std::vector<uchar>& rlbwt_heads,
         const std::vector<ulint>& rlbwt_run_lengths,
         const split_params& sp
     ) {
-        return rlbwt_permutation::lf_permutation(rlbwt_heads, rlbwt_run_lengths, sp);
+        return rlbwt_interval_encoding::lf_interval_encoding(rlbwt_heads, rlbwt_run_lengths, sp);
     }
 
     position LF(position pos) {
