@@ -2,7 +2,7 @@
 
 $O(r)$ bitpacked (Orbit) move structure library.
 
-Flexible plug-and-play header library implementing data structures for representing run-length encoded permutations. Orbit features $O(r)$-space bit packed move structures and specialized RLBWT implementations for high-performance indexing. Can be used as a foundation for further applications, providing storage and retrieval of user fields alongside the permutation intervals. Further, powerful splitting optimizations such as length capping and balancing are implemented.
+Flexible plug-and-play header library implementing data structures for representing run-length encoded permutations. Orbit features $O(r)$-space bitpacked move structures and specialized RLBWT implementations for high-performance indexing. Can be used as a foundation for further applications, providing storage and retrieval of user fields alongside the permutation intervals. Further, powerful splitting optimizations such as length capping and balancing are implemented.
 
 Described in greater detail at [https://arxiv.org/abs/2602.11029](https://arxiv.org/abs/2602.11029).
 
