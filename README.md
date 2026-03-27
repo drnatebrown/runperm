@@ -123,6 +123,33 @@ pos = meta_perm.next(pos); // move one permutation step
 unsigned long int other_data = meta_perm.get<data_cols::VAL2>(pos);
 ```
 
+## Interface
+
+The main class for run-length encoded permutations with move structure integration. Core functionality is supported by 
+
+- **Template Parameters**:
+  - `data_columns_t`: Type defining user run data columns
+  - `integrated_move_structure`: integrate run data bitpacked alongside move structure or stored bitpacked in its own table (default: false)
+  - `store_absolute_positions`: store absolute positions for index lookups, rather than just interval/offset paits (default: false)
+- **Key Methods**:
+  - `next(pos)`, `next(pos, ulint steps)`
+  - `up(pos)`, `down(pos)`, `first()`, `last()`
+  - `get<Col>(pos)`, `get<Col>(pos, i)`, `get_length(pos)`, `get_length(i)`
+  - `pred<Col>(pos, val)`, `succ<Col>(pos, val)`
+  - `domain()`, `runs()`, `intervals()`
+  - `serialize(os)`, `load(is)`
+
+## Performance Considerations
+
+- **Integrated vs Separated**: Integrating user data alongside the move structure offer better cache locality but may cause slower move queries since navigating the data structure requires loading larger entries.
+- **Absolute vs Relative Positions**: Absolute positions enable full permutation positional information but increase memory usage. The space usage is, for a runny permutation of $r$ runs over domain $n$ is approximately:
+  - **Absolute**: $r \log r + 2 r \log n$ bits
+  - **Relative**: $r \log r + 2 r \log \frac{n}{r}$ bits
+- **Length Capping**: Can greatly reduce the size of the data structure, especially for relative positions. Also gives amortized guarantees and practical speed up when tuned correctly. Where length capping factor is $c$, splits any runs/intervals longer than $c$ times the average run length of the original permutation.
+- **Balancing**: Where $\alpha$ is the balancing factor, guarantees less than $2\alpha$ complexity for a single permutation step. However, can increase the size of the data structures due to splitting intervals if not tuned correctly. Length capping and balancing often work well together.
+
+## Advanced Usage
+
 #### Interval Splitting
 When we build a permutation object without data columns, default splitting is used. Where a run refers to a maximal contigiously permuted subsequence, an interval is a potentially non-maximal (sub-run) found by splitting runs/intervals. Given this example:
 
@@ -211,38 +238,6 @@ orbit::rlbwt::phi_inv_permutation<phi_data_cols> phi_inv(bwt_heads, bwt_run_leng
 
 ```
 
-## Interface
-
-### Permutation
-
-The main class for run-length encoded permutations with move structure integration. Core functionality is supported by 
-
-- **Template Parameters**:
-  - `RunColsType`: Type defining user run data columns
-  - `IntegratedMoveStructure`: integrate run data bitpacked alongside move structure or stored bitpacked in its own table (default: false)
-  - `StoreAbsolutePositions`: store absolute positions for index lookups, rather than just interval/offset paits (default: false)
-- **Key Methods**:
-  - `next(pos)`, `next(pos, ulint steps)`
-  - `up(pos)`, `down(pos)`, `first()`, `last()`
-  - `get<Col>(pos)`, `get<Col>(pos, i)`, `get_length(pos)`, `get_length(i)`
-  - `pred<Col>(pos, val)`, `succ<Col>(pos, val)`
-  - `domain()`, `runs()`, `intervals()`
-  - `serialize(os)`, `load(is)`
-
-### Performance Considerations
-
-- **Integrated vs Separated**: Integrating user data alongside the move structure offer better cache locality but may cause slower move queries since navigating the data structure requires loading larger entries.
-- **Absolute vs Relative Positions**: Absolute positions enable full permutation positional information but increase memory usage. The space usage is, for a runny permutation of $r$ runs over domain $n$ is approximately:
-  - **Absolute**: $r \log r + 2 r \log n$ bits
-  - **Relative**: $r \log r + 2 r \log \frac{n}{r}$ bits
-- **Length Capping**: Can greatly reduce the size of the data structure, especially for relative positions. Also gives amortized guarantees and practical speed up when tuned correctly. Where length capping factor is $c$, splits any runs/intervals longer than $c$ times the average run length of the original permutation.
-- **Balancing**: Where $\alpha$ is the balancing factor, guarantees less than $2\alpha$ complexity for a single permutation step. However, can increase the size of the data structures due to splitting intervals if not tuned correctly. Length capping and balancing often work well together.
-
-### Dependencies
-
-- C++17 or later
-- No external dependencies; header-only usage.
-
 ## Examples
 
 ### Basic Permutation Navigation
@@ -306,6 +301,11 @@ std::vector<ulint> lf_images                = { 17  , 11  , 14  ,  1  , 22  ,  0
 
 orbit::permutation rlbwt(bwt_run_lengths, lf_images, bwt_heads);
 ```
+
+## Dependencies
+
+- C++17 or later
+- No external dependencies; header-only usage.
 
 ## Citation
 
