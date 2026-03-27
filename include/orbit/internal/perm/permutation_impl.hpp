@@ -1,11 +1,11 @@
-#ifndef _INTERNAL_RUNPERM_HPP
-#define _INTERNAL_RUNPERM_HPP
+#ifndef _INTERNAL_PERMUTATION_HPP
+#define _INTERNAL_PERMUTATION_HPP
 
 #include "orbit/common.hpp"
 #include "orbit/internal/move/move_splitting.hpp"
 #include "orbit/internal/move/interval_encoding_impl.hpp"
 #include "orbit/internal/move/move_structure_impl.hpp"
-#include "orbit/internal/runperm/data_columns.hpp"
+#include "orbit/internal/perm/data_columns.hpp"
 
 namespace orbit {
 
@@ -24,7 +24,7 @@ template <typename data_columns_t>
 struct separated_data_holder<data_columns_t, true> { /* empty */ };
 
 // TODO InversePermutation, which builds both the forward and inverse move structures if needed
-template<typename data_columns_t, // Fields to be stored alongside the move structure representing a runny permutation
+template<typename data_columns_t = empty_data_columns, // Fields to be stored alongside the move structure representing a runny permutation
          bool integrated_move_structure = DEFAULT_INTEGRATED_MOVE_STRUCTURE, // Whether to pack the run data alongside the move structure
          bool store_absolute_positions = DEFAULT_STORE_ABSOLUTE_POSITIONS, // Whether to store absolute positions instead of interval/offset
          bool exponential_search = store_absolute_positions && DEFAULT_EXPONENTIAL_SEARCH, // Whether to use exponential search for next() by default, only used if store_absolute_positions is true
@@ -32,7 +32,7 @@ template<typename data_columns_t, // Fields to be stored alongside the move stru
          template<typename, template<typename> class> class move_structure_t = move_structure,
          template<typename> class table_t = move_vector>
          // TODO need PackedType option?
-class runperm_impl : separated_data_holder<data_columns_t, integrated_move_structure> {
+class permutation_impl : separated_data_holder<data_columns_t, integrated_move_structure> {
 protected:
     // Helpful constants for number of base (move permutation information) columns and run (additional data) columns
     static constexpr size_t num_run_cols = static_cast<size_t>(data_columns_t::COUNT);
@@ -73,11 +73,34 @@ public:
     "Cannot integrate user data with MoveTable. Use move_vector or set integrated_move_structure=false."
     "MoveTable for integrated data requires specialized implementation!");
 
-    runperm_impl() = default;
+    permutation_impl() = default;
+
+    // Gated constructors for when data columns are empty
+    // Constructor from permutation vector
+    template<class dc = data_columns_t,
+         std::enable_if_t<std::is_same_v<dc, empty_data_columns>, int> = 0>
+    permutation_impl(std::vector<ulint>& perm, const split_params& sp = split_params())
+    : permutation_impl([&]{
+            auto [lengths, images] = get_permutation_intervals(perm);
+            return interval_encoding_impl<>::from_lengths_and_images(lengths, images, sp);
+    }()) {}
+
+    template<typename interval_encoding_t,
+             class dc = data_columns_t,
+             std::enable_if_t<std::is_same_v<dc, empty_data_columns>, int> = 0>
+    permutation_impl(const interval_encoding_t& enc) 
+    : permutation_impl(enc, std::vector<data_tuple>(enc.intervals())) {}
+    
+    // Constructor from lengths and interval permutation
+    template<typename container1_t, typename container2_t,
+             class dc = data_columns_t,
+             std::enable_if_t<std::is_same_v<dc, empty_data_columns>, int> = 0>
+    permutation_impl(const container1_t& lengths, const container2_t& images, const split_params& sp = split_params())
+    : permutation_impl(lengths, images, sp, std::vector<data_tuple>(lengths.size())) {}
 
     // Intended constructor for manual splitting of run data
     template<typename interval_encoding_t>
-    runperm_impl(const interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
+    permutation_impl(const interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
         split_params_ = enc.get_split_params();
         packed_vector<base_columns> base_structure = move_structure_base::find_structure(enc);
         if (run_data.size() == enc.intervals()) {
@@ -98,13 +121,13 @@ public:
      */
      // When user doesn't pass splitting params without providing permutation object input, use NO_SPLITTING
     template<typename container1_t, typename container2_t>
-     runperm_impl(const container1_t &lengths, const container2_t &images, const std::vector<data_tuple> &run_data)
-     : runperm_impl(lengths, images, NO_SPLITTING, run_data) {}
+     permutation_impl(const container1_t &lengths, const container2_t &images, const std::vector<data_tuple> &run_data)
+     : permutation_impl(lengths, images, NO_SPLITTING, run_data) {}
 
     // If splitting, copy the run data by default
     template<typename container1_t, typename container2_t>
-    runperm_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, const std::vector<data_tuple> &run_data)
-        : runperm_impl(lengths, images, sp, run_data,
+    permutation_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, const std::vector<data_tuple> &run_data)
+        : permutation_impl(lengths, images, sp, run_data,
             [&run_data](ulint orig_interval, ulint orig_interval_length, ulint new_offset_from_orig_start, ulint new_length) {
                 return run_data[orig_interval];
             }
@@ -113,7 +136,7 @@ public:
     // Path for constructor above, see below constructor for more details
     // This exists as a fast path in case no splitting is set and we do not need to call extend_run_data
     template<typename container1_t, typename container2_t>
-    runperm_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, const std::vector<data_tuple> &run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+    permutation_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, const std::vector<data_tuple> &run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(lengths.size() == images.size());
         split_params_ = sp;
 
@@ -141,7 +164,7 @@ public:
      * and returns the values to be stored in the new interval (run data) for that new row
      */
     template<typename container1_t, typename container2_t>
-    runperm_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+    permutation_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(lengths.size() == images.size());
         split_params_ = sp;
 
@@ -156,28 +179,28 @@ public:
     }
 
     // from pre-computed table (move semantics) for advanced users with integrated move structure
-    static runperm_impl from_structure(packed_vector<columns> &&structure, const size_t domain, const size_t runs) {
-        static_assert(integrated_move_structure, "Cannot construct RunPerm with pre-computed permutation structure if not integrating user data with move structure");
-        return runperm_impl(move_structure_perm(std::move(structure), domain, runs));
+    static permutation_impl from_structure(packed_vector<columns> &&structure, const size_t domain, const size_t runs) {
+        static_assert(integrated_move_structure, "Cannot construct permutation with pre-computed permutation structure if not integrating user data with move structure");
+        return permutation_impl(move_structure_perm(std::move(structure), domain, runs));
     }
 
     // from pre-computed table (move semantics) for advanced users without integrated move structure
-    static runperm_impl from_structure(packed_vector<base_columns> &&structure, std::vector<data_tuple> &run_data, const size_t domain, const size_t runs) {
-        static_assert(!integrated_move_structure, "Cannot construct RunPerm with pre-computed permutation structure if integrating user data with move structure");
-        auto result = runperm_impl(move_structure_perm(std::move(structure), domain, runs));
+    static permutation_impl from_structure(packed_vector<base_columns> &&structure, std::vector<data_tuple> &run_data, const size_t domain, const size_t runs) {
+        static_assert(!integrated_move_structure, "Cannot construct permutation with pre-computed permutation structure if integrating user data with move structure");
+        auto result = permutation_impl(move_structure_perm(std::move(structure), domain, runs));
         result.populate_run_data(std::move(structure), run_data);
         return result;
     }
 
-    static runperm_impl from_move_structure(move_structure_perm &&ms) {
-        static_assert(integrated_move_structure, "Cannot construct RunPerm with pre-computed move structure if not integrating user data with move structure");
-        return runperm_impl(std::move(ms));
+    static permutation_impl from_move_structure(move_structure_perm &&ms) {
+        static_assert(integrated_move_structure, "Cannot construct permutation with pre-computed move structure if not integrating user data with move structure");
+        return permutation_impl(std::move(ms));
     }
 
-    static runperm_impl from_move_structure(move_structure_perm &&ms, std::vector<data_tuple> &run_data) {
+    static permutation_impl from_move_structure(move_structure_perm &&ms, std::vector<data_tuple> &run_data) {
         assert(run_data.size() == ms.size());
-        static_assert(!integrated_move_structure, "Cannot construct RunPerm with pre-computed move structure if integrating user data with move structure");
-        auto result = runperm_impl(std::move(ms));
+        static_assert(!integrated_move_structure, "Cannot construct permutation with pre-computed move structure if integrating user data with move structure");
+        auto result = permutation_impl(std::move(ms));
         auto run_cols_widths = get_data_cols_widths(run_data);
         result.fill_separated_data(run_data, run_cols_widths);
         return result;
@@ -257,7 +280,9 @@ public:
     }
 
     // Returns row/offset of largest idx before or at position run with matching run data value
-    template<data_columns col>
+    template<data_columns col,
+             class dc = data_columns_t,
+             std::enable_if_t<!std::is_same_v<dc, empty_data_columns>, int> = 0>
     std::optional<position> pred(position position, ulint val) {
         while (get<col>(position) != val)
         {
@@ -272,7 +297,9 @@ public:
     }
 
     // Returns row/offset of smallest idx after or at position run with matching run data value
-    template<data_columns col>
+    template<data_columns col,
+             class dc = data_columns_t,
+             std::enable_if_t<!std::is_same_v<dc, empty_data_columns>, int> = 0>
     std::optional<position> succ(position position, ulint val) {
         while (get<col>(position) != val)
         {
@@ -301,7 +328,9 @@ public:
 
     /*** DATA COLUMNS ACCESS METHODS ***/
 
-    template<data_columns col>
+    template<data_columns col,
+             class dc = data_columns_t,
+             std::enable_if_t<!std::is_same_v<dc, empty_data_columns>, int> = 0>
     ulint get(ulint interval) const {
         if constexpr (integrated_move_structure) {
             return move_structure.template get<cols_traits::template data_column<col>()>(interval);
@@ -309,11 +338,15 @@ public:
             return this->data_cols.template get<col>(interval);
         }
     }
-    template<data_columns col>
+    template<data_columns col,
+             class dc = data_columns_t,
+             std::enable_if_t<!std::is_same_v<dc, empty_data_columns>, int> = 0>
     ulint get(position position) const {
         return get<col>(position.interval);
     }
 
+    template<class dc = data_columns_t,
+             std::enable_if_t<!std::is_same_v<dc, empty_data_columns>, int> = 0>
     data_tuple get_row(ulint interval) const {
         if constexpr (integrated_move_structure) {
             auto full_row = move_structure.get_row(interval);
@@ -326,6 +359,8 @@ public:
             return this->data_cols.get_row(interval);
         }   
     }
+    template<class dc = data_columns_t,
+             std::enable_if_t<!std::is_same_v<dc, empty_data_columns>, int> = 0>
     data_tuple get_row(position position) const {
         return get_row(position.interval);
     }
@@ -480,56 +515,10 @@ protected:
     }
 };
 
-// A wrapper around RunPerm without any run data, essentially just a move_structure
+// A helper alias around permutation_impl without any run data, essentially just a move_structure
 template<bool store_absolute_positions = DEFAULT_STORE_ABSOLUTE_POSITIONS, bool exponential_search = DEFAULT_EXPONENTIAL_SEARCH, typename base_columns = move_columns, template<typename, template<typename> class> class move_structure_t = move_structure, template<typename> class table_t = move_vector>
-class moveperm_impl {
-protected:
-    using runperm_t = runperm_impl<empty_data_columns, false, store_absolute_positions, exponential_search, base_columns, move_structure_t, table_t>;
-    runperm_t run_perm;
-    
-public:
-    using position = typename runperm_t::position;
-    
-    moveperm_impl() = default;
-    
-    // Constructor from permutation vector
-    moveperm_impl(std::vector<ulint>& permutation, const split_params& sp = split_params()) {
-        auto [lengths, images] = get_permutation_intervals(permutation);
-        std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
-        run_perm = runperm_t(lengths, images, sp, empty_run_data);
-    }
-
-    template<typename interval_encoding_t>
-    moveperm_impl(const interval_encoding_t& enc) {
-        std::vector<std::array<ulint, 0>> empty_run_data(enc.intervals());
-        run_perm = runperm_t(enc, empty_run_data);
-    }
-    
-    // Constructor from lengths and interval permutation
-    template<typename container1_t, typename container2_t>
-    moveperm_impl(const container1_t& lengths, const container2_t& images, const split_params& sp = split_params()) {
-        std::vector<std::array<ulint, 0>> empty_run_data(lengths.size());
-        run_perm = runperm_t(lengths, images, sp, empty_run_data);
-    }
-    
-    // Delegate all RunPerm methods
-    position first() { return run_perm.first(); }
-    position last() { return run_perm.last(); }
-    position next(position pos) { return run_perm.next(pos); }
-    position next(position pos, ulint steps) { return run_perm.next(pos, steps); }
-    position up(position position) { return run_perm.up(position); }
-    position down(position position) { return run_perm.down(position); }
-    ulint get_length(ulint interval) const { return run_perm.get_length(interval); }
-    ulint get_length(position position) const { return run_perm.get_length(position); }
-    
-    ulint domain() const { return run_perm.domain(); }
-    ulint runs() const { return run_perm.runs(); }
-    ulint intervals() const { return run_perm.intervals(); }
-    
-    size_t serialize(std::ostream& out) { return run_perm.serialize(out); }
-    void load(std::istream& in) { run_perm.load(in); }
-};
+using move_permutation_impl = permutation_impl<empty_data_columns, false, store_absolute_positions, exponential_search, base_columns, move_structure_t, table_t>;
 
 } // namespace orbit
 
-#endif /* end of include guard: _INTERNAL_RUNPERM_HPP */
+#endif /* end of include guard: _INTERNAL_PERMUTATION_HPP */

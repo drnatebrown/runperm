@@ -3,7 +3,7 @@
 
 #include "orbit/common.hpp"
 #include "orbit/internal/ds/packed_vector_aligned.hpp"
-#include "orbit/internal/rlbwt/runperm_lf.hpp"
+#include "orbit/internal/rlbwt/lf_permutation.hpp"
 
 namespace orbit::rlbwt {
 
@@ -74,7 +74,7 @@ inline std::tuple<int_vec, int_vec> rlbwt_to_phi_images(const std::vector<uchar>
 template<typename alphabet_t=nucleotide>
 inline std::tuple<int_vec, int_vec> rlbwt_to_phi_images(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, size_t* domain = nullptr, ulint* max_length = nullptr) {
     // Need a move structure with LF to find SA samples
-    move_lf_impl_default<alphabet_t> move_lf(bwt_heads, bwt_run_lengths);
+    lf_move_impl_default<alphabet_t> move_lf(bwt_heads, bwt_run_lengths);
     return rlbwt_to_phi_images(bwt_heads, bwt_run_lengths, move_lf, domain, max_length);
 }   
 
@@ -145,7 +145,7 @@ inline std::tuple<int_vec, int_vec> rlbwt_to_phi_img_rank_inv(const std::vector<
 template<typename alphabet_t=nucleotide>
 inline std::tuple<int_vec, int_vec> rlbwt_to_phi_img_rank_inv(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, size_t* domain = nullptr, ulint* max_length = nullptr) {
     // Need a move structure with LF to find SA samples
-    move_lf_impl_default<alphabet_t> move_lf(bwt_heads, bwt_run_lengths);
+    lf_move_impl_default<alphabet_t> move_lf(bwt_heads, bwt_run_lengths);
     return rlbwt_to_phi_img_rank_inv(bwt_heads, bwt_run_lengths, move_lf, domain, max_length);
 }
 
@@ -214,7 +214,7 @@ inline std::tuple<int_vec, int_vec> rlbwt_to_phi_inv_images(const std::vector<uc
 template<typename alphabet_t=nucleotide>
 inline std::tuple<int_vec, int_vec> rlbwt_to_phi_inv_images(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, size_t* domain = nullptr, ulint* max_length = nullptr) {
     // Need a move structure with LF to find SA samples
-    move_lf_impl_default<alphabet_t> move_lf(bwt_heads, bwt_run_lengths);
+    lf_move_impl_default<alphabet_t> move_lf(bwt_heads, bwt_run_lengths);
     return rlbwt_to_phi_inv_images(bwt_heads, bwt_run_lengths, move_lf, domain, max_length);
 }
 
@@ -285,7 +285,7 @@ inline std::tuple<int_vec, int_vec> rlbwt_to_phi_inv_img_rank_inv(const std::vec
 template<typename alphabet_t=nucleotide>
 inline std::tuple<int_vec, int_vec> rlbwt_to_phi_inv_img_rank_inv(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, size_t* domain = nullptr, ulint* max_length = nullptr) {
     // Need a move structure with LF to find SA samples
-    move_lf_impl_default<alphabet_t> move_lf(bwt_heads, bwt_run_lengths);
+    lf_move_impl_default<alphabet_t> move_lf(bwt_heads, bwt_run_lengths);
     return rlbwt_to_phi_inv_img_rank_inv(bwt_heads, bwt_run_lengths, move_lf, domain, max_length);
 }
 

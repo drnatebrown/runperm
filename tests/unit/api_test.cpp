@@ -1,10 +1,10 @@
-// Small API-level tests for public headers `move.hpp` and `rlbwt.hpp` and minor `runperm.hpp` tests.
+// Small API-level tests for public headers `move_structure.hpp` and `rlbwt.hpp` and minor `permutation.hpp` tests.
 // Goal: ensure the convenience aliases and basic constructors are usable.
 // These are intentionally light on logic/algorithmic checks.
 
 #include "orbit/move_structure.hpp"
 #include "orbit/rlbwt.hpp"
-#include "orbit/runperm.hpp"
+#include "orbit/permutation.hpp"
 
 #include <cassert>
 #include <iostream>

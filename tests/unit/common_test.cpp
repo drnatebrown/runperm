@@ -15,7 +15,7 @@ using namespace orbit;
 
 void test_define_run_cols_macro() {
     // Exercise DEFINE_ENUM_CLASS_WITH_COUNT and enum helpers from common.hpp.
-    DEFINE_COLUMNS(run_cols, A, B);
+    DEFINE_ORBIT_COLUMNS(run_cols, A, B);
 
     // COUNT is appended as the last enumerator, but the total size is the number of fields provided.
     static_assert(num_columns<run_cols>() == 2, "num_columns should match number of fields provided");

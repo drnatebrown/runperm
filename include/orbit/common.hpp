@@ -91,8 +91,8 @@ using columns_tuple = std::array<T, num_columns<E>()>;
 
 // Defines a macro to generate an enum class named <enum_name> with specified fields, 
 // and appends COUNT as the last enumerator for sizing.
-// Usage: DEFINE_COLUMNS(MyEnum, FIELD1, FIELD2, FIELD3)
-#define DEFINE_COLUMNS(enum_name, ...) \
+// Usage: DEFINE_ORBIT_COLUMNS(MyEnum, FIELD1, FIELD2, FIELD3)
+#define DEFINE_ORBIT_COLUMNS(enum_name, ...) \
     enum class enum_name { __VA_ARGS__, COUNT };
 
 #define MOVE_CLASS_TRAITS(columns_param) \

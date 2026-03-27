@@ -1,7 +1,7 @@
 // Integration-style tests for RunPerm (generic, non-RLBWT).
 // These are simple assert-based tests, no external framework.
 
-#include "orbit/runperm.hpp"
+#include "orbit/permutation.hpp"
 
 #include <cassert>
 #include <iostream>

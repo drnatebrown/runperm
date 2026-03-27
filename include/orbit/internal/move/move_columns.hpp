@@ -120,7 +120,7 @@ using switch_columns = std::conditional_t<use_absolute_positions,
     typename column_switcher<base_columns>::absolute,
     typename column_switcher<base_columns>::relative>;
 
-/* Code below is only useful to interact with runperm, so we can have base column oblivious extended types */
+/* Code below is only useful to interact with permutation, so we can have base column oblivious extended types */
 // ADL detector: is C an extended enum (has friend columns_parent(C))?
 template<class c, class = void>
 struct is_columns_extended : std::false_type {};

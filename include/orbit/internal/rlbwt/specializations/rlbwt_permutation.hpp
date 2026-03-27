@@ -1,8 +1,8 @@
-#ifndef _INTERNAL_RUNPERM_RLBWT_HPP
-#define _INTERNAL_RUNPERM_RLBWT_HPP
+#ifndef _RLBWT_PERMUTATION_HPP
+#define _RLBWT_PERMUTATION_HPP
 
 #include "orbit/common.hpp"
-#include "orbit/internal/runperm/runperm_impl.hpp"
+#include "orbit/internal/perm/permutation_impl.hpp"
 #include "orbit/internal/ds/alphabet.hpp"
 #include "orbit/internal/rlbwt/specializations/rlbwt_columns.hpp"
 #include "orbit/internal/rlbwt/specializations/rlbwt_structure.hpp"
@@ -12,14 +12,14 @@
 namespace orbit::rlbwt {
 
 template<typename derived,
-         typename data_columns_t,
+         typename data_columns_t = empty_data_columns,
          bool integrated_move_structure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool store_absolute_positions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          bool exponential_search = DEFAULT_EXPONENTIAL_SEARCH,
          typename alphabet_t = nucleotide,
          template<typename> class table_t = move_vector>
-class runperm_rlbwt : public runperm_impl<data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, rlbwt_columns, rlbwt_move_structure, table_t> {
-    using base = runperm_impl<data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, rlbwt_columns, rlbwt_move_structure, table_t>;
+class rlbwt_permutation : public permutation_impl<data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, rlbwt_columns, rlbwt_move_structure, table_t> {
+    using base = permutation_impl<data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, rlbwt_columns, rlbwt_move_structure, table_t>;
 protected:
     using base_columns = typename base::base_columns;
     using move_structure_perm = typename base::move_structure_perm;
@@ -31,10 +31,33 @@ public:
     using data_tuple = typename base::data_tuple;
     using position = typename base::position;
 
-    runperm_rlbwt() = default;
+    rlbwt_permutation() = default;
 
+    // Gated constructors for empty data columns
+    template<typename rlbwt_interval_encoding_t,
+             typename dc = data_columns_t,
+             std::enable_if_t<std::is_same_v<dc, empty_data_columns>, int> = 0>
+    rlbwt_permutation(const rlbwt_interval_encoding_t &enc) 
+    : rlbwt_permutation(enc, std::vector<data_tuple>(enc.intervals())) {}
+
+    template<typename dc = data_columns_t,
+             std::enable_if_t<std::is_same_v<dc, empty_data_columns>, int> = 0>
+    rlbwt_permutation(const std::vector<uchar>& bwt, const split_params& sp = {})
+    : rlbwt_permutation([&]{
+        auto [heads, lens] = bwt_to_rlbwt(bwt);
+        return rlbwt_interval_encoding(heads, lens, sp);
+    }()) {}
+
+    template<typename container1_t, typename container2_t,
+             typename dc = data_columns_t,
+             std::enable_if_t<std::is_same_v<dc, empty_data_columns>, int> = 0>
+    rlbwt_permutation(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, 
+                  const split_params& sp = split_params()) 
+    : rlbwt_permutation(rlbwt_heads, rlbwt_run_lengths, sp, std::vector<data_tuple>(rlbwt_heads.size())) {}
+
+    // Regular non-gated constructors for user defined data columns
     template<typename rlbwt_interval_encoding_t>
-    runperm_rlbwt(const rlbwt_interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
+    rlbwt_permutation(const rlbwt_interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
         static_assert(std::is_same_v<alphabet_t, typename rlbwt_interval_encoding_t::alphabet_tag>, "alphabet_t must be the same as the alphabet type used to create the interval encoding");
 
         base::split_params_ = enc.get_split_params();
@@ -51,12 +74,12 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    runperm_rlbwt(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, const std::vector<data_tuple> &run_data)
-        : runperm_rlbwt(rlbwt_heads, rlbwt_run_lengths, NO_SPLITTING, run_data) {}
+    rlbwt_permutation(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, const std::vector<data_tuple> &run_data)
+        : rlbwt_permutation(rlbwt_heads, rlbwt_run_lengths, NO_SPLITTING, run_data) {}
 
     template<typename container1_t, typename container2_t>
-    runperm_rlbwt(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, const split_params& sp, const std::vector<data_tuple> &run_data)
-        : runperm_rlbwt(rlbwt_heads, rlbwt_run_lengths, sp,
+    rlbwt_permutation(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, const split_params& sp, const std::vector<data_tuple> &run_data)
+        : rlbwt_permutation(rlbwt_heads, rlbwt_run_lengths, sp,
             [&run_data](ulint orig_interval, ulint orig_interval_length, ulint new_offset_from_orig_start, ulint new_length) {
                 return run_data[orig_interval];
             }
@@ -64,7 +87,7 @@ public:
 
     // TODO reduce code duplication with the constructors next
     template<typename container1_t, typename container2_t>
-    runperm_rlbwt(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, const split_params& sp, const std::vector<data_tuple> &run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+    rlbwt_permutation(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, const split_params& sp, const std::vector<data_tuple> &run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
 
         rlbwt_interval_encoding enc = find_interval_encoding(rlbwt_heads, rlbwt_run_lengths, sp);
@@ -81,7 +104,7 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    runperm_rlbwt(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, const split_params& sp, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+    rlbwt_permutation(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, const split_params& sp, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
 
         rlbwt_interval_encoding enc = find_interval_encoding(rlbwt_heads, rlbwt_run_lengths, sp);
@@ -95,20 +118,20 @@ public:
         base::populate_structure(std::move(base_structure), final_run_data, enc.domain(), enc.runs());
     }
 
-    static runperm_rlbwt from_structure(packed_vector<base_columns> &&structure, const size_t domain, const size_t runs) {
-        return runperm_rlbwt(std::move(structure), domain, runs);
+    static rlbwt_permutation from_structure(packed_vector<base_columns> &&structure, const size_t domain, const size_t runs) {
+        return rlbwt_permutation(std::move(structure), domain, runs);
     }
 
-    static runperm_rlbwt from_structure(packed_vector<base_columns> &&structure, std::vector<data_tuple> &run_data, const size_t domain, const size_t runs) {
-        return runperm_rlbwt(std::move(structure), run_data, domain, runs);
+    static rlbwt_permutation from_structure(packed_vector<base_columns> &&structure, std::vector<data_tuple> &run_data, const size_t domain, const size_t runs) {
+        return rlbwt_permutation(std::move(structure), run_data, domain, runs);
     }
 
-    static runperm_rlbwt from_move_structure(move_structure_perm &&ms) {
-        return runperm_rlbwt(std::move(ms));
+    static rlbwt_permutation from_move_structure(move_structure_perm &&ms) {
+        return rlbwt_permutation(std::move(ms));
     }
 
-    static runperm_rlbwt from_move_structure(move_structure_perm &&ms, std::vector<data_tuple> &run_data) {
-        return runperm_rlbwt(std::move(ms), run_data);
+    static rlbwt_permutation from_move_structure(move_structure_perm &&ms, std::vector<data_tuple> &run_data) {
+        return rlbwt_permutation(std::move(ms), run_data);
     }
 
     uchar get_character(ulint interval) {
@@ -148,63 +171,13 @@ protected:
     }
 };
 
-// A wrapper around RunPermRLBWT without any run data, essentially just a MoveStructure for RLBWT
 template<typename derived,
          bool store_absolute_positions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          bool exponential_search = DEFAULT_EXPONENTIAL_SEARCH,
          typename alphabet_t = nucleotide,
          template<typename> class table_t = move_vector>
-class moveperm_rlbwt {
-private:
-    using runperm_rlbwt_t = runperm_rlbwt<derived, empty_data_columns, false, store_absolute_positions, exponential_search, alphabet_t, table_t>;
-    runperm_rlbwt_t runperm_rlbwt_;
-    
-public:
-    using position = typename runperm_rlbwt_t::position;
-    
-    moveperm_rlbwt() = default;
-
-    template<typename rlbwt_permutation_t>
-    moveperm_rlbwt(const rlbwt_permutation_t &permutation) {
-        std::vector<std::array<ulint, 0>> empty_run_data(permutation.intervals());
-        runperm_rlbwt_ = runperm_rlbwt_t(permutation, empty_run_data);
-    }
-
-    moveperm_rlbwt(const std::vector<uchar> &bwt, const split_params& sp = split_params()) {
-        auto [rlbwt_heads, rlbwt_run_lengths] = bwt_to_rlbwt(bwt);
-        std::vector<std::array<ulint, 0>> empty_run_data(rlbwt_heads.size());
-        runperm_rlbwt_ = runperm_rlbwt_t(rlbwt_heads, rlbwt_run_lengths, sp, empty_run_data);
-    }
-    
-    // Constructor from RLBWT data
-    template<typename container1_t, typename container2_t>
-    moveperm_rlbwt(const container1_t &rlbwt_heads, const container2_t &rlbwt_run_lengths, 
-                  const split_params& sp = split_params()) {
-        std::vector<std::array<ulint, 0>> empty_run_data(rlbwt_heads.size());
-        runperm_rlbwt_ = runperm_rlbwt_t(rlbwt_heads, rlbwt_run_lengths, sp, empty_run_data);
-    }
-    
-    position first() { return runperm_rlbwt_.first(); }
-    void last() { runperm_rlbwt_.last(); }
-    ulint get_length(ulint interval) const { return runperm_rlbwt_.get_length(interval); }
-    ulint get_length(position pos) const { return runperm_rlbwt_.get_length(pos); }
-    position next(position pos) { return runperm_rlbwt_.next(pos); }
-    position next(position pos, ulint steps) { return runperm_rlbwt_.next(pos, steps); }
-    position up(position pos) { return runperm_rlbwt_.up(pos); }
-    position down(position pos) { return runperm_rlbwt_.down(pos); }
-    
-    ulint domain() const { return runperm_rlbwt_.domain(); }
-    ulint runs() const { return runperm_rlbwt_.runs(); }
-    ulint intervals() const { return runperm_rlbwt_.intervals(); }
-    
-    // RLBWT-specific method
-    uchar get_character(ulint interval) { return runperm_rlbwt_.get_character(interval); }
-    uchar get_character(position pos) { return runperm_rlbwt_.get_character(pos); }
-    
-    size_t serialize(std::ostream& out) { return runperm_rlbwt_.serialize(out); }
-    void load(std::istream& in) { runperm_rlbwt_.load(in); }
-};
+using rlbwt_move = rlbwt_permutation<derived, empty_data_columns, false, store_absolute_positions, exponential_search, alphabet_t, table_t>;
 
 } // namespace orbit::rlbwt
 
-#endif /* end of include guard: _INTERNAL_RUNPERM_RLBWT_HPP */
+#endif /* end of include guard: _RLBWT_PERMUTATION_HPP */

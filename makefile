@@ -38,25 +38,25 @@ UNIT_TESTS = $(UNIT_BUILD_DIR)/packed_vector_test \
              $(UNIT_BUILD_DIR)/move_table_test \
              $(UNIT_BUILD_DIR)/move_splitting_test \
              $(UNIT_BUILD_DIR)/move_structure_test \
-             $(UNIT_BUILD_DIR)/moveperm_test \
-             $(UNIT_BUILD_DIR)/runperm_test \
-             $(UNIT_BUILD_DIR)/runperm_random_test \
+             $(UNIT_BUILD_DIR)/move_test \
+             $(UNIT_BUILD_DIR)/permutation_test \
+             $(UNIT_BUILD_DIR)/permutation_random_test \
              $(UNIT_BUILD_DIR)/rlbwt_row_test \
              $(UNIT_BUILD_DIR)/rlbwt_structure_test \
-             $(UNIT_BUILD_DIR)/runperm_lf_fl_test \
-             $(UNIT_BUILD_DIR)/runperm_phi_phi_inv_test \
+             $(UNIT_BUILD_DIR)/permutation_lf_fl_test \
+             $(UNIT_BUILD_DIR)/permutation_phi_phi_inv_test \
              $(UNIT_BUILD_DIR)/rlbwt_interval_encoding_test
 INTEGRATION_TESTS = $(INTEGRATION_BUILD_DIR)/rlbwt_test \
                     $(INTEGRATION_BUILD_DIR)/move_structure_test \
-                    $(INTEGRATION_BUILD_DIR)/moveperm_test \
-                    $(INTEGRATION_BUILD_DIR)/runperm_test
+                    $(INTEGRATION_BUILD_DIR)/move_test \
+                    $(INTEGRATION_BUILD_DIR)/permutation_test
 BENCH_TESTS = $(BENCH_BUILD_DIR)/move_bench \
-              $(BENCH_BUILD_DIR)/runperm_bench \
+              $(BENCH_BUILD_DIR)/permutation_bench \
               $(BENCH_BUILD_DIR)/rlbwt_bench
 
-all: $(UNIT_TESTS) $(INTEGRATION_TESTS) $(BENCH_TESTS) examples
+all: $(UNIT_TESTS) $(INTEGRATION_TESTS) $(BENCH_TESTS) example
 
-examples: examples.cpp $(HEADERS)
+example: examples/example.cpp examples/example.hpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
@@ -69,18 +69,18 @@ test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	$(UNIT_BUILD_DIR)/move_table_test
 	$(UNIT_BUILD_DIR)/move_splitting_test
 	$(UNIT_BUILD_DIR)/move_structure_test
-	$(UNIT_BUILD_DIR)/moveperm_test
-	$(UNIT_BUILD_DIR)/runperm_test
-	$(UNIT_BUILD_DIR)/runperm_random_test
+	$(UNIT_BUILD_DIR)/move_test
+	$(UNIT_BUILD_DIR)/permutation_test
+	$(UNIT_BUILD_DIR)/permutation_random_test
 	$(UNIT_BUILD_DIR)/rlbwt_row_test
 	$(UNIT_BUILD_DIR)/rlbwt_structure_test
-	$(UNIT_BUILD_DIR)/runperm_lf_fl_test
-	$(UNIT_BUILD_DIR)/runperm_phi_phi_inv_test
+	$(UNIT_BUILD_DIR)/permutation_lf_fl_test
+	$(UNIT_BUILD_DIR)/permutation_phi_phi_inv_test
 	$(UNIT_BUILD_DIR)/rlbwt_interval_encoding_test
 	$(INTEGRATION_BUILD_DIR)/rlbwt_test
 	$(INTEGRATION_BUILD_DIR)/move_structure_test
-	$(INTEGRATION_BUILD_DIR)/moveperm_test
-	$(INTEGRATION_BUILD_DIR)/runperm_test
+	$(INTEGRATION_BUILD_DIR)/move_test
+	$(INTEGRATION_BUILD_DIR)/permutation_test
 	@echo "==============================================="
 	@echo "     All unit and integration tests passed"
 	@echo "==============================================="
@@ -124,15 +124,15 @@ $(UNIT_BUILD_DIR)/move_structure_test: ./tests/unit/move/move_structure_test.cpp
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(UNIT_BUILD_DIR)/moveperm_test: ./tests/unit/runperm/moveperm_test.cpp $(HEADERS)
+$(UNIT_BUILD_DIR)/move_test: ./tests/unit/perm/move_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(UNIT_BUILD_DIR)/runperm_test: ./tests/unit/runperm/runperm_test.cpp $(HEADERS)
+$(UNIT_BUILD_DIR)/permutation_test: ./tests/unit/perm/permutation_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(UNIT_BUILD_DIR)/runperm_random_test: ./tests/unit/runperm/runperm_random_test.cpp $(HEADERS)
+$(UNIT_BUILD_DIR)/permutation_random_test: ./tests/unit/perm/permutation_random_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
@@ -144,11 +144,11 @@ $(UNIT_BUILD_DIR)/rlbwt_structure_test: ./tests/unit/rlbwt/rlbwt_structure_test.
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(UNIT_BUILD_DIR)/runperm_lf_fl_test: ./tests/unit/rlbwt/runperm_lf_fl_test.cpp $(HEADERS)
+$(UNIT_BUILD_DIR)/permutation_lf_fl_test: ./tests/unit/rlbwt/permutation_lf_fl_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(UNIT_BUILD_DIR)/runperm_phi_phi_inv_test: ./tests/unit/rlbwt/runperm_phi_phi_inv_test.cpp $(HEADERS)
+$(UNIT_BUILD_DIR)/permutation_phi_phi_inv_test: ./tests/unit/rlbwt/permutation_phi_phi_inv_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
@@ -165,11 +165,11 @@ $(INTEGRATION_BUILD_DIR)/move_structure_test: ./tests/integration/move_structure
 	mkdir -p $(INTEGRATION_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(INTEGRATION_BUILD_DIR)/moveperm_test: ./tests/integration/moveperm_test.cpp $(HEADERS)
+$(INTEGRATION_BUILD_DIR)/move_test: ./tests/integration/move_test.cpp $(HEADERS)
 	mkdir -p $(INTEGRATION_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(INTEGRATION_BUILD_DIR)/runperm_test: ./tests/integration/runperm_test.cpp $(HEADERS)
+$(INTEGRATION_BUILD_DIR)/permutation_test: ./tests/integration/permutation_test.cpp $(HEADERS)
 	mkdir -p $(INTEGRATION_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
@@ -178,7 +178,7 @@ $(BENCH_BUILD_DIR)/move_bench: ./tests/benchmark/move_bench.cpp $(HEADERS)
 	mkdir -p $(BENCH_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-$(BENCH_BUILD_DIR)/runperm_bench: ./tests/benchmark/runperm_bench.cpp $(HEADERS)
+$(BENCH_BUILD_DIR)/permutation_bench: ./tests/benchmark/permutation_bench.cpp $(HEADERS)
 	mkdir -p $(BENCH_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
@@ -193,4 +193,4 @@ debug: all
 # Clean up build files
 clean:
 	rm -rf $(BUILD_DIR)
-	rm -f examples
+	rm -f example

@@ -1,8 +1,8 @@
-// Unit tests for column type traits used by move, runperm, and RLBWT.
+// Unit tests for column type traits used by move_structure, permutation, and RLBWT.
 // These are simple assert-based tests, no external framework.
 
 #include "orbit/internal/move/move_columns.hpp"
-#include "orbit/internal/runperm/data_columns.hpp"
+#include "orbit/internal/perm/data_columns.hpp"
 #include "orbit/internal/rlbwt/specializations/rlbwt_columns.hpp"
 
 #include <cassert>

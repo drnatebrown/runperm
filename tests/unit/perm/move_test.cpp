@@ -1,7 +1,7 @@
 // Unit tests for MovePerm (MovePermImpl via public alias).
 // Simple assert-based tests, no external framework.
 
-#include "orbit/runperm.hpp"
+#include "orbit/permutation.hpp"
 
 #include <cassert>
 #include <iostream>

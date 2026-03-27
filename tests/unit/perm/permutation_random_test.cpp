@@ -6,7 +6,7 @@
 //   configurations (separated vs integrated, absolute) all represent
 //   the same underlying permutation and expose consistent run data.
 
-#include "orbit/runperm.hpp"
+#include "orbit/permutation.hpp"
 
 #include <cassert>
 #include <iostream>

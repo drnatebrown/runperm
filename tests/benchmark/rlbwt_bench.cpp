@@ -4,7 +4,7 @@
  * - LF / FL text reconstruction (standard + exponential, split + unsplit)
  * - phi / phi_inv suffix array recovery (standard + exponential, split + unsplit)
  *
- * Datasets (run from the `runperm/` directory):
+ * Datasets (run from the `orbit/` directory):
  * - `tests/data/dna.{txt,bwt,sa}` using `nucleotide`
  * - `tests/data/hamlet.{txt,bwt,sa}` using generic `alphabet`
  */
@@ -245,10 +245,10 @@ void bench_move_phi(const string &name,
 
     auto t0 = high_resolution_clock::now();
     auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
-    move_phi<> move_phi(permutation);
+    move_phi move_phi(permutation);
     auto t1 = high_resolution_clock::now();
 
-    using position = typename move_phi<>::position;
+    using position = typename move_phi::position;
     vector<ulint> sa_recovered(sa_truth.size());
 
     position pos = move_phi.last();
@@ -285,7 +285,7 @@ void bench_move_phi_exp(const string &name,
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    using MovePhiExp = move_phi<true>;
+    using MovePhiExp = phi_move_impl<true>;
 
     auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
     MovePhiExp move_phi(permutation);
@@ -329,10 +329,10 @@ void bench_move_phi_inv(const string &name,
 
     auto t0 = high_resolution_clock::now();
     auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
-    move_phi_inv<> move_phi_inv(permutation);
+    move_phi_inv move_phi_inv(permutation);
     auto t1 = high_resolution_clock::now();
 
-    using position = typename move_phi_inv<>::position;
+    using position = typename move_phi_inv::position;
     vector<ulint> sa_recovered(sa_truth.size());
 
     position pos = move_phi_inv.last();
@@ -368,7 +368,7 @@ void bench_move_phi_inv_exp(const string &name,
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    using Movephi_invExp = move_phi_inv<true>;
+    using Movephi_invExp = phi_inv_move_impl<true>;
 
     auto perm = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
     Movephi_invExp move_phi_inv(perm);
@@ -545,22 +545,22 @@ int main() {
             cout << endl;
 
             if (ds.nucleotide) {
-                using LFStd = move_lf<>;
-                using LFExp = move_lf_impl<true, true>;
-                using FLStd = move_fl<>;
-                using FLExp = move_fl_impl<true, true>;
+                using LFStd = lf_move<>;
+                using LFExp = lf_move_impl<true, true>;
+                using FLStd = fl_move<>;
+                using FLExp = fl_move_impl<true, true>;
                 run_lf_fl_benchmarks<LFStd, LFExp, FLStd, FLExp>(bwt_heads, bwt_run_lengths, text);
 
-                using LFPhi = move_lf<>;
+                using LFPhi = lf_move<>;
                 run_phi_phi_inv_benchmarks<nucleotide>(bwt_heads, bwt_run_lengths, sa_truth);
             } else {
-                using LFStd = move_lf_impl<false, false, alphabet>;
-                using LFExp = move_lf_impl<true, true, alphabet>;
-                using FLStd = move_fl_impl<false, false, alphabet>;
-                using FLExp = move_fl_impl<true, true, alphabet>;
+                using LFStd = lf_move_impl<false, false, alphabet>;
+                using LFExp = lf_move_impl<true, true, alphabet>;
+                using FLStd = fl_move_impl<false, false, alphabet>;
+                using FLExp = fl_move_impl<true, true, alphabet>;
                 run_lf_fl_benchmarks<LFStd, LFExp, FLStd, FLExp>(bwt_heads, bwt_run_lengths, text);
 
-                using LFPhi = move_lf_impl<false, false, alphabet>;
+                using LFPhi = lf_move_impl<false, false, alphabet>;
                 run_phi_phi_inv_benchmarks<alphabet>(bwt_heads, bwt_run_lengths, sa_truth);
             }
         }

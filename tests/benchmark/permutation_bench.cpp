@@ -3,7 +3,7 @@
     benchmarks. Leaving them here for now since they somewhat 
     verify performance. Better benchmarks should be written. */
 
-#include "orbit/runperm.hpp"
+#include "orbit/permutation.hpp"
 
 #include <iostream>
 #include <set>
