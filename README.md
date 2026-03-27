@@ -128,7 +128,7 @@ unsigned long int other_data = meta_perm.get<data_cols::VAL2>(pos);
 The main class for run-length encoded permutations with move structure integration. Core functionality is supported by 
 
 - **Template Parameters**:
-  - `data_columns_t`: Type defining user run data columns
+  - `data_columns_t`: Type defining user run data columns (default: empty_data_columns). Alias move_permutation implicitly sets this to empty_data_columns.
   - `integrated_move_structure`: integrate run data bitpacked alongside move structure or stored bitpacked in its own table (default: false)
   - `store_absolute_positions`: store absolute positions for index lookups, rather than just interval/offset paits (default: false)
 - **Key Methods**:
@@ -271,7 +271,7 @@ for (size_t i = 1; i < lf.domain(); ++i) {
 }
 ```
 
-### Phi SA Recovery
+### $\phi$ SA Recovery
 
 ```cpp
 #include "orbit/rlbwt.hpp"
@@ -286,7 +286,7 @@ for (size_t i = 0; i < phi.domain(); ++i) {
 }
 ```
 
-### LF Permutation using RunPerm without RunPermLF
+### LF Permutation using Permutation without RLBWT Specializations
 
 ```cpp
 DEFINE_ORBIT_COLUMNS(bwt_data, BWT_CHAR);
