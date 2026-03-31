@@ -127,6 +127,96 @@ void test_runperm_fl_wrapper_equivalence() {
     assert(fl2.offset == iter.offset);
 }
 
+void test_move_lf_pred_succ_char_basic() {
+    vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
+    vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+
+    move_lf<> move_lf(bwt_heads, bwt_run_lengths);
+    using position = typename move_lf<>::position;
+
+    // Same-character query returns the same position unchanged.
+    position p_same{4, 0};
+    auto same = move_lf.pred_char(p_same, static_cast<uchar>('T'));
+    assert(same.has_value());
+    assert(same->interval == p_same.interval);
+    assert(same->offset == p_same.offset);
+    same = move_lf.succ_char(p_same, static_cast<uchar>('T'));
+    assert(same.has_value());
+    assert(same->interval == p_same.interval);
+    assert(same->offset == p_same.offset);
+
+    // Previous/next matching runs set offset to run end/run start respectively.
+    position from_t{4, 0}; // T run between A and terminator.
+    auto pred_a = move_lf.pred_char(from_t, static_cast<uchar>('A'));
+    assert(pred_a.has_value());
+    assert(pred_a->interval == 3);
+    assert(pred_a->offset == bwt_run_lengths[3] - 1);
+
+    auto succ_a = move_lf.succ_char(from_t, static_cast<uchar>('A'));
+    assert(succ_a.has_value());
+    assert(succ_a->interval == 6);
+    assert(succ_a->offset == 0);
+
+    // Boundary misses return nullopt.
+    position from_c{1, 2};
+    auto pred_term = move_lf.pred_char(from_c, static_cast<uchar>(1));
+    assert(!pred_term.has_value());
+
+    position from_t_right{7, 1};
+    auto succ_c = move_lf.succ_char(from_t_right, static_cast<uchar>('C'));
+    assert(!succ_c.has_value());
+}
+
+void test_move_lf_absolute_pred_succ_char_updates_idx() {
+    vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
+    vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+
+    move_lf<true> move_lf_abs(bwt_heads, bwt_run_lengths);
+    using position = typename move_lf<true>::position;
+
+    position from_t{4, 0, 14};
+    auto pred_a = move_lf_abs.pred_char(from_t, static_cast<uchar>('A'));
+    assert(pred_a.has_value());
+    assert(pred_a->interval == 3);
+    assert(pred_a->offset == 2);
+    assert(pred_a->idx == 13);
+
+    auto succ_a = move_lf_abs.succ_char(from_t, static_cast<uchar>('A'));
+    assert(succ_a.has_value());
+    assert(succ_a->interval == 6);
+    assert(succ_a->offset == 0);
+    assert(succ_a->idx == 16);
+}
+
+void test_runperm_lf_pred_succ_char_basic() {
+    vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
+    vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+
+    enum class RunCols {
+        V,
+        COUNT
+    };
+    static constexpr size_t NUM_FIELDS = static_cast<size_t>(RunCols::COUNT);
+    vector<std::array<ulint, NUM_FIELDS>> run_data(bwt_heads.size());
+    for (size_t i = 0; i < run_data.size(); ++i) {
+        run_data[i][0] = static_cast<ulint>(10 + i);
+    }
+
+    runperm_lf<RunCols> rp_lf(bwt_heads, bwt_run_lengths, run_data);
+    using position = typename runperm_lf<RunCols>::position;
+
+    position from_t{4, 0};
+    auto pred_a = rp_lf.pred_char(from_t, static_cast<uchar>('A'));
+    assert(pred_a.has_value());
+    assert(pred_a->interval == 3);
+    assert(pred_a->offset == bwt_run_lengths[3] - 1);
+
+    auto succ_a = rp_lf.succ_char(from_t, static_cast<uchar>('A'));
+    assert(succ_a.has_value());
+    assert(succ_a->interval == 6);
+    assert(succ_a->offset == 0);
+}
+
 void test_runpermlf_construct_from_precomputed_permutation_no_splitting() {
     vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
     vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
@@ -247,6 +337,9 @@ int main() {
     test_runperm_lf_wrapper_equivalence();
     test_move_fl_wrapper_equivalence();
     test_runperm_fl_wrapper_equivalence();
+    test_move_lf_pred_succ_char_basic();
+    test_move_lf_absolute_pred_succ_char_updates_idx();
+    test_runperm_lf_pred_succ_char_basic();
     test_runpermlf_construct_from_precomputed_permutation_no_splitting();
     test_runpermlf_construct_from_precomputed_permutation_with_splitting();
     test_bwt_to_rlbwt_basic();

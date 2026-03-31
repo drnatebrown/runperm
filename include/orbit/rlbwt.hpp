@@ -94,6 +94,9 @@ public:
 // Takes std::vector<uchar> bwt_and std::vector<ulint> as bwt_heads and bwt_run_lengths as input in place of lengths and images
 // Otherwise, same as permutation. Can also pass rlbwt_interval_encoding as input instead of bwt_heads and bwt_run_lengths.
 // Also implements LF, LF(steps), get_character(), get_character(row)
+// and pred_char(pos, char), succ_char(pos, char)
+// pred_char(pos, char) returns the position of the largest idx before or at position run with matching character
+// succ_char(pos, char) returns the position of the smallest idx after or at position run with matching character
 
 template<typename data_columns_t = empty_data_columns, typename alphabet_t = nucleotide>
 using lf_permutation_absolute = lf_permutation<data_columns_t, false, true, alphabet_t>;
@@ -155,7 +158,9 @@ public:
 
 // Takes std::vector<uchar> bwt_and std::vector<ulint> as bwt_heads and bwt_run_lengths as input in place of lengths and interval permutations
 // Otherwise, same as permutation. Can also pass rlbwt_interval_encoding as input instead of bwt_heads and bwt_run_lengths.
-// Also implements FL(pos), FL(pos, steps), get_character(pos), get_character(interval)
+// Also implements FL(pos), FL(pos, steps), get_character(pos), get_character(interval), pred_char(pos, char), succ_char(pos, char)
+// pred_char(pos, char) returns the position of the largest idx before or at position run with matching character
+// succ_char(pos, char) returns the position of the smallest idx after or at position run with matching character
 
 template<typename data_columns_t = empty_data_columns, typename alphabet_t = nucleotide>
 using fl_permutation_absolute = fl_permutation<data_columns_t, false, true, alphabet_t>;

@@ -284,6 +284,10 @@ public:
              class dc = data_columns_t,
              std::enable_if_t<!std::is_same_v<dc, empty_data_columns>, int> = 0>
     std::optional<position> pred(position position, ulint val) {
+        if (get<col>(position) == val) {
+            return position;
+        }
+
         while (get<col>(position) != val)
         {
             if (position.interval == 0) return std::nullopt;
@@ -301,14 +305,18 @@ public:
              class dc = data_columns_t,
              std::enable_if_t<!std::is_same_v<dc, empty_data_columns>, int> = 0>
     std::optional<position> succ(position position, ulint val) {
+        if (get<col>(position) == val) {
+            return position;
+        }
+
         while (get<col>(position) != val)
         {
             if (position.interval == move_structure.runs() - 1) return std::nullopt;
             ++position.interval;
         }
-        position.offset = move_structure.get_length(position.interval) - 1;
+        position.offset = 0;
         if constexpr (store_absolute_positions) {
-            position.idx = move_structure.get_start(position.interval) + position.offset;
+            position.idx = move_structure.get_start(position.interval);
         }
         return position;
     }

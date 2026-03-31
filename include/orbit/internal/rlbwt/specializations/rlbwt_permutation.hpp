@@ -141,6 +141,42 @@ public:
         return alphabet_.unmap_char(base::template get_base_column<base_columns::CHARACTER>(pos.interval));
     }
 
+    // Returns row/offset of largest idx before or at position run with matching character
+    std::optional<position> pred_char(position position, uchar c) {
+        if (get_character(position) == c) {
+            return position;
+        }
+
+        while (get_character(position) != c)
+        {
+            if (position.interval == 0) return std::nullopt;
+            --position.interval;
+        }
+        position.offset = base::move_structure.get_length(position.interval) - 1;
+        if constexpr (store_absolute_positions) {
+            position.idx = base::move_structure.get_start(position.interval) + position.offset;
+        }
+        return position;
+    }
+
+    // Returns row/offset of smallest idx after or at position run with matching character
+    std::optional<position> succ_char(position position, uchar c) {
+        if (get_character(position) == c) {
+            return position;
+        }
+
+        while (get_character(position) != c)
+        {
+            if (position.interval == base::move_structure.runs() - 1) return std::nullopt;
+            ++position.interval;
+        }
+        position.offset = 0;
+        if constexpr (store_absolute_positions) {
+            position.idx = base::move_structure.get_start(position.interval);
+        }
+        return position;
+    }
+
     std::vector<uchar> get_alphabet() const {
         std::vector<uchar> sigma;
         sigma.reserve(static_cast<size_t>(alphabet_.size()));
