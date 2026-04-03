@@ -31,7 +31,7 @@ These can be used to build a permutation object, which permits efficient navigat
 ```cpp
 orbit::permutation perm(lengths, images);
 auto pos = perm.first();
-pos.next();
+pos = perm.next();
 ...
 ```
 
