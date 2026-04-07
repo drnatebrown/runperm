@@ -107,11 +107,11 @@ void test_split_by_length_capping_mixed_lengths() {
 }
 
 // Dummy test for balancing: just ensure the function is callable.
-void test_split_by_balancing_dummy() {
+void test_split_by_balancing_no_change() {
     const vector<ulint> lengths_vec = {2, 3, 1, 2, 2, 1, 1, 1, 3};
     const vector<ulint> perm_vec = {1, 9, 3, 12, 4, 14, 0, 15, 6};
     const vector<ulint> img_rank_inv_vec = {6, 0, 2, 4, 8, 1, 3, 5, 7};
-    const ulint domain = 15;
+    const ulint domain = 16;
     const ulint factor = 4;
 
     test_int_vector lengths(lengths_vec);
@@ -119,13 +119,19 @@ void test_split_by_balancing_dummy() {
 
     test_split_result result;
     move_splitting::split_by_balancing(lengths, img_rank_inv, domain, factor, result);
+
+    for (size_t i = 0; i < lengths_vec.size(); ++i) {
+        assert(result.lengths[i] == lengths_vec[i]);
+        assert(result.img_rank_inv[i] == img_rank_inv_vec[i]);
+    }
+    assert(result.max_length == 3);
 }
 
 int main() {
     test_split_by_length_capping_no_splitting();
     test_split_by_length_capping_with_splitting();
     test_split_by_length_capping_mixed_lengths();
-    test_split_by_balancing_dummy();
+    test_split_by_balancing_no_change();
 
     std::cout << "move_splitting tests passed" << std::endl;
     return 0;
