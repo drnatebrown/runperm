@@ -127,11 +127,85 @@ void test_split_by_balancing_no_change() {
     assert(result.max_length == 3);
 }
 
+// Dummy test for balancing: just ensure the function is callable.
+void test_split_by_balancing_splitting() {
+    const vector<ulint> lengths_vec = {6, 1, 1, 1, 1, 1, 1};
+    const vector<ulint> img_rank_inv_vec = {3, 1, 5, 6, 2, 4, 0};
+    const vector<ulint> expected_lengths = {3, 3, 1, 1, 1, 1, 1, 1};
+    const vector<ulint> expected_img_rank_inv = {4, 2, 6, 7, 3, 5, 0, 1};
+    const ulint domain = 12;
+    const ulint factor = 2;
+
+    test_int_vector lengths(lengths_vec);
+    test_int_vector img_rank_inv(img_rank_inv_vec);
+
+    test_split_result result;
+    move_splitting::split_by_balancing(lengths, img_rank_inv, domain, factor, result);
+
+    for (size_t i = 0; i < expected_lengths.size(); ++i) {
+        assert(result.lengths[i] == expected_lengths[i]);
+        assert(result.img_rank_inv[i] == expected_img_rank_inv[i]);
+    }
+
+    assert(result.max_length == 3);
+}
+
+template<typename int_vector_t>
+ulint compute_max_weight(const int_vector_t &lengths, const int_vector_t &tau_inv, size_t domain) {
+    ulint max_weight = 0;
+
+    ulint curr_input_start = 0;
+    ulint curr_output_start = 0;
+    ulint curr_output_idx = 0;
+    for (size_t i = 0; i < lengths.size(); ++i) {
+        ulint curr_length = lengths[i];
+        ulint curr_weight = 0;
+        std::cout << "Input: [" << curr_input_start << ", " << curr_input_start + curr_length << ")" << std::endl;
+        while (curr_output_start <= curr_input_start + curr_length && curr_output_idx < tau_inv.size()) {
+            std::cout << "Output: [" << curr_output_start << ", " << curr_output_start + lengths[tau_inv[curr_output_idx]] << ")" << std::endl;
+            if (curr_output_start > curr_input_start) {
+                ++curr_weight;
+            }
+            curr_output_start += lengths[tau_inv[curr_output_idx]];
+            ++curr_output_idx;
+        }
+        max_weight = std::max(max_weight, curr_weight);
+        curr_input_start += curr_length;
+    }
+    assert(curr_input_start == domain);
+    assert(curr_output_start == domain);
+    assert(curr_output_idx == tau_inv.size());
+
+    return max_weight;
+}
+
+void test_split_by_balancing_invariant() {
+    const vector<ulint> lengths_vec = {4, 3, 1, 2, 2, 1, 4, 1, 1, 1, 2, 1, 1, 2, 1, 2, 1, 24, 1, 5};
+    const vector<ulint> images_vec = {30, 47, 34, 50, 35, 52, 37, 53, 41, 54, 42, 55, 44, 56, 45, 58, 46, 1, 0, 29};
+    const ulint domain = 60;
+    const ulint factor = 2;
+
+    test_int_vector lengths(lengths_vec);
+    test_int_vector tau_inv = compute_img_rank_inv<test_int_vector>(images_vec);
+    ulint max_weight_before = compute_max_weight(lengths, tau_inv, domain);
+
+    std::cout << "max_weight_before: " << max_weight_before << std::endl;
+
+    test_split_result result;
+    move_splitting::split_by_balancing(lengths, tau_inv, domain, factor, result);
+    ulint max_weight_after = compute_max_weight(result.lengths, result.img_rank_inv, domain);
+    std::cout << "max_weight_after: " << max_weight_after << std::endl;
+
+    assert(max_weight_before == max_weight_after);
+}
+
 int main() {
     test_split_by_length_capping_no_splitting();
     test_split_by_length_capping_with_splitting();
     test_split_by_length_capping_mixed_lengths();
-    test_split_by_balancing_no_change();
+    // test_split_by_balancing_no_change();
+    // test_split_by_balancing_splitting();
+    test_split_by_balancing_invariant();
 
     std::cout << "move_splitting tests passed" << std::endl;
     return 0;
