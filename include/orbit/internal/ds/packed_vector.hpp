@@ -381,16 +381,13 @@ public:
     }
 };
 
-} // namespace orbit
-
-// Enable std algorithms that rely on std::iter_swap for int_vector iterators.
-namespace std {
-    template<>
-    inline void iter_swap(orbit::int_vector::iterator a, orbit::int_vector::iterator b) {
-        orbit::ulint tmp = static_cast<orbit::ulint>(*a);
-        *a = static_cast<orbit::ulint>(*b);
-        *b = tmp;
-    }
+/** Prvalues from operator* are proxies; libc++ std::iter_swap calls swap(*a,*b) with rvalues. */
+inline void swap(int_vector::reference&& x, int_vector::reference&& y) noexcept {
+    ulint t = static_cast<ulint>(x);
+    x = static_cast<ulint>(y);
+    y = t;
 }
+
+} // namespace orbit
 
 #endif // end of include guard: _PACKED_VECTOR_HPP

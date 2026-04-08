@@ -201,7 +201,7 @@ public:
         assert(run_data.size() == ms.size());
         static_assert(!integrated_move_structure, "Cannot construct permutation with pre-computed move structure if integrating user data with move structure");
         auto result = permutation_impl(std::move(ms));
-        auto run_cols_widths = get_data_cols_widths(run_data);
+        auto run_cols_widths = result.get_data_cols_widths(run_data);
         result.fill_separated_data(run_data, run_cols_widths);
         return result;
     }
@@ -503,7 +503,7 @@ protected:
 
     // Sets move structure and run data from the base structure and run data
     void populate_structure(packed_vector<base_columns>&& base_structure, const std::vector<data_tuple>& run_data, const size_t domain, const size_t runs) {
-        auto run_cols_widths = get_data_cols_widths(run_data);
+        auto run_cols_widths = this->get_data_cols_widths(run_data);
         if constexpr (integrated_move_structure) {
             auto base_widths = base_structure.get_widths();
             auto widths = get_widths(base_widths, run_cols_widths);

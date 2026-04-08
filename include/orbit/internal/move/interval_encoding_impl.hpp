@@ -86,118 +86,118 @@ class interval_encoding_impl {
 public:
 
     interval_encoding_impl() = default;
-    interval_encoding_impl(const std::vector<ulint>& permutation, const split_params& split_params = split_params()) {
-        *this = from_permutation(permutation, split_params);
+    interval_encoding_impl(const std::vector<ulint>& permutation, const split_params& sp = split_params{}) {
+        *this = from_permutation(permutation, sp);
     }
-    interval_encoding_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const split_params& split_params = split_params()) {
-        *this = from_lengths_and_images(lengths, images, split_params);
+    interval_encoding_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const split_params& sp = split_params{}) {
+        *this = from_lengths_and_images(lengths, images, sp);
     }
-    interval_encoding_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const ulint max_length, const split_params& split_params = split_params()) {
-        *this = from_lengths_and_images(lengths, images, domain, max_length, split_params);
+    interval_encoding_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const ulint max_length, const split_params& sp = split_params{}) {
+        *this = from_lengths_and_images(lengths, images, domain, max_length, sp);
     }
 
-    static interval_encoding_impl<int_vector_t> from_permutation(const std::vector<ulint>& permutation, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_permutation(const std::vector<ulint>& permutation, const split_params& sp = split_params{}) {
         ulint max_length = 0;
         auto [lengths, images] = get_permutation_intervals(permutation, &max_length);
         assert(lengths.size() == images.size());
 
-        return from_lengths_and_images(lengths, images, permutation.size(), max_length, split_params);
+        return from_lengths_and_images(lengths, images, permutation.size(), max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const split_params& sp = split_params{}) {
         assert(lengths.size() == img_rank_inv.size());
         auto [domain, max_length] = sum_and_max(lengths);
         
-        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, split_params);
+        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, sp);
     }
     
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& sp = split_params{}) {
         assert(lengths.size() == img_rank_inv.size());
         interval_encoding_impl<int_vector_t> enc;
-        enc.set_initial_values(domain, lengths.size(), max_length, split_params);
+        enc.set_initial_values(domain, lengths.size(), max_length, sp);
         enc.init_img_rank_inv(lengths, img_rank_inv);
         return enc;
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const split_params& sp = split_params{}) {
         assert(lengths.size() == img_rank.size());
 
         auto [domain, max_length] = sum_and_max(lengths);
-        return from_lengths_and_img_rank(lengths, img_rank, domain, max_length, split_params);
+        return from_lengths_and_img_rank(lengths, img_rank, domain, max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& sp = split_params{}) {
         assert(lengths.size() == img_rank.size());
 
         interval_encoding_impl<int_vector_t> enc;
-        enc.set_initial_values(domain, lengths.size(), max_length, split_params);
+        enc.set_initial_values(domain, lengths.size(), max_length, sp);
         enc.init_img_rank(lengths, img_rank);
         return enc;
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const split_params& sp = split_params{}) {
         assert(lengths.size() == images.size());
 
         auto [domain, max_length] = sum_and_max(lengths);
-        return from_lengths_and_images(lengths, images, domain, max_length, split_params);
+        return from_lengths_and_images(lengths, images, domain, max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const size_t domain, const ulint max_length, const split_params& sp = split_params{}) {
         assert(lengths.size() == images.size());
 
         int_vector_t img_rank_inv = compute_img_rank_inv<int_vector_t>(images);
-        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, split_params);
+        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const split_params& sp = split_params{}) {
         assert(starts.size() == img_rank_inv.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
-        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, split_params);
+        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& sp = split_params{}) {
         assert(starts.size() == img_rank_inv.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
-        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, calculated_max_length, split_params);
+        return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, calculated_max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const split_params& sp = split_params{}) {
         assert(starts.size() == img_rank.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
-        return from_lengths_and_img_rank(lengths, img_rank, domain, max_length, split_params);
+        return from_lengths_and_img_rank(lengths, img_rank, domain, max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& sp = split_params{}) {
         assert(starts.size() == img_rank.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
-        return from_lengths_and_img_rank(lengths, img_rank, domain, calculated_max_length, split_params);
+        return from_lengths_and_img_rank(lengths, img_rank, domain, calculated_max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const split_params& sp = split_params{}) {
         assert(starts.size() == images.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
-        return from_lengths_and_images(lengths, images, domain, max_length, split_params);
+        return from_lengths_and_images(lengths, images, domain, max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const ulint max_length, const split_params& split_params = split_params()) {
+    static interval_encoding_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const ulint max_length, const split_params& sp = split_params{}) {
         assert(starts.size() == images.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
-        return from_lengths_and_images(lengths, images, domain, calculated_max_length, split_params);
+        return from_lengths_and_images(lengths, images, domain, calculated_max_length, sp);
     }
 
     template<typename T, typename container_t>
