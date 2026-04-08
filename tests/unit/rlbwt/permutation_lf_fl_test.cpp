@@ -19,23 +19,23 @@ void test_move_lf_wrapper_equivalence() {
     vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
     vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
-    move_lf<> move_lf(bwt_heads, bwt_run_lengths);
+    move_lf<> mlf(bwt_heads, bwt_run_lengths);
 
     using position = typename move_lf<>::position;
-    position start = move_lf.first();
+    position start = mlf.first();
 
     // Single-step LF must match next().
-    position lf1 = move_lf.LF(start);
-    position next1 = move_lf.next(start);
+    position lf1 = mlf.LF(start);
+    position next1 = mlf.next(start);
     assert(lf1.interval == next1.interval);
     assert(lf1.offset == next1.offset);
 
     // Multi-step LF(pos, k) must match k repeated LF calls.
-    position lf3 = move_lf.LF(start, 3);
+    position lf3 = mlf.LF(start, 3);
     position iter = start;
-    iter = move_lf.LF(iter);
-    iter = move_lf.LF(iter);
-    iter = move_lf.LF(iter);
+    iter = mlf.LF(iter);
+    iter = mlf.LF(iter);
+    iter = mlf.LF(iter);
     assert(lf3.interval == iter.interval);
     assert(lf3.offset == iter.offset);
 }
@@ -76,20 +76,20 @@ void test_move_fl_wrapper_equivalence() {
     vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
     vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
-    move_fl<> move_fl(bwt_heads, bwt_run_lengths);
+    move_fl<> mfl(bwt_heads, bwt_run_lengths);
 
     using position = typename move_fl<>::position;
-    position start = move_fl.first();
+    position start = mfl.first();
 
-    position fl1 = move_fl.FL(start);
-    position next1 = move_fl.next(start);
+    position fl1 = mfl.FL(start);
+    position next1 = mfl.next(start);
     assert(fl1.interval == next1.interval);
     assert(fl1.offset == next1.offset);
 
-    position fl4 = move_fl.FL(start, 4);
+    position fl4 = mfl.FL(start, 4);
     position iter = start;
     for (int i = 0; i < 4; ++i) {
-        iter = move_fl.FL(iter);
+        iter = mfl.FL(iter);
     }
     assert(fl4.interval == iter.interval);
     assert(fl4.offset == iter.offset);
@@ -131,39 +131,39 @@ void test_move_lf_pred_succ_char_basic() {
     vector<uchar> bwt_heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
     vector<ulint> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
-    move_lf<> move_lf(bwt_heads, bwt_run_lengths);
+    move_lf<> mlf(bwt_heads, bwt_run_lengths);
     using position = typename move_lf<>::position;
 
     // Same-character query returns the same position unchanged.
     position p_same{4, 0};
-    auto same = move_lf.pred_char(p_same, static_cast<uchar>('T'));
+    auto same = mlf.pred_char(p_same, static_cast<uchar>('T'));
     assert(same.has_value());
     assert(same->interval == p_same.interval);
     assert(same->offset == p_same.offset);
-    same = move_lf.succ_char(p_same, static_cast<uchar>('T'));
+    same = mlf.succ_char(p_same, static_cast<uchar>('T'));
     assert(same.has_value());
     assert(same->interval == p_same.interval);
     assert(same->offset == p_same.offset);
 
     // Previous/next matching runs set offset to run end/run start respectively.
     position from_t{4, 0}; // T run between A and terminator.
-    auto pred_a = move_lf.pred_char(from_t, static_cast<uchar>('A'));
+    auto pred_a = mlf.pred_char(from_t, static_cast<uchar>('A'));
     assert(pred_a.has_value());
     assert(pred_a->interval == 3);
     assert(pred_a->offset == bwt_run_lengths[3] - 1);
 
-    auto succ_a = move_lf.succ_char(from_t, static_cast<uchar>('A'));
+    auto succ_a = mlf.succ_char(from_t, static_cast<uchar>('A'));
     assert(succ_a.has_value());
     assert(succ_a->interval == 6);
     assert(succ_a->offset == 0);
 
     // Boundary misses return nullopt.
     position from_c{1, 2};
-    auto pred_term = move_lf.pred_char(from_c, static_cast<uchar>(1));
+    auto pred_term = mlf.pred_char(from_c, static_cast<uchar>(1));
     assert(!pred_term.has_value());
 
     position from_t_right{7, 1};
-    auto succ_c = move_lf.succ_char(from_t_right, static_cast<uchar>('C'));
+    auto succ_c = mlf.succ_char(from_t_right, static_cast<uchar>('C'));
     assert(!succ_c.has_value());
 }
 
