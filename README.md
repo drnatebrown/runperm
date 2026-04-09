@@ -123,6 +123,47 @@ pos = meta_perm.next(pos); // move one permutation step
 unsigned long int other_data = meta_perm.get<data_cols::VAL2>(pos);
 ```
 
+#### RLBWT: LF/FL
+
+By including `orbit/rlbwt.hpp` users can use specialized methods designed for permutations based on the RLBWT such as LF/FL for pattern matching and text extraction.
+
+```cpp
+#include "orbit/rlbwt.hpp"
+
+// BWT = TTTTTCCCGGGAAAT$ATTTTAAAAAA
+// RLBWT as run heads (characters) and run lengths, with 0 as terminator
+std::vector<uchar> bwt_heads                   = {'T','C','G','A','T', 0 ,'A','T','A'};
+std::vector<unsigned long int> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+
+orbit::rlbwt::lf_permutation<> lf(bwt_heads, bwt_run_lengths);
+
+// Can also add data columns
+enum class data_cols { VAL1, VAL2, COUNT };
+...
+orbit::rlbwt::lf_permutation<data_cols> meta_lf(bwt_heads, bwt_run_lengths, data);
+
+// FL (symmetrically)
+orbit::rlbwt:fl_permutation fl(bwt_heads, bwt_run_lengths);
+...
+```
+
+#### RLBWT: $\phi$ / $\phi^{-1}$
+
+By including `orbit/rlbwt.hpp`, we can also build the permutations from an RLBWT for $\phi$ and $\phi^{-1}$ needed for locate queries.
+
+```cpp
+#include "orbit/rlbwt.hpp"
+
+orbit::rlbwt::phi_permutation<> phi(bwt_heads, bwt_run_lengths);
+
+// Build phi_inv similarly... Can use user data here too!
+DEFINE_ORBIT_COLUMNS(phi_data_cols, VAL1, VAL2);
+...
+orbit::rlbwt::phi_inv_permutation<phi_data_cols> phi_inv(bwt_heads, bwt_run_lengths, phi_data);
+...
+
+```
+
 ## Interface
 
 The main class for run-length encoded permutations with move structure integration. Core functionality is supported by 
@@ -197,47 +238,6 @@ for(size_t i = 0; i < enc.intervals(); ++i) {
 }
 
 orbit::permutation perm(enc, data);
-```
-
-#### RLBWT: LF/FL
-
-By including `orbit/rlbwt.hpp` users can use specialized methods designed for permutations based on the RLBWT such as LF/FL for pattern matching and text extraction.
-
-```cpp
-#include "orbit/rlbwt.hpp"
-
-// BWT = TTTTTCCCGGGAAAT$ATTTTAAAAAA
-// RLBWT as run heads (characters) and run lengths, with 0 as terminator
-std::vector<uchar> bwt_heads                   = {'T','C','G','A','T', 0 ,'A','T','A'};
-std::vector<unsigned long int> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
-
-orbit::rlbwt::lf_permutation<> lf(bwt_heads, bwt_run_lengths);
-
-// Can also add data columns
-enum class data_cols { VAL1, VAL2, COUNT };
-...
-orbit::rlbwt::lf_permutation<data_cols> meta_lf(bwt_heads, bwt_run_lengths, data);
-
-// FL (symmetrically)
-orbit::rlbwt:fl_permutation fl(bwt_heads, bwt_run_lengths);
-...
-```
-
-#### RLBWT: $\phi$ / $\phi^{-1}$
-
-By including `orbit/rlbwt.hpp`, we can also build the permutations from an RLBWT for $\phi$ and $\phi^{-1}$ needed for locate queries.
-
-```cpp
-#include "orbit/rlbwt.hpp"
-
-orbit::rlbwt::phi_permutation<> phi(bwt_heads, bwt_run_lengths);
-
-// Build phi_inv similarly... Can use user data here too!
-DEFINE_ORBIT_COLUMNS(phi_data_cols, VAL1, VAL2);
-...
-orbit::rlbwt::phi_inv_permutation<phi_data_cols> phi_inv(bwt_heads, bwt_run_lengths, phi_data);
-...
-
 ```
 
 ## Examples
