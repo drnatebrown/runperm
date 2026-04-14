@@ -175,7 +175,7 @@ The main class for run-length encoded permutations with move structure integrati
 - **Key Methods**:
   - `next(pos)`, `next(pos, ulint steps)`
   - `up(pos)`, `down(pos)`, `first()`, `last()`
-  - `get<col>(pos)`, `get<col>(pos, i)`, `get_length(pos)`, `get_length(i)`
+  - `get<col>(pos)`, `get<col>(i)`, `get_length(pos)`, `get_length(i)`
   - `pred<col>(pos, val)`, `succ<col>(pos, val)`
   - `domain()`, `runs()`, `intervals()`
   - `serialize(os)`, `load(is)`
