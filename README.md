@@ -170,7 +170,7 @@ The main class for run-length encoded permutations with move structure integrati
 
 - **Template Parameters**:
   - `data_columns_t`: Type defining user run data columns (default: empty_data_columns). Alias move_permutation implicitly sets this to empty_data_columns.
-  - `integrated_move_structure`: integrate run data bitpacked alongside move structure or stored bitpacked in its own table (default: false)
+  - `integrated_move_structure`: integrate run data bitpacked alongside move structure if true, or stored bitpacked in its own table if false (default: false)
   - `store_absolute_positions`: store absolute positions for index lookups, rather than just interval/offset paits (default: false)
 - **Key Methods**:
   - `next(pos)`, `next(pos, ulint steps)`
