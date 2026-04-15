@@ -33,7 +33,7 @@ public:
     : move_structure(interval_encoding_impl<>::from_lengths_and_images(lengths, images, split_params)) {}
 
     template<typename interval_encoding_t>
-    move_structure(const interval_encoding_t& enc, const split_params& split_params = split_params()) {
+    move_structure(const interval_encoding_t& enc) {
         n = enc.domain();
         r = enc.runs();
         table = find_structure(enc);
