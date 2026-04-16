@@ -16,7 +16,7 @@ public:
 
     rlbwt_interval_encoding_impl() = default;
 
-    static rlbwt_interval_encoding_impl lf_interval_encoding(const std::vector<uchar>& rlbwt_heads, const std::vector<ulint>& rlbwt_run_lengths, const split_params& sp = split_params{}) {
+    static rlbwt_interval_encoding_impl lf_interval_encoding(const std::vector<uchar>& rlbwt_heads, const std::vector<ulint>& rlbwt_run_lengths, const split_params& sp = split_params()) {
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
 
         rlbwt_interval_encoding_impl enc;
@@ -32,7 +32,7 @@ public:
         return enc;
     }
 
-    static rlbwt_interval_encoding_impl fl_interval_encoding(const std::vector<uchar>& rlbwt_heads, const std::vector<ulint>& rlbwt_run_lengths, const split_params& sp = split_params{}) {
+    static rlbwt_interval_encoding_impl fl_interval_encoding(const std::vector<uchar>& rlbwt_heads, const std::vector<ulint>& rlbwt_run_lengths, const split_params& sp = split_params()) {
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
 
         rlbwt_interval_encoding_impl enc;

@@ -96,6 +96,6 @@ static void integration_runperm_separated_and_integrated_absolute() {
 int main() {
     integration_runperm_separated_and_integrated_absolute();
 
-    std::cout << "runperm integration tests passed" << std::endl;
+    std::cout << "permutation integration tests passed" << std::endl;
     return 0;
 }

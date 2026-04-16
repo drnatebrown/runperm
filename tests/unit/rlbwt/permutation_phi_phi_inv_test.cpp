@@ -189,6 +189,6 @@ int main() {
     test_runperm_phi_img_rank_inv_wrapper_equivalence();
     test_phi_and_phi_inv_img_rank_inv_equivalence();
 
-    std::cout << "runperm_phi_phi_inv unit tests passed" << std::endl;
+    std::cout << "permutation_phi_phi_inv unit tests passed" << std::endl;
     return 0;
 }

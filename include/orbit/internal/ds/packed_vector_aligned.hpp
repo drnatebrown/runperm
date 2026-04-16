@@ -353,6 +353,11 @@ public:
         return get(row);
     }
 
+    /// Bits per stored element (same as column 0 width in the underlying packed matrix).
+    [[nodiscard]] uchar get_width() const noexcept {
+        return base::get_widths()[0];
+    }
+
     iterator begin() {
         return iterator(this, 0);
     }

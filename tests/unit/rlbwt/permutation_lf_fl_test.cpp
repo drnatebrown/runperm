@@ -344,6 +344,6 @@ int main() {
     test_runpermlf_construct_from_precomputed_permutation_with_splitting();
     test_bwt_to_rlbwt_basic();
 
-    std::cout << "runperm_lf_fl unit tests passed" << std::endl;
+    std::cout << "permutation_lf_fl unit tests passed" << std::endl;
     return 0;
 }
