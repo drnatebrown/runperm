@@ -140,6 +140,37 @@ void test_nucleotide_basic_mapping() {
     assert(nucleotide::unmap_char(n_code) == static_cast<uchar>('N'));
 }
 
+void test_nucleotide_mapped_constants_and_complement() {
+    vector<ulint> char_counts(MAX_ALPHABET_SIZE, 0);
+    char_counts[TERMINATOR] = 1;
+    char_counts[SEPARATOR] = 1;
+    char_counts[static_cast<uchar>('A')] = 1;
+    char_counts[static_cast<uchar>('C')] = 1;
+    char_counts[static_cast<uchar>('G')] = 1;
+    char_counts[static_cast<uchar>('T')] = 1;
+    char_counts[static_cast<uchar>('N')] = 1;
+
+    nucleotide nuc(char_counts);
+    (void)nuc;
+
+    assert(nucleotide::TER == nucleotide::map_char(static_cast<uchar>(TERMINATOR)));
+    assert(nucleotide::SEP == nucleotide::map_char(static_cast<uchar>(SEPARATOR)));
+    assert(nucleotide::A == nucleotide::map_char(static_cast<uchar>('A')));
+    assert(nucleotide::C == nucleotide::map_char(static_cast<uchar>('C')));
+    assert(nucleotide::G == nucleotide::map_char(static_cast<uchar>('G')));
+    assert(nucleotide::T == nucleotide::map_char(static_cast<uchar>('T')));
+    assert(nucleotide::N == nucleotide::map_char(static_cast<uchar>('N')));
+
+    assert(nucleotide::complement_mapped(nucleotide::TER) == nucleotide::TER);
+    assert(nucleotide::complement_mapped(nucleotide::SEP) == nucleotide::SEP);
+    assert(nucleotide::complement_mapped(nucleotide::N) == nucleotide::N);
+    assert(nucleotide::complement_mapped(nucleotide::A) == nucleotide::T);
+    assert(nucleotide::complement_mapped(nucleotide::T) == nucleotide::A);
+    assert(nucleotide::complement_mapped(nucleotide::C) == nucleotide::G);
+    assert(nucleotide::complement_mapped(nucleotide::G) == nucleotide::C);
+    assert(nucleotide::complement_mapped(nucleotide::complement_mapped(nucleotide::A)) == nucleotide::A);
+}
+
 void test_nucleotide_sequence_roundtrip() {
     vector<ulint> char_counts(MAX_ALPHABET_SIZE, 0);
     char_counts[TERMINATOR] = 1;
@@ -185,6 +216,7 @@ int main() {
     test_alphabet_full_alphabet_throws();
 
     test_nucleotide_basic_mapping();
+    test_nucleotide_mapped_constants_and_complement();
     test_nucleotide_sequence_roundtrip();
 
     std::cout << "alphabet tests passed" << std::endl;

@@ -33,7 +33,7 @@ inline constexpr size_t VERSION_MAJOR = 1;
 inline constexpr size_t VERSION_MINOR = 0;
 inline constexpr size_t VERSION_PATCH = 0;
 
-size_t serialize_version(std::ostream& out) {
+inline size_t serialize_version(std::ostream& out) {
     size_t written_bytes = 0;
     size_t major = VERSION_MAJOR;
     size_t minor = VERSION_MINOR;
@@ -47,7 +47,7 @@ size_t serialize_version(std::ostream& out) {
     return written_bytes;
 }
 
-std::tuple<size_t, size_t, size_t> load_version(std::istream& is) {
+inline std::tuple<size_t, size_t, size_t> load_version(std::istream& is) {
     size_t major, minor, patch;
     is.read(reinterpret_cast<char *>(&major), sizeof(major));
     is.read(reinterpret_cast<char *>(&minor), sizeof(minor));

@@ -1,6 +1,6 @@
 # Orbit
 
-$O(r)$ bitpacked (Orbit) move structures for runny permutations! 
+$O(r)$-space bitpacked (Orbit) move structures for runny permutations! 
 
 Flexible plug-and-play header library implementing compact data structures for representing run-length encoded permutations. Since permutations decompose into cycles, navigation becomes a literal orbit, stepping through positions as if circling an encapsulated world. Engineered for compactness, Orbit features $O(r)$-space bitpacked move structures and specialized RLBWT implementations for high-performance indexing. Can be used as a foundation for further applications, providing storage and retrieval of user fields alongside the permutation intervals. Further, powerful splitting optimizations such as length capping and balancing are implemented. 
 
@@ -31,7 +31,7 @@ These can be used to build a permutation object, which permits efficient navigat
 ```cpp
 orbit::permutation perm(lengths, images);
 auto pos = perm.first();
-pos = perm.next();
+pos = perm.next(pos);
 ...
 ```
 
@@ -48,10 +48,10 @@ Orbit provides compact representations of run-length encoded permutations, with 
 
 - **Move Structures**: Advanced data structures for fast and cache efficient navigation of runny permutations.
 - **Compact Representation**: Bitpacked, using the minimum fixed width per move structure column and user defined data columns.
-- **Advanced Storage** Allows efficient storage and retrieval of additional information alongside permutation which can be bitpacked alongside the move structure for cache efficiency.
-- **Splitting Schemes**: Optimization schemes for length capping and balancing providing faster and smaller move structures.
+- **Advanced Storage** Allows efficient storage and retrieval of additional information which can be bitpacked alongside the permutation for cache efficiency.
+- **Splitting Schemes**: Optimization schemes for length capping and balancing providing faster and smaller move structures, running in $O(r)$-time and space.
 - **RLBWT Specializations**:
-  - LF/FL navigation with character access.
+  - LF/FL navigation with character access, constructed in $O(r)$-time and space from RLBWT.
   - $\phi$ / $\phi^{-1}$ navigation with SA retrieval.
   - Helpers to derive $\phi$ / $\phi^{-1}$ permutations from RLBWT in $O(n)$-time and $O(r)$-space.
 - **Flexible Configuration**: Multiple template parameters for various move structure representations.
@@ -123,18 +123,59 @@ pos = meta_perm.next(pos); // move one permutation step
 unsigned long int other_data = meta_perm.get<data_cols::VAL2>(pos);
 ```
 
+#### RLBWT: LF/FL
+
+By including `orbit/rlbwt.hpp` users can use specialized methods designed for permutations based on the RLBWT such as LF/FL for pattern matching and text extraction.
+
+```cpp
+#include "orbit/rlbwt.hpp"
+
+// BWT = TTTTTCCCGGGAAAT$ATTTTAAAAAA
+// RLBWT as run heads (characters) and run lengths, with 0 as terminator
+std::vector<uchar> bwt_heads                   = {'T','C','G','A','T', 0 ,'A','T','A'};
+std::vector<unsigned long int> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+
+orbit::rlbwt::lf_permutation<> lf(bwt_heads, bwt_run_lengths);
+
+// Can also add data columns
+enum class data_cols { VAL1, VAL2, COUNT };
+...
+orbit::rlbwt::lf_permutation<data_cols> meta_lf(bwt_heads, bwt_run_lengths, data);
+
+// FL (symmetrically)
+orbit::rlbwt:fl_permutation fl(bwt_heads, bwt_run_lengths);
+...
+```
+
+#### RLBWT: $\phi$ / $\phi^{-1}$
+
+By including `orbit/rlbwt.hpp`, we can also build the permutations from an RLBWT for $\phi$ and $\phi^{-1}$ needed for locate queries.
+
+```cpp
+#include "orbit/rlbwt.hpp"
+
+orbit::rlbwt::phi_permutation<> phi(bwt_heads, bwt_run_lengths);
+
+// Build phi_inv similarly... Can use user data here too!
+DEFINE_ORBIT_COLUMNS(phi_data_cols, VAL1, VAL2);
+...
+orbit::rlbwt::phi_inv_permutation<phi_data_cols> phi_inv(bwt_heads, bwt_run_lengths, phi_data);
+...
+
+```
+
 ## Interface
 
 The main class for run-length encoded permutations with move structure integration. Core functionality is supported by 
 
 - **Template Parameters**:
   - `data_columns_t`: Type defining user run data columns (default: empty_data_columns). Alias move_permutation implicitly sets this to empty_data_columns.
-  - `integrated_move_structure`: integrate run data bitpacked alongside move structure or stored bitpacked in its own table (default: false)
+  - `integrated_move_structure`: integrate run data bitpacked alongside move structure if true, or stored bitpacked in its own table if false (default: false)
   - `store_absolute_positions`: store absolute positions for index lookups, rather than just interval/offset paits (default: false)
 - **Key Methods**:
   - `next(pos)`, `next(pos, ulint steps)`
   - `up(pos)`, `down(pos)`, `first()`, `last()`
-  - `get<col>(pos)`, `get<col>(pos, i)`, `get_length(pos)`, `get_length(i)`
+  - `get<col>(pos)`, `get<col>(i)`, `get_length(pos)`, `get_length(i)`
   - `pred<col>(pos, val)`, `succ<col>(pos, val)`
   - `domain()`, `runs()`, `intervals()`
   - `serialize(os)`, `load(is)`
@@ -144,11 +185,11 @@ The public API simplifies template parameters and methods, see the internal impl
 ## Performance Considerations
 
 - **Integrated vs Separated**: Integrating user data alongside the move structure offer better cache locality but may cause slower move queries since navigating the data structure requires loading larger entries.
-- **Absolute vs Relative Positions**: Absolute positions enable full permutation positional information but increase memory usage. The space usage for a runny permutation of $r$ runs over domain $n$ is approximately:
+- **Absolute vs Relative Positions**: Absolute positions enable full permutation positional information but increases memory usage. The space usage for a runny permutation of $r$ runs over domain $n$ is approximately:
   - **Absolute**: $r \log r + 2 r \log n$ bits
   - **Relative**: $r \log r + 2 r \log \frac{n}{r}$ bits
-- **Length Capping**: Can greatly reduce the size of the data structure, especially for relative positions. Also gives amortized guarantees and practical speed up when tuned correctly. Where length capping factor is $c$, splits any runs/intervals longer than $c$ times the average run length of the original permutation.
-- **Balancing**: Where $\alpha$ is the balancing factor, guarantees less than $2\alpha$ complexity for a single permutation step. However, can increase the size of the data structures due to splitting intervals if not tuned correctly. Length capping and balancing often work well together.
+- **Length Capping**: Can greatly reduce the size of the data structure, especially for relative positions. Also gives amortized guarantees and practical speed up when tuned correctly. Where length capping factor is $c$, splits any runs/intervals longer than $c$ times the average run length of the original permutation. Takes $O(r)$-time and space ([see here](https://arxiv.org/abs/2602.11029)). Where default splitting parameters are used, $c$ is set to 8.
+- **Balancing**: Where $\alpha$ is the balancing factor, guarantees less than $2\alpha$ complexity for a single permutation step. However, can increase the size of the data structures due to splitting intervals. Length capping and balancing often work well together. Takes $O(r)$-time and space ([see here](https://arxiv.org/abs/2603.22147)). Where default splitting parameters are used, $\alpha$ is set to 16.
 
 ## Advanced Usage
 
@@ -197,47 +238,6 @@ for(size_t i = 0; i < enc.intervals(); ++i) {
 }
 
 orbit::permutation perm(enc, data);
-```
-
-#### RLBWT: LF/FL
-
-By including `orbit/rlbwt.hpp` users can use specialized methods designed for permutations based on the RLBWT such as LF/FL for pattern matching and text extraction.
-
-```cpp
-#include "orbit/rlbwt.hpp"
-
-// BWT = TTTTTCCCGGGAAAT$ATTTTAAAAAA
-// RLBWT as run heads (characters) and run lengths, with 0 as terminator
-std::vector<uchar> bwt_heads                   = {'T','C','G','A','T', 0 ,'A','T','A'};
-std::vector<unsigned long int> bwt_run_lengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
-
-orbit::rlbwt::lf_permutation<> lf(bwt_heads, bwt_run_lengths);
-
-// Can also add data columns
-enum class data_cols { VAL1, VAL2, COUNT };
-...
-orbit::rlbwt::lf_permutation<data_cols> meta_lf(bwt_heads, bwt_run_lengths, data);
-
-// FL (symmetrically)
-orbit::rlbwt:fl_permutation fl(bwt_heads, bwt_run_lengths);
-...
-```
-
-#### RLBWT: $\phi$ / $\phi^{-1}$
-
-By including `orbit/rlbwt.hpp`, we can also build the permutations from an RLBWT for $\phi$ and $\phi^{-1}$ needed for locate queries.
-
-```cpp
-#include "orbit/rlbwt.hpp"
-
-orbit::rlbwt::phi_permutation<> phi(bwt_heads, bwt_run_lengths);
-
-// Build phi_inv similarly... Can use user data here too!
-DEFINE_ORBIT_COLUMNS(phi_data_cols, VAL1, VAL2);
-...
-orbit::rlbwt::phi_inv_permutation<phi_data_cols> phi_inv(bwt_heads, bwt_run_lengths, phi_data);
-...
-
 ```
 
 ## Examples

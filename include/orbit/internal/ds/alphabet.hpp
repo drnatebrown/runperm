@@ -111,7 +111,35 @@ private:
 
 class nucleotide {
     public:
+    /** Number of distinct mapped nucleotide codes (TER, SEP, A, C, G, T, N). */
     static constexpr uchar SIGMA = 7;
+
+    /**
+     * Integer codes for characters in mapped (BWT) space.  These match
+     * nucleotide::map_char for the fixed DNA alphabet and TER/SEP.
+     */
+    static constexpr uchar TER = 0;
+    static constexpr uchar SEP = 1;
+    static constexpr uchar A = 2;
+    static constexpr uchar C = 3;
+    static constexpr uchar G = 4;
+    static constexpr uchar T = 5;
+    static constexpr uchar N = 6;
+
+    /** Reverse complement in mapped space (A<->T, C<->G; TER, SEP, N fixed). */
+    static constexpr uchar complement_mapped(uchar c) {
+        assert(c < SIGMA);
+        switch (c) {
+            case TER: return TER;
+            case SEP: return SEP;
+            case A: return T;
+            case C: return G;
+            case G: return C;
+            case T: return A;
+            case N: return N;
+            default: return N;
+        }
+    }
 
     nucleotide() = default;
 
@@ -160,13 +188,6 @@ class nucleotide {
     void load(std::istream& in) { }
 
 private:
-    static constexpr uchar TER = 0;
-    static constexpr uchar SEP = 1;
-    static constexpr uchar A = 2;
-    static constexpr uchar C = 3;
-    static constexpr uchar G = 4;
-    static constexpr uchar T = 5;
-    static constexpr uchar N = 6;
     static constexpr uchar NUL = UNMAPPED;
 
     static constexpr uchar alphabet_map[MAX_ALPHABET_SIZE] = {

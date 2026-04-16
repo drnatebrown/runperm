@@ -59,14 +59,14 @@ namespace orbit::rlbwt {
 template<typename alphabet_t = nucleotide>
 using rlbwt_interval_encoding = rlbwt_interval_encoding_impl<int_vector_aligned, alphabet_t>;
 
-interval_encoding_impl<> rlbwt_to_phi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params()) {
+inline interval_encoding_impl<> rlbwt_to_phi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params{}) {
     size_t domain;
     ulint max_length;
     auto [phi_lengths, phi_img_rank_inv] = rlbwt_to_phi_img_rank_inv(bwt_heads, bwt_run_lengths, &domain, &max_length);
     return interval_encoding_impl<>::from_lengths_and_img_rank_inv(phi_lengths, phi_img_rank_inv, domain, max_length, sp);
 }
 
-interval_encoding_impl<> rlbwt_to_phi_inv(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params()) {
+inline interval_encoding_impl<> rlbwt_to_phi_inv(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params{}) {
     size_t domain;
     ulint max_length;
     auto [phi_inv_lengths, phi_inv_img_rank_inv] = rlbwt_to_phi_inv_img_rank_inv(bwt_heads, bwt_run_lengths, &domain, &max_length);

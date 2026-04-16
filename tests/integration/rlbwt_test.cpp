@@ -14,41 +14,41 @@ using namespace orbit;
 using namespace orbit::rlbwt;
 
 void test_move_lf(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::string text) {
-    move_lf<> move_lf(bwt_heads, bwt_run_lengths);
+    move_lf<> mlf(bwt_heads, bwt_run_lengths);
 
     using position = typename move_lf<>::position;
-    auto pos = move_lf.first();
-    for (size_t i = 0; i < move_lf.domain(); ++i) {
-        pos = move_lf.next(pos);
+    auto pos = mlf.first();
+    for (size_t i = 0; i < mlf.domain(); ++i) {
+        pos = mlf.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     
     std::string recovered_text(text.size(), '\0');
-    pos = move_lf.first();
-    for (size_t i = 1; i < move_lf.domain(); ++i) {
-        recovered_text[text.size() - i] = (char)move_lf.get_character(pos);
-        pos = move_lf.next(pos);
+    pos = mlf.first();
+    for (size_t i = 1; i < mlf.domain(); ++i) {
+        recovered_text[text.size() - i] = (char)mlf.get_character(pos);
+        pos = mlf.next(pos);
     }
     assert(recovered_text.compare(text) == 0);
 }
 
 void test_move_lf_with_splitting(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::string text) {
-    move_lf<> move_lf(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING);
+    move_lf<> mlf(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING);
 
     using position = typename move_lf<>::position;
-    auto pos = move_lf.first();
-    for (size_t i = 0; i < move_lf.domain(); ++i) {
-        pos = move_lf.next(pos);
+    auto pos = mlf.first();
+    for (size_t i = 0; i < mlf.domain(); ++i) {
+        pos = mlf.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     
     std::string recovered_text(text.size(), '\0');
-    pos = move_lf.first();
-    for (size_t i = 1; i < move_lf.domain(); ++i) {
-        recovered_text[text.size() - i] = (char)move_lf.get_character(pos);
-        pos = move_lf.next(pos);
+    pos = mlf.first();
+    for (size_t i = 1; i < mlf.domain(); ++i) {
+        recovered_text[text.size() - i] = (char)mlf.get_character(pos);
+        pos = mlf.next(pos);
     }
     assert(recovered_text.compare(text) == 0);
 }
@@ -81,22 +81,22 @@ void test_move_lf_serialize_roundtrip(std::vector<uchar> bwt_heads, std::vector<
 }
 
 void test_move_fl(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::string text) {
-    move_fl<> move_fl(bwt_heads, bwt_run_lengths);
+    move_fl<> mfl(bwt_heads, bwt_run_lengths);
 
     using position = typename move_fl<>::position;
-    position pos = move_fl.first();
-    for (size_t i = 0; i < move_fl.domain(); ++i) {
-        pos = move_fl.next(pos);
+    position pos = mfl.first();
+    for (size_t i = 0; i < mfl.domain(); ++i) {
+        pos = mfl.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     
     std::string recovered_text = "";
-    pos = move_fl.first();
-    pos = move_fl.FL(pos);
-    for (size_t i = 1; i < move_fl.domain(); ++i) {
-        recovered_text += (char)move_fl.get_character(pos);
-        pos = move_fl.FL(pos);
+    pos = mfl.first();
+    pos = mfl.FL(pos);
+    for (size_t i = 1; i < mfl.domain(); ++i) {
+        recovered_text += (char)mfl.get_character(pos);
+        pos = mfl.FL(pos);
     }
     assert(recovered_text.compare(text) == 0);
 }
@@ -119,24 +119,24 @@ void test_runperm_lf(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_le
     }
     
     // Try the constructor without SplitParams
-    runperm_lf<RunData> runperm_lf(bwt_heads, bwt_run_lengths, run_data);
+    runperm_lf<RunData> rp_lf(bwt_heads, bwt_run_lengths, run_data);
     
                 
-    runperm_lf.first();
+    rp_lf.first();
     using position = typename runperm_lf<RunData>::position;
-    position pos = runperm_lf.first();
+    position pos = rp_lf.first();
     
-    for (size_t i = 0; i < runperm_lf.domain(); ++i) {
-        pos = runperm_lf.LF(pos);
+    for (size_t i = 0; i < rp_lf.domain(); ++i) {
+        pos = rp_lf.LF(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     
     std::string recovered_text(text.size(), '\0');
-    pos = runperm_lf.first();
-    for (size_t i = 1; i < runperm_lf.domain(); ++i) {
-        recovered_text[text.size() - i] = (char)runperm_lf.get_character(pos);
-        pos = runperm_lf.LF(pos);
+    pos = rp_lf.first();
+    for (size_t i = 1; i < rp_lf.domain(); ++i) {
+        recovered_text[text.size() - i] = (char)rp_lf.get_character(pos);
+        pos = rp_lf.LF(pos);
     }
     assert(recovered_text.compare(text) == 0);
 }
@@ -159,24 +159,24 @@ void test_runperm_lf_with_splitting(std::vector<uchar> bwt_heads, std::vector<ul
     }
     
     // Try the constructor with SplitParams that enable splitting
-    runperm_lf<RunData> runperm_lf(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING, run_data);
+    runperm_lf<RunData> rp_lf(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING, run_data);
     
                 
-    runperm_lf.first();
+    rp_lf.first();
     using position = typename runperm_lf<RunData>::position;
-    position pos = runperm_lf.first();
+    position pos = rp_lf.first();
     
-    for (size_t i = 0; i < runperm_lf.domain(); ++i) {
-        pos = runperm_lf.LF(pos);
+    for (size_t i = 0; i < rp_lf.domain(); ++i) {
+        pos = rp_lf.LF(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     
     std::string recovered_text(text.size(), '\0');
-    pos = runperm_lf.first();
-    for (size_t i = 1; i < runperm_lf.domain(); ++i) {
-        recovered_text[text.size() - i] = (char)runperm_lf.get_character(pos);
-        pos = runperm_lf.LF(pos);
+    pos = rp_lf.first();
+    for (size_t i = 1; i < rp_lf.domain(); ++i) {
+        recovered_text[text.size() - i] = (char)rp_lf.get_character(pos);
+        pos = rp_lf.LF(pos);
     }
     assert(recovered_text.compare(text) == 0);
 }
@@ -243,45 +243,45 @@ void test_runperm_fl(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_le
     }
     
     // Try the constructor without SplitParams
-    runperm_fl<RunData> runperm_fl(bwt_heads, bwt_run_lengths, run_data);
+    runperm_fl<RunData> rp_fl(bwt_heads, bwt_run_lengths, run_data);
     
                 
     using position = typename runperm_fl<RunData>::position;
-    position pos = runperm_fl.first();
+    position pos = rp_fl.first();
     
-    for (size_t i = 0; i < runperm_fl.domain(); ++i) {
-        pos = runperm_fl.FL(pos);
+    for (size_t i = 0; i < rp_fl.domain(); ++i) {
+        pos = rp_fl.FL(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     
-    pos = runperm_fl.first();
-    pos = runperm_fl.FL(pos);
+    pos = rp_fl.first();
+    pos = rp_fl.FL(pos);
     std::string recovered_text = "";
-    for (size_t i = 1; i < runperm_fl.domain(); ++i) {
-        recovered_text += (char)runperm_fl.get_character(pos);
-        pos = runperm_fl.FL(pos);
+    for (size_t i = 1; i < rp_fl.domain(); ++i) {
+        recovered_text += (char)rp_fl.get_character(pos);
+        pos = rp_fl.FL(pos);
     }
     assert(recovered_text.compare(text) == 0);
 }
 
 void test_move_fl_with_splitting(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::string text) {
-    move_fl<> move_fl(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING);
+    move_fl<> mfl(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING);
 
     using position = typename move_fl<>::position;
-    position pos = move_fl.first();
-    for (size_t i = 0; i < move_fl.domain(); ++i) {
-        pos = move_fl.next(pos);
+    position pos = mfl.first();
+    for (size_t i = 0; i < mfl.domain(); ++i) {
+        pos = mfl.next(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     
     std::string recovered_text = "";
-    pos = move_fl.first();
-    pos = move_fl.FL(pos);
-    for (size_t i = 1; i < move_fl.domain(); ++i) {
-        recovered_text += (char)move_fl.get_character(pos);
-        pos = move_fl.FL(pos);
+    pos = mfl.first();
+    pos = mfl.FL(pos);
+    for (size_t i = 1; i < mfl.domain(); ++i) {
+        recovered_text += (char)mfl.get_character(pos);
+        pos = mfl.FL(pos);
     }
     assert(recovered_text.compare(text) == 0);
 }
@@ -303,24 +303,24 @@ void test_runperm_fl_with_splitting(std::vector<uchar> bwt_heads, std::vector<ul
         run_data[i][1] = i * 3;   // Another dummy value
     }
     
-    runperm_fl<RunData> runperm_fl(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING, run_data);
+    runperm_fl<RunData> rp_fl(bwt_heads, bwt_run_lengths, DEFAULT_SPLITTING, run_data);
     
                 
     using position = typename runperm_fl<RunData>::position;
-    position pos = runperm_fl.first();
+    position pos = rp_fl.first();
     
-    for (size_t i = 0; i < runperm_fl.domain(); ++i) {
-        pos = runperm_fl.FL(pos);
+    for (size_t i = 0; i < rp_fl.domain(); ++i) {
+        pos = rp_fl.FL(pos);
     }
     assert(pos.interval == 0);
     assert(pos.offset == 0);
     
-    pos = runperm_fl.first();
-    pos = runperm_fl.FL(pos);
+    pos = rp_fl.first();
+    pos = rp_fl.FL(pos);
     std::string recovered_text = "";
-    for (size_t i = 1; i < runperm_fl.domain(); ++i) {
-        recovered_text += (char)runperm_fl.get_character(pos);
-        pos = runperm_fl.FL(pos);
+    for (size_t i = 1; i < rp_fl.domain(); ++i) {
+        recovered_text += (char)rp_fl.get_character(pos);
+        pos = rp_fl.FL(pos);
     }
     assert(recovered_text.compare(text) == 0);
 }
