@@ -23,7 +23,7 @@ public:
              std::enable_if_t<std::is_same_v<dc, empty_data_columns>, int> = 0>
     phi_permutation_impl(const std::vector<uchar>& rlbwt_heads,
         const std::vector<ulint>& rlbwt_run_lengths,
-        const split_params& sp = split_params{})
+        const split_params& sp = split_params())
     : base([&] {
         size_t domain = 0;
         ulint max_length = 0;

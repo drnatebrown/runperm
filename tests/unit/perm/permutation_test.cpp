@@ -215,6 +215,6 @@ int main() {
     test_runperm_serialize_roundtrip_separated_absolute();
     test_runperm_next_with_steps_and_pred_succ();
 
-    std::cout << "runperm unit tests passed" << std::endl;
+    std::cout << "permutation unit tests passed" << std::endl;
     return 0;
 }

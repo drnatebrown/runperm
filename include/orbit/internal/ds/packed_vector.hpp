@@ -348,6 +348,11 @@ public:
         base::template set<0>(row, val);
     }
 
+    /// Bits per stored element (same as column 0 width in the underlying packed matrix).
+    [[nodiscard]] uchar get_width() const noexcept {
+        return base::get_widths()[0];
+    }
+
     reference operator[](size_t row) {
         return reference(this, row);
     }

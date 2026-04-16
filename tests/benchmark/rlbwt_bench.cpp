@@ -214,19 +214,29 @@ void run_lf_fl_benchmarks(const vector<uchar> &bwt_heads,
     cout << "RLBWT runs:  " << bwt_heads.size() << endl;
 
     split_params no_splitting = NO_SPLITTING;
-    split_params splitting(8.0, std::nullopt); // length_capping_factor = 8.0
+    split_params length_capping(8.0, std::nullopt); // length_capping_factor = 8.0
+    split_params balancing(std::nullopt, 4); // balancing_factor = 16
+    split_params length_capping_and_balancing(8.0, 4); // length_capping_factor = 8.0, balancing_factor = 16
 
     // LF (standard + exponential)
     bench_move_lf<MoveLFStd>("MoveLF (no splitting)", bwt_heads, bwt_run_lengths, text, no_splitting);
-    bench_move_lf<MoveLFStd>("MoveLF (split, 8.0)", bwt_heads, bwt_run_lengths, text, splitting);
+    bench_move_lf<MoveLFStd>("MoveLF (length capping, 8.0)", bwt_heads, bwt_run_lengths, text, length_capping);
+    bench_move_lf<MoveLFStd>("MoveLF (balancing, 16)", bwt_heads, bwt_run_lengths, text, balancing);
+    bench_move_lf<MoveLFStd>("MoveLF (length capping and balancing, 8.0, 16)", bwt_heads, bwt_run_lengths, text, length_capping_and_balancing);
     bench_move_lf<MoveLFExp>("MoveLFExp (no splitting)", bwt_heads, bwt_run_lengths, text, no_splitting);
-    bench_move_lf<MoveLFExp>("MoveLFExp (split, 8.0)", bwt_heads, bwt_run_lengths, text, splitting);
+    bench_move_lf<MoveLFExp>("MoveLFExp (length capping, 8.0)", bwt_heads, bwt_run_lengths, text, length_capping);
+    bench_move_lf<MoveLFExp>("MoveLFExp (balancing, 16)", bwt_heads, bwt_run_lengths, text, balancing);
+    bench_move_lf<MoveLFExp>("MoveLFExp (length capping and balancing, 8.0, 16)", bwt_heads, bwt_run_lengths, text, length_capping_and_balancing);
 
     // FL (standard + exponential)
     bench_move_fl<MoveFLStd>("MoveFL (no splitting)", bwt_heads, bwt_run_lengths, text, no_splitting);
-    bench_move_fl<MoveFLStd>("MoveFL (split, 8.0)", bwt_heads, bwt_run_lengths, text, splitting);
+    bench_move_fl<MoveFLStd>("MoveFL (length capping, 8.0)", bwt_heads, bwt_run_lengths, text, length_capping);
+    bench_move_fl<MoveFLStd>("MoveFL (balancing, 16)", bwt_heads, bwt_run_lengths, text, balancing);
+    bench_move_fl<MoveFLStd>("MoveFL (length capping and balancing, 8.0, 16)", bwt_heads, bwt_run_lengths, text, length_capping_and_balancing);
     bench_move_fl<MoveFLExp>("MoveFLExp (no splitting)", bwt_heads, bwt_run_lengths, text, no_splitting);
-    bench_move_fl<MoveFLExp>("MoveFLExp (split, 8.0)", bwt_heads, bwt_run_lengths, text, splitting);
+    bench_move_fl<MoveFLExp>("MoveFLExp (length capping, 8.0)", bwt_heads, bwt_run_lengths, text, length_capping);
+    bench_move_fl<MoveFLExp>("MoveFLExp (balancing, 16)", bwt_heads, bwt_run_lengths, text, balancing);
+    bench_move_fl<MoveFLExp>("MoveFLExp (length capping and balancing, 8.0, 16)", bwt_heads, bwt_run_lengths, text, length_capping_and_balancing);
 
     cout << endl;
 }
@@ -244,7 +254,7 @@ void bench_move_phi(const string &name,
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
+    auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv, split_params);
     move_phi move_phi(permutation);
     auto t1 = high_resolution_clock::now();
 
@@ -287,7 +297,7 @@ void bench_move_phi_exp(const string &name,
     auto t0 = high_resolution_clock::now();
     using MovePhiExp = phi_move_impl<true>;
 
-    auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
+    auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv, split_params);
     MovePhiExp move_phi(permutation);
     auto t1 = high_resolution_clock::now();
 
@@ -328,7 +338,7 @@ void bench_move_phi_inv(const string &name,
     cout << "  " << name << endl;
 
     auto t0 = high_resolution_clock::now();
-    auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
+    auto permutation = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv, split_params);
     move_phi_inv move_phi_inv(permutation);
     auto t1 = high_resolution_clock::now();
 
@@ -370,7 +380,7 @@ void bench_move_phi_inv_exp(const string &name,
     auto t0 = high_resolution_clock::now();
     using Movephi_invExp = phi_inv_move_impl<true>;
 
-    auto perm = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv);
+    auto perm = interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv, split_params);
     Movephi_invExp move_phi_inv(perm);
     auto t1 = high_resolution_clock::now();
 
@@ -428,71 +438,31 @@ void run_phi_phi_inv_benchmarks(const vector<uchar> &bwt_heads,
     assert(phi_inv_domain == sa_truth.size());
 
     split_params no_splitting = NO_SPLITTING;
-    split_params splitting(8.0, std::nullopt); // length_capping_factor = 8.0
+    split_params length_capping(8.0, std::nullopt); // length_capping_factor = 8.0
+    split_params balancing(std::nullopt, 4); // balancing_factor = 16
+    split_params length_capping_and_balancing(8.0, 4); // length_capping_factor = 8.0, balancing_factor = 16
 
     // Move-only phi (standard + exponential)
-    bench_move_phi(
-        "MovePhi (no splitting)",
-        phi_lengths,
-        phi_img_rank_inv,
-        phi_domain,
-        sa_truth,
-        no_splitting);
-
-    bench_move_phi(
-        "MovePhi (split, 8.0)",
-        phi_lengths,
-        phi_img_rank_inv,
-        phi_domain,
-        sa_truth,
-        splitting);
-    bench_move_phi_exp(
-        "MovePhiExp (no splitting)",
-        phi_lengths,
-        phi_img_rank_inv,
-        phi_domain,
-        sa_truth,
-        no_splitting);
-    bench_move_phi_exp(
-        "MovePhiExp (split, 8.0)",
-        phi_lengths,
-        phi_img_rank_inv,
-        phi_domain,
-        sa_truth,
-        splitting);
+    bench_move_phi("MovePhi (no splitting)", phi_lengths, phi_img_rank_inv, phi_domain, sa_truth, no_splitting);
+    bench_move_phi("MovePhi (length capping, 8.0)", phi_lengths, phi_img_rank_inv, phi_domain, sa_truth, length_capping);
+    bench_move_phi("MovePhi (balancing, 16)", phi_lengths, phi_img_rank_inv, phi_domain, sa_truth, balancing);
+    bench_move_phi("MovePhi (length capping and balancing, 8.0, 16)", phi_lengths, phi_img_rank_inv, phi_domain, sa_truth, length_capping_and_balancing);
+    
+    bench_move_phi_exp("MovePhiExp (no splitting)", phi_lengths, phi_img_rank_inv, phi_domain, sa_truth, no_splitting);
+    bench_move_phi_exp("MovePhiExp (length capping, 8.0)", phi_lengths, phi_img_rank_inv, phi_domain, sa_truth, length_capping);
+    bench_move_phi_exp("MovePhiExp (balancing, 16)", phi_lengths, phi_img_rank_inv, phi_domain, sa_truth, balancing);
+    bench_move_phi_exp("MovePhiExp (length capping and balancing, 8.0, 16)", phi_lengths, phi_img_rank_inv, phi_domain, sa_truth, length_capping_and_balancing);
 
     // Move-only phi_inv (standard + exponential)
-    bench_move_phi_inv(
-        "Movephi_inv (no splitting)",
-        phi_inv_lengths,
-        phi_inv_img_rank_inv,
-        phi_inv_domain,
-        sa_truth,
-        no_splitting);
+    bench_move_phi_inv("Movephi_inv (no splitting)", phi_inv_lengths, phi_inv_img_rank_inv, phi_inv_domain, sa_truth, no_splitting);
+    bench_move_phi_inv("Movephi_inv (length capping, 8.0)", phi_inv_lengths, phi_inv_img_rank_inv, phi_inv_domain, sa_truth, length_capping);
+    bench_move_phi_inv("Movephi_inv (balancing, 16)", phi_inv_lengths, phi_inv_img_rank_inv, phi_inv_domain, sa_truth, balancing);
+    bench_move_phi_inv("Movephi_inv (length capping and balancing, 8.0, 16)", phi_inv_lengths, phi_inv_img_rank_inv, phi_inv_domain, sa_truth, length_capping_and_balancing);
 
-    bench_move_phi_inv(
-        "Movephi_inv (split, 8.0)",
-        phi_inv_lengths,
-        phi_inv_img_rank_inv,
-        phi_inv_domain,
-        sa_truth,
-        splitting);
-
-    bench_move_phi_inv_exp(
-        "Movephi_invExp (no splitting)",
-        phi_inv_lengths,
-        phi_inv_img_rank_inv,
-        phi_inv_domain,
-        sa_truth,
-        no_splitting);
-
-    bench_move_phi_inv_exp(
-        "Movephi_invExp (split, 8.0)",
-        phi_inv_lengths,
-        phi_inv_img_rank_inv,
-        phi_inv_domain,
-        sa_truth,
-        splitting);
+    bench_move_phi_inv_exp("Movephi_invExp (no splitting)", phi_inv_lengths, phi_inv_img_rank_inv, phi_inv_domain, sa_truth, no_splitting);
+    bench_move_phi_inv_exp("Movephi_invExp (length capping, 8.0)", phi_inv_lengths, phi_inv_img_rank_inv, phi_inv_domain, sa_truth, length_capping);
+    bench_move_phi_inv_exp("Movephi_invExp (balancing, 16)", phi_inv_lengths, phi_inv_img_rank_inv, phi_inv_domain, sa_truth, balancing);
+    bench_move_phi_inv_exp("Movephi_invExp (length capping and balancing, 8.0, 16)", phi_inv_lengths, phi_inv_img_rank_inv, phi_inv_domain, sa_truth, length_capping_and_balancing);
 
     cout << endl;
 }

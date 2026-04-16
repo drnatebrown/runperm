@@ -132,6 +132,6 @@ static void test_runperm_random_small_permutations() {
 int main() {
     test_runperm_random_small_permutations();
 
-    std::cout << "runperm random tests passed" << std::endl;
+    std::cout << "permutation random tests passed" << std::endl;
     return 0;
 }

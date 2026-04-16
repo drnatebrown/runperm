@@ -6,7 +6,7 @@ Flexible plug-and-play header library implementing compact data structures for r
 
 Described in greater detail at [https://arxiv.org/abs/2602.11029](https://arxiv.org/abs/2602.11029).
 
-Alpha Version 0.4.1
+Version 1.0.0
 
 ## Quick Start
 
