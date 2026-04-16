@@ -22,7 +22,7 @@ We pass the lengths of contiguously permuted intervals ($S_\ell$) and the permut
 // Create a run-length permutation
 // Length of contiguously permuted intervals
 std::vector<unsigned long int> lengths = {2, 3, 1,  2, 2,  1, 1,  1, 3};
-// Permutation at head of each intervals
+// Permutation at head of each interval
 std::vector<unsigned long int> images  = {1, 9, 3, 12, 4, 14, 0, 15, 6};   
 ```
 
