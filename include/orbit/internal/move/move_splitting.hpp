@@ -118,7 +118,7 @@ public:
             (new_intervals_upper_bound == 0) ? domain - 1 : lengths.size() + new_intervals_upper_bound - 1;
 
         // For each original run, how many new intervals were added up to but not including this run?
-        int_vector_t input_splits_exclusive_cumsum(lengths.size(), bit_width(intervals_after_splitting_upper_bound));
+        int_vector_t input_splits_exclusive_cumsum(lengths.size(), bit_width(new_intervals_upper_bound));
         
         // First pass to determine the number of intervals after splitting in input order, 
         // the number of new intervals added up to but not including each run, 
@@ -241,10 +241,18 @@ public:
         result.max_length = 0;
 
         ulint idx = 0;
-        int_vector_t real_input_idx(num_intervals_after_splitting, bit_width(num_intervals_after_splitting - 1));
+        ulint curr_original_idx = 0;
+        ulint cumulative_new_intervals = 0;
+        int_vector_t input_splits_exclusive_cumsum(lengths.size(), bit_width(num_intervals_after_splitting - lengths.size()));
         for (size_t i = 0; i < num_intervals_after_splitting; ++i) {
             result.max_length = std::max(result.max_length, input_intervals.get_length(idx));
-            real_input_idx[idx] = i;
+            if (idx < lengths.size()) {
+                input_splits_exclusive_cumsum[curr_original_idx] = cumulative_new_intervals;
+                ++curr_original_idx;
+            }
+            else {
+                ++cumulative_new_intervals;
+            }
             idx = input_intervals.get_next(idx);
         }
         assert(idx == input_intervals.END_IDX);
@@ -252,12 +260,21 @@ public:
         result.lengths = int_vector_t(num_intervals_after_splitting, bit_width(result.max_length));
         result.img_rank_inv = int_vector_t(num_intervals_after_splitting, bit_width(num_intervals_after_splitting - 1));
         idx = 0;
+        size_t steps_since_last_original = 0;
+        ulint last_original_mapping = 0;
         for (size_t i = 0; i < num_intervals_after_splitting; ++i) {
             ulint curr_length = output_intervals.get_length(idx);
-            ulint curr_img_rank_inv = real_input_idx[output_intervals.get_mapping(idx)];
+            if (idx < lengths.size()) {
+                last_original_mapping = output_intervals.get_mapping(idx);
+                steps_since_last_original = 0;
+            }
+            else {
+                ++steps_since_last_original;
+            }
+            ulint curr_img_rank_inv = last_original_mapping + input_splits_exclusive_cumsum[last_original_mapping] + steps_since_last_original;
             result.img_rank_inv[i] = curr_img_rank_inv;
             result.lengths[curr_img_rank_inv] = curr_length;
-            idx = output_intervals.get_next(idx);
+            idx = output_intervals.get_next(idx);   
         }
         assert(idx == output_intervals.END_IDX);
     }
@@ -319,10 +336,6 @@ private:
                     orig_intervals.set<interval_cols::NEXT>(idx, next_idx - orig_intervals.size() + 1);
                 }
                 else {
-                    std::cout << "Invalid next index: " << next_idx << std::endl;
-                    std::cout << "idx: " << idx << std::endl;
-                    std::cout << "orig_intervals.size(): " << orig_intervals.size() << std::endl;
-                    std::cout << "next_idx - orig_intervals.size(): " << next_idx - orig_intervals.size() << std::endl;
                     throw std::invalid_argument("Invalid next index");
                 }
             }
@@ -387,11 +400,9 @@ private:
         }
 
         inline ulint get_pred(ulint idx) {
-            // If original interval, use the delta values
             if (idx < orig_intervals.size()) {
                 return orig_intervals.get<interval_cols::PRED>(idx);
             }
-            // If new interval, use the full pred values
             else {
                 return new_intervals.get<interval_cols::PRED>(idx - orig_intervals.size());
             }
@@ -432,7 +443,7 @@ private:
                 output_intervals.set_start(curr_output_idx, curr_output_start);
                 output_intervals.init_next(curr_output_idx);
                 output_intervals.set_pred(curr_output_idx, input_pred);
-
+                
                 img_rank[img_rank_inv[curr_output_idx]] = curr_output_idx;
             };
             
