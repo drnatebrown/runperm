@@ -164,12 +164,14 @@ orbit::rlbwt::phi_inv_permutation<phi_data_cols> phi_inv(bwt_heads, bwt_run_leng
 
 ## Interface
 
-The main class for run-length encoded permutations with move structure integration. Core functionality is supported by 
+The main class is summarized by the following template paramters and methods:
 
 - **Template Parameters**:
   - `data_columns_t`: Type defining user run data columns (default: empty_data_columns). Alias move_permutation implicitly sets this to empty_data_columns.
   - `integrated_move_structure`: integrate run data bitpacked alongside move structure if true, or stored bitpacked in its own table if false (default: false)
   - `store_absolute_positions`: store absolute positions for index lookups, rather than just interval/offset paits (default: false)
+- **RLBWT Parameters**
+  - `alphabet`: when using LF/FL permutations, specify `nucleotide` if using DNA alphabets (with 0 reserved for terminators, 1 reserved for separators). Use `alphabet` otherwise.
 - **Key Methods**:
   - `next(pos)`, `next(pos, ulint steps)`
   - `up(pos)`, `down(pos)`, `first()`, `last()`
@@ -178,7 +180,7 @@ The main class for run-length encoded permutations with move structure integrati
   - `domain()`, `runs()`, `intervals()`
   - `serialize(os)`, `load(is)`
  
-The public API simplifies template parameters and methods, see the internal implementation for advanced flexibility for building move structure types.
+The public API simplifies template parameters and methods, see the internal implementation for advanced flexibility for building move structure types (discussed below in advanced usage).
 
 ## Performance Considerations
 
