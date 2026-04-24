@@ -30,7 +30,7 @@ inline constexpr size_t DEFAULT_BYTES = 4;
 // END CONFIGURABLE ===========================================================
 
 inline constexpr size_t VERSION_MAJOR = 1;
-inline constexpr size_t VERSION_MINOR = 0;
+inline constexpr size_t VERSION_MINOR = 1;
 inline constexpr size_t VERSION_PATCH = 0;
 
 inline size_t serialize_version(std::ostream& out) {
