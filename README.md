@@ -164,14 +164,27 @@ orbit::rlbwt::phi_inv_permutation<phi_data_cols> phi_inv(bwt_heads, bwt_run_leng
 
 ## Interface
 
-The main class is summarized by the following template paramters and methods:
+The main class interfaces are summarized by the following components, where `ulint` refers to `unsigned long int`:
 
+- **Constructors**
+  - No User Data:
+    ```cpp
+    orbit::permutation<>(std::vector<ulint> permutation, split_params sp = split_params())
+    orbit::permutation<>(std::vector<ulint> lengths, std::vector<ulint> images, split_params sp = split_params())
+    orbit::permutation<>(interval_encoding enc)
+    ```
+  - With User Data (see advanced usage for effect of split_params)
+    ```cpp
+    using tuple = orbit::columns_tuple<data_t>
+    orbit::permutation<data_t>(std::vector<ulint> lengths, std::vector<ulint> images, std::vector<tuple> data)
+    orbit::permutation<data_t>(std::vector<ulint> lengths, std::vector<ulint> images, split_params sp, std::vector<tuple> data)
+    orbit::permutation<data_t>(interval_encoding enc, std::vector<tuple> data)
+    ```
+  - `orbit::interval_encoding` offers many alternative input parameters apart from lengths/images.
 - **Template Parameters**:
   - `data_columns_t`: Type defining user run data columns (default: empty_data_columns). Alias move_permutation implicitly sets this to empty_data_columns.
   - `integrated_move_structure`: integrate run data bitpacked alongside move structure if true, or stored bitpacked in its own table if false (default: false)
   - `store_absolute_positions`: store absolute positions for index lookups, rather than just interval/offset paits (default: false)
-- **RLBWT Parameters**
-  - `alphabet`: when using LF/FL permutations, specify `nucleotide` if using DNA alphabets (with 0 reserved for terminators, 1 reserved for separators). Use `alphabet` otherwise.
 - **Key Methods**:
   - `next(pos)`, `next(pos, ulint steps)`
   - `up(pos)`, `down(pos)`, `first()`, `last()`
@@ -179,6 +192,29 @@ The main class is summarized by the following template paramters and methods:
   - `pred<col>(pos, val)`, `succ<col>(pos, val)`
   - `domain()`, `runs()`, `intervals()`
   - `serialize(os)`, `load(is)`
+ 
+The RLBWT permutations LF/FL have extra components (we show use for LF below):
+- **RLBWT Specific Constructors**
+  - No User Data
+    ```cpp
+    orbit::rlbwt::lf_permutation<>(std::vector<char> bwt, split_params sp = split_params())
+    template<typename container_t>
+    orbit::rlbwt::lf_permutation<>(container_t rlbwt, container_t rlbwt_lengths, split_params sp = split_params())
+    template<typename rlbwt_interval_encoding_t>
+    orbit::rlbwt::lf_permutation<>(rlbwt_interval_encoding_t enc)
+    ```
+  - With User Data (see advanced usage for effect of split_params)
+    ```cpp
+    using tuple = orbit::columns_tuple<data_t>
+    orbit::rlbwt::lf_permutation<>(container_t rlbwt, container_t rlbwt_lengths, std::vector<tuple> data)
+    orbit::rlbwt::lf_permutation<>(container_t rlbwt, container_t rlbwt_lengths, split_params sp, std::vector<tuple> data)
+    template<typename rlbwt_interval_encoding_t>
+    orbit::rlbwt::lf_permutation<>(rlbwt_interval_encoding_t enc, std::vector<tuple> data)
+    ```
+- **RLBWT Specific Template Parameters**
+  - `alphabet`: when using LF/FL permutations, specify `nucleotide` if using DNA alphabets (with 0 reserved for terminators, 1 reserved for separators). Use `alphabet` otherwise.
+- **RLBWT Specific Methods**
+  - `get_character(pos)
  
 The public API simplifies template parameters and methods, see the internal implementation for advanced flexibility for building move structure types (discussed below in advanced usage).
 
@@ -241,7 +277,7 @@ orbit::permutation perm(enc, data);
 ```
 
 #### Template Parameters
-Many of the library classes expose a simplified interface, including only the template parameters described above. More advanced template parameters can be accessed by loading the specific implementation of a class from the `orbit/include/internal` filetree. For example, `orbit::permutation_impl` exposes parameters that turn on an exponential search for navigation steps instead of the default linear scan or allows modification of the bitpacking scheme and underlying layout of the move structure data. These specific options are likely to be of interest to an academic community, but not for those looking only for a practical library.
+Many of the library classes expose a simplified interface, including only the template parameters described above. More advanced template parameters can be accessed by loading the specific implementation of a class from the `orbit/include/internal` filetree. For example, `orbit::permutation_impl` exposes parameters that turn on an exponential search for navigation steps instead of the default linear scan (can be preferred when no splitting optimizations are used) or allows modification of the bitpacking scheme and underlying layout of the move structure data. These specific options are likely to be of interest to an academic community, but not for those looking only for a practical library.
 
 ## Examples
 
