@@ -25,6 +25,7 @@ public:
         enc.set_initial_values(n, rlbwt_heads.size(), max_length, sp);
         std::vector<ulint> img_rank_inv = get_LF_img_rank_inv(rlbwt_heads, head_counts);
 
+        // Also does splitting
         enc.init_img_rank_inv(rlbwt_run_lengths, img_rank_inv);
 
         enc.alphabet_ = alphabet_t(head_counts);
@@ -41,6 +42,7 @@ public:
         enc.set_initial_values(n, rlbwt_heads.size(), max_length, sp);
 
         auto [F_heads, F_lens, F_img_rank_inv] = get_FL_runs_and_img_rank_inv(rlbwt_heads.size(), F_lens_and_origin_run);
+        // Also does splitting
         enc.init_img_rank_inv(F_lens, F_img_rank_inv);
 
         enc.alphabet_ = alphabet_t(head_counts);

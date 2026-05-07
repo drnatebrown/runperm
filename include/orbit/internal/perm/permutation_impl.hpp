@@ -101,16 +101,7 @@ public:
     // Intended constructor for manual splitting of run data
     template<typename interval_encoding_t>
     permutation_impl(const interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
-        split_params_ = enc.get_split_params();
-        packed_vector<base_columns> base_structure = move_structure_base::find_structure(enc);
-        if (run_data.size() == enc.intervals()) {
-            populate_structure(std::move(base_structure), run_data, enc.domain(), enc.runs());
-        }
-        else if (run_data.size() == enc.runs()) {
-            throw std::invalid_argument("Run data size is same as number of runs, not intervals after splitting; avoid splitting, manually split run data, or use permutation copy split.");
-        } else {
-            throw std::invalid_argument("Run data size must be the same as the number of intervals (user defined splits) or number of runs (no splitting).");
-        }
+        build_from_interval_encoding(enc, run_data);
     }
 
     /**
@@ -137,21 +128,7 @@ public:
     // This exists as a fast path in case no splitting is set and we do not need to call extend_run_data
     template<typename container1_t, typename container2_t>
     permutation_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, const std::vector<data_tuple> &run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
-        assert(lengths.size() == images.size());
-        split_params_ = sp;
-
-        // Find the base structure (move structure without run data)
-        auto enc = interval_encoding_impl<>::from_lengths_and_images(lengths, images, sp);
-        size_t domain = enc.domain();
-        size_t runs = enc.runs();
-        packed_vector<base_columns> base_structure = move_structure_base::find_structure(enc);
-
-        if (split_params_ == NO_SPLITTING) {
-            populate_structure(std::move(base_structure), run_data, domain, runs);
-        } else {
-            std::vector<data_tuple> final_run_data = extend_run_data(lengths, base_structure, domain, get_run_cols_data);
-            populate_structure(std::move(base_structure), final_run_data, domain, runs);
-        }
+        build_from_lengths_and_images(lengths, images, sp, &run_data, std::move(get_run_cols_data));
     }
 
     // Advanced constructor for users who want to specify how to set the run data for each column type by passing a function:
@@ -165,17 +142,7 @@ public:
      */
     template<typename container1_t, typename container2_t>
     permutation_impl(const container1_t &lengths, const container2_t &images, const split_params &sp, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
-        assert(lengths.size() == images.size());
-        split_params_ = sp;
-
-        // Find the base structure (move structure without run data)
-        auto enc = interval_encoding_impl<>::from_lengths_and_images(lengths, images, sp);
-        size_t domain = enc.domain();
-        size_t runs = enc.runs();
-        packed_vector<base_columns> base_structure = move_structure_base::find_structure(enc);
-
-        std::vector<data_tuple> final_run_data = extend_run_data(lengths, base_structure, domain, get_run_cols_data);
-        populate_structure(std::move(base_structure), final_run_data, domain, runs);
+        build_from_lengths_and_images(lengths, images, sp, nullptr, std::move(get_run_cols_data));
     }
 
     // from pre-computed table (move semantics) for advanced users with integrated move structure
@@ -420,6 +387,43 @@ protected:
 
     move_structure_perm move_structure;
     split_params split_params_;
+
+    template<typename interval_encoding_t>
+    void build_from_interval_encoding(const interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
+        split_params_ = enc.get_split_params();
+        packed_vector<base_columns> base_structure = move_structure_base::find_structure(enc);
+        if (run_data.size() == enc.intervals()) {
+            populate_structure(std::move(base_structure), run_data, enc.domain(), enc.runs());
+        }
+        else if (run_data.size() == enc.runs()) {
+            throw std::invalid_argument("Run data size is same as number of runs, not intervals after splitting; avoid splitting, manually split run data, or use permutation copy split.");
+        } else {
+            throw std::invalid_argument("Run data size must be the same as the number of intervals (user defined splits) or number of runs (no splitting).");
+        }
+    }
+
+    template<typename container1_t, typename container2_t>
+    void build_from_lengths_and_images(const container1_t &lengths, const container2_t &images, const split_params &sp, const std::vector<data_tuple>* run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+        assert(lengths.size() == images.size());
+        auto enc = interval_encoding_impl<>::from_lengths_and_images(lengths, images, sp);
+        build_from_interval_encoding_callback(enc, lengths, run_data, std::move(get_run_cols_data));
+    }
+
+    template<typename container1_t, typename interval_encoding_t = interval_encoding_impl<>>
+    void build_from_interval_encoding_callback(const interval_encoding_t& enc, const container1_t &lengths, const std::vector<data_tuple>* run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+        split_params_ = enc.get_split_params();
+        // Find the base structure (move structure without run data)
+        size_t domain = enc.domain();
+        size_t runs = enc.runs();
+        packed_vector<base_columns> base_structure = move_structure_base::find_structure(enc);
+
+        if (split_params_ == NO_SPLITTING && run_data != nullptr) {
+            populate_structure(std::move(base_structure), *run_data, domain, runs);
+        } else {
+            std::vector<data_tuple> final_run_data = extend_run_data(lengths, base_structure, domain, get_run_cols_data);
+            populate_structure(std::move(base_structure), final_run_data, domain, runs);
+        }
+    }
 
     template<base_columns col>
     ulint get_base_column(size_t row) const {

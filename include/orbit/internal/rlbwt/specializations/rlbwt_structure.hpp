@@ -33,7 +33,7 @@ public:
 
     static packed_vector<columns> find_structure(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const uchar char_width, const split_params& sp = split_params()) = delete;
 
-    // When the permutation is not already computed
+    // When the permutation is already computed but with no encoding
     static packed_vector<columns> find_structure(const std::vector<uchar>& head_chars, const std::vector<ulint>& lengths, const std::vector<ulint>& images, const uchar sigma, const split_params& sp = split_params()) {
         assert(head_chars.size() == lengths.size());
 
@@ -47,6 +47,7 @@ public:
         return structure; 
     }
 
+    // When the permutation is already computed with a regular encoding
     template<typename interval_encoding_t>
     static packed_vector<columns> find_structure(const std::vector<uchar>& rlbwt_chars, const interval_encoding_t& enc, const uchar sigma) {
         assert(rlbwt_chars.size() == enc.intervals());
@@ -59,7 +60,8 @@ public:
 
         return structure; 
     }
-    
+
+    // When the permutation is already computed with a rlbwt encoding
     template<typename rlbwt_permutation_t>
     static packed_vector<columns> find_structure(const rlbwt_permutation_t& permutation) {
         assert(permutation.get_heads().size() == permutation.intervals());
@@ -87,7 +89,7 @@ private:
         return widths;
     }
 
-    // Copy characters over while accounting for splitting
+    // Copy characters assuming no splitting
     template<typename collection_t>
     static void set_characters(packed_vector<columns>& structure, const collection_t& rlbwt_chars) {
         assert(rlbwt_chars.size() == structure.size());
@@ -97,6 +99,7 @@ private:
         }
     }
 
+    // Copy characters over while accounting for splitting
     static void set_characters(packed_vector<columns>& structure, const std::vector<uchar>& rlbwt_chars, const std::vector<ulint>& lengths, const ulint domain) {
         assert(rlbwt_chars.size() == lengths.size());
         

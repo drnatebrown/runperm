@@ -9,7 +9,7 @@
 
 namespace orbit {
 
-template <typename columns_t>
+template <typename bits_t>
 struct move_row_traits;
 
 template <typename columns_t, size_t PRIMARY_BITS, size_t POINTER_BITS, size_t OFFSET_BITS>
@@ -64,6 +64,15 @@ struct move_row {
     }
     std::array<ulint, num_cols> get() const {
         return get(std::make_index_sequence<num_cols>{});
+    }
+
+    static const std::array<uchar, num_cols>& get_widths() {
+        static const std::array<uchar, num_cols> widths{
+            static_cast<uchar>(row_traits::PRIMARY_BITS),
+            static_cast<uchar>(row_traits::POINTER_BITS),
+            static_cast<uchar>(row_traits::OFFSET_BITS),
+        };
+        return widths;
     }
 
     static void assert_widths(const std::array<uchar, num_cols>& widths) {

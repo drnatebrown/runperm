@@ -90,12 +90,7 @@ struct move_table : public move_table_interface<move_table<columns_t>, columns_t
     }
 
     const std::array<uchar, num_cols>& get_widths() const {
-        static const std::array<uchar, num_cols> w{
-            static_cast<uchar>(row_traits::PRIMARY_BITS),
-            static_cast<uchar>(row_traits::POINTER_BITS),
-            static_cast<uchar>(row_traits::OFFSET_BITS)
-        };
-        return w;
+        return row::get_widths();
     }
 
     size_t size() const { return table.size(); }
