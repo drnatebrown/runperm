@@ -58,8 +58,6 @@ public:
     using data_tuple = columns_tuple<data_columns>;
     using position = typename move_structure_perm::position;
 
-    // TODO use int_vector and container templates here
-
     static_assert(has_count_enumerator<data_columns>::value, "data_columns_t must have a COUNT enumerator");
     static_assert(!(!store_absolute_positions && exponential_search), "Exponential search is only supported with absolute positions");
 
