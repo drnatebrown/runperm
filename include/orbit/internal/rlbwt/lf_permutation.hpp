@@ -8,7 +8,6 @@
 #include "orbit/internal/rlbwt/rlbwt_helpers.hpp"
 
 namespace orbit::rlbwt {
-// TODO use int_vector here
 
 template<typename data_columns_t = empty_data_columns,
          bool integrated_move_structure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
@@ -26,10 +25,10 @@ public:
     using base::operator=;
     using position = typename base::position;
 
-    // TODO use int_vector and container templates here
+    template<typename container1_t, typename container2_t>
     rlbwt_interval_encoding find_interval_encoding(
-        const std::vector<uchar>& rlbwt_heads,
-        const std::vector<ulint>& rlbwt_run_lengths,
+        const container1_t& rlbwt_heads,
+        const container2_t& rlbwt_run_lengths,
         const split_params& sp
     ) {
         return rlbwt_interval_encoding::lf_interval_encoding(rlbwt_heads, rlbwt_run_lengths, sp);

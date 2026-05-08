@@ -14,11 +14,11 @@ using std::vector;
 using namespace orbit;
 using namespace orbit::rlbwt;
 
-template<class Perm>
+template<class Perm, typename container1_t, typename container2_t>
 static vector<uchar> expected_heads_for_permutation(
     const Perm& perm,
-    const vector<uchar>& orig_heads,
-    const vector<ulint>& orig_lengths
+    const container1_t& orig_heads,
+    const container2_t& orig_lengths
 ) {
     vector<uchar> expected;
     expected.reserve(perm.intervals());
@@ -88,7 +88,7 @@ void test_rlbwt_fl_permutation_heads_and_alphabet() {
     (void)max_length;
     assert(n == perm.domain());
 
-    auto [F_heads, F_lens, F_img_rank_inv] = get_FL_runs_and_img_rank_inv(heads.size(), F_lens_and_origin_run);
+    auto [F_heads, F_lens, F_img_rank_inv] = get_FL_runs_and_img_rank_inv<int_vector_aligned>(heads.size(), F_lens_and_origin_run, max_length);
     (void)F_img_rank_inv;
     assert(F_heads.size() == heads.size());
     assert(F_lens.size() == lengths.size());

@@ -59,6 +59,21 @@ namespace orbit::rlbwt {
 template<typename alphabet_t = nucleotide>
 using rlbwt_interval_encoding = rlbwt_interval_encoding_impl<int_vector_aligned, alphabet_t>;
 
+// ======================== RLBWT to Interval Encoding Types (Derive Permutation, Don't Use Character Columns) ========================
+inline interval_encoding_impl<> rlbwt_to_lf(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params{}) {
+    size_t domain;
+    ulint max_length;
+    auto img_rank_inv = rlbwt_to_lf_img_rank_inv(bwt_heads, bwt_run_lengths, &domain, &max_length);
+    return interval_encoding_impl<>::from_lengths_and_img_rank_inv(bwt_run_lengths, img_rank_inv, domain, max_length, sp);
+}
+
+inline interval_encoding_impl<> rlbwt_to_fl(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params{}) {
+    size_t domain;
+    ulint max_length;
+    auto [lengths, img_rank_inv] = rlbwt_to_fl_img_rank_inv(bwt_heads, bwt_run_lengths, &domain, &max_length);
+    return interval_encoding_impl<>::from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, sp);
+}
+
 inline interval_encoding_impl<> rlbwt_to_phi(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params{}) {
     size_t domain;
     ulint max_length;

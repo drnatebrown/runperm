@@ -89,10 +89,12 @@ public:
     interval_encoding_impl(const std::vector<ulint>& permutation, const split_params& sp = split_params()) {
         *this = from_permutation(permutation, sp);
     }
-    interval_encoding_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const split_params& sp = split_params()) {
+    template<typename container1_t, typename container2_t>
+    interval_encoding_impl(const container1_t& lengths, const container2_t& images, const split_params& sp = split_params()) {
         *this = from_lengths_and_images(lengths, images, sp);
     }
-    interval_encoding_impl(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const ulint max_length, const split_params& sp = split_params()) {
+    template<typename container1_t, typename container2_t>
+    interval_encoding_impl(const container1_t& lengths, const container2_t& images, const ulint domain, const ulint max_length, const split_params& sp = split_params()) {
         *this = from_lengths_and_images(lengths, images, domain, max_length, sp);
     }
 

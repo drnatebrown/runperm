@@ -29,7 +29,8 @@ public:
     move_structure() = default;
     
     // Constructor from permutation data
-    move_structure(const std::vector<ulint>& lengths, const std::vector<ulint>& images, const split_params& sp = split_params())
+    template<typename container1_t, typename container2_t>
+    move_structure(const container1_t& lengths, const container2_t& images, const split_params& sp = split_params())
     : move_structure(interval_encoding_impl<>::from_lengths_and_images(lengths, images, sp)) {}
 
     template<typename interval_encoding_t>

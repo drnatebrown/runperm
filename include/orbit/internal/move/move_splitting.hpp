@@ -280,7 +280,6 @@ public:
     }
 
 private:
-    // TODO instead of END_IDX and domain, add to [END_IDX] with the start of domain to the input/output intervals
     struct balance_state {
         size_t next_free_idx;
         ulint balancing_factor;

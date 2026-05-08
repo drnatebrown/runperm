@@ -175,9 +175,10 @@ protected:
     }
 
     // Special logic for LF or FL
+    template<typename container1_t, typename container2_t>
     rlbwt_interval_encoding find_interval_encoding(
-        const std::vector<uchar>& rlbwt_heads,
-        const std::vector<ulint>& rlbwt_run_lengths,
+        const container1_t& rlbwt_heads,
+        const container2_t& rlbwt_run_lengths,
         const split_params& sp
     ) {
         return static_cast<derived*>(this)->find_interval_encoding(rlbwt_heads, rlbwt_run_lengths, sp);
