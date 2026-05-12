@@ -57,7 +57,9 @@
 namespace orbit::rlbwt {
 
 template<typename alphabet_t = nucleotide>
-using rlbwt_interval_encoding = rlbwt_interval_encoding_impl<int_vector_aligned, alphabet_t>;
+using rlbwt_interval_encoding = rlbwt_interval_encoding_impl<false, int_vector_aligned, alphabet_t>;
+template<typename alphabet_t = nucleotide>
+using invertible_rlbwt_interval_encoding = rlbwt_interval_encoding_impl<true, int_vector_aligned, alphabet_t>;
 
 // ======================== RLBWT to Interval Encoding Types (Derive Permutation, Don't Use Character Columns) ========================
 inline interval_encoding_impl<> rlbwt_to_lf(const std::vector<uchar>& bwt_heads, const std::vector<ulint>& bwt_run_lengths, const split_params& sp = split_params{}) {

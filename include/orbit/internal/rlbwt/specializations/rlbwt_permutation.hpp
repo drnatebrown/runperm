@@ -23,7 +23,8 @@ class rlbwt_permutation : public permutation_impl<data_columns_t, integrated_mov
 protected:
     using base_columns = typename base::base_columns;
     using move_structure_perm = typename base::move_structure_perm;
-    using rlbwt_interval_encoding = rlbwt_interval_encoding_impl<int_vector_aligned, alphabet_t>;
+    // TODO: Add invertible template parameter
+    using rlbwt_interval_encoding = rlbwt_interval_encoding_impl<false, int_vector_aligned, alphabet_t>;
 public:
     // Sets Columns, ColsTraits, and NumCols
     MOVE_CLASS_TRAITS(data_columns_t)

@@ -17,7 +17,8 @@ using namespace orbit;
 
 // Use the packed int_vector as IntVectorType for tests.
 using test_int_vector = int_vector;
-using test_permutation = interval_encoding_impl<test_int_vector>;
+using test_permutation = interval_encoding_impl<false, test_int_vector>;
+using test_invertible_encoding = interval_encoding_impl<true, test_int_vector>;
 
 // Basic helper to check that img_rank_inv is a permutation of [0, n).
 static void assert_img_rank_inv_is_permutation(test_permutation &perm) {
@@ -116,6 +117,47 @@ static void test_permutation_helpers() {
         const vector<ulint> expected_interval_perm = {2, 10};
         assert(lengths == expected_lengths);
         assert(interval_perm == expected_interval_perm);
+    }
+}
+
+static void test_invertible_no_splitting_applies_union_split() {
+    // With invertible=true, NO_SPLITTING still runs union refinement (split_by_union).
+    const vector<ulint> permutation = {1, 2, 9, 10, 11, 3, 12, 13, 4, 5, 14, 0, 15, 6, 7, 8};
+    const ulint domain = static_cast<ulint>(permutation.size());
+
+    test_permutation plain = test_permutation::from_permutation(permutation, NO_SPLITTING);
+    test_invertible_encoding inv = test_invertible_encoding::from_permutation(permutation, NO_SPLITTING);
+
+    assert(plain.domain() == domain);
+    assert(inv.domain() == domain);
+    assert(plain.runs() == 9);
+    assert(inv.runs() == 9);
+    assert(plain.intervals() == 9);
+    assert(inv.intervals() == 15);
+    assert(plain.max_length() == 3);
+    assert(inv.max_length() == 2);
+
+    // Spot-check a few indices against split_by_union golden output (same permutation / runs).
+    assert(inv.get_is_fwd_interval(0) == true);
+    assert(inv.get_is_inv_interval(0) == true);
+    assert(inv.get_is_fwd_interval(1) == false);
+    assert(inv.get_is_inv_interval(1) == true);
+    assert(inv.get_is_fwd_interval(5) == true);
+    assert(inv.get_is_inv_interval(5) == false);
+
+    ulint sum_len = 0;
+    vector<ulint> img_inv(inv.intervals());
+    for (size_t i = 0; i < inv.intervals(); ++i) {
+        sum_len += inv.get_length(i);
+        img_inv[i] = inv.get_img_rank_inv(i);
+    }
+    assert(sum_len == domain);
+    vector<bool> seen_rank(inv.intervals(), false);
+    for (size_t i = 0; i < inv.intervals(); ++i) {
+        ulint r = img_inv[i];
+        assert(r < inv.intervals());
+        assert(!seen_rank[r]);
+        seen_rank[r] = true;
     }
 }
 
@@ -387,10 +429,10 @@ int main() {
     test_inverse_permutation();
     test_permutation_intervals_trivial_and_runs();
     test_permutation_helpers();
+    test_invertible_no_splitting_applies_union_split();
     test_all_construction_paths_no_splitting();
     test_from_permutation_and_split_run_data();
 
     std::cout << "permutation tests passed" << std::endl;
     return 0;
 }
-

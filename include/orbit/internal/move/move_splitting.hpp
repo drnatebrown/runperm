@@ -79,9 +79,15 @@ struct split_result {
     ulint max_length;
 };
 
+template<class int_vector_t>
+struct split_result_union : split_result<int_vector_t> {
+    int_vector_t is_fwd_interval;
+    int_vector_t is_inv_interval;
+};
+
 class move_splitting {
 public:
-
+    /* ============================================= Splitting by Length Capping ============================================= */
     template<class int_vector_t>
     inline static void split_by_length_capping(
         const int_vector_t& lengths, 
@@ -100,22 +106,19 @@ public:
 
         size_t new_intervals_upper_bound = std::ceil(static_cast<double>(lengths.size()) / length_capping_factor);
 
-        split_by_max_allowed_length(lengths, img_rank_inv, domain, max_allowed_length, result, new_intervals_upper_bound);
+        split_by_max_allowed_length(lengths, img_rank_inv, max_allowed_length, result, new_intervals_upper_bound);
     }
 
     template<class int_vector_t>
     inline static void split_by_max_allowed_length(
         const int_vector_t& lengths, 
         const int_vector_t& img_rank_inv,
-        const ulint domain,
         const ulint max_allowed_length, 
         split_result<int_vector_t>& result,
         const size_t new_intervals_upper_bound = 0
     ) {
         assert(lengths.size() == img_rank_inv.size());
         assert(max_allowed_length > 0);
-        size_t intervals_after_splitting_upper_bound = 
-            (new_intervals_upper_bound == 0) ? domain - 1 : lengths.size() + new_intervals_upper_bound - 1;
 
         // For each original run, how many new intervals were added up to but not including this run?
         int_vector_t input_splits_exclusive_cumsum(lengths.size(), bit_width(new_intervals_upper_bound));
@@ -176,6 +179,106 @@ public:
         }
     }
 
+    /* ============================================= Splitting by Union ============================================= */
+    template<class int_vector_t>
+    inline static void split_by_union(const int_vector_t& lengths, const int_vector_t& img_rank_inv, const ulint domain, ulint max_length, split_result_union<int_vector_t>& result) {
+        assert(lengths.size() == img_rank_inv.size());
+        size_t new_intervals_upper_bound = lengths.size();
+        int_vector_t input_splits_exclusive_cumsum(lengths.size(), bit_width(new_intervals_upper_bound));
+        size_t NO_INTERSECT = lengths.size();
+        int_vector_t first_output_intersecting_input_idx(lengths.size(), bit_width(lengths.size()));
+        int_vector_t intersecting_offsets(lengths.size(), bit_width(max_length));
+        
+        size_t curr_input_start = 0;
+        size_t curr_output_idx = 0;
+        size_t curr_output_start = 0;
+        size_t union_size = 0;
+        size_t cumulative_new_intervals = 0;
+        result.max_length = 0;
+        for (size_t i = 0; i < lengths.size(); ++i) {
+            first_output_intersecting_input_idx[i] = NO_INTERSECT;
+            input_splits_exclusive_cumsum[i] = cumulative_new_intervals;
+            ulint curr_input_length = lengths[i];
+
+            ulint last_start = curr_input_start;
+            while (curr_output_idx < lengths.size() && curr_output_start < curr_input_start + curr_input_length) {
+                if (curr_output_start > curr_input_start) {
+                    ulint new_length = curr_output_start - last_start;
+                    result.max_length = std::max(result.max_length, new_length);
+                    ++union_size;
+                    ++cumulative_new_intervals;
+                }
+                if (first_output_intersecting_input_idx[i] == NO_INTERSECT) {
+                    first_output_intersecting_input_idx[i] = curr_output_idx;
+                    intersecting_offsets[i] = curr_output_start - curr_input_start;
+                }
+                last_start = curr_output_start;
+                ulint curr_output_length = lengths[img_rank_inv[curr_output_idx]];
+                curr_output_start += curr_output_length;
+                ++curr_output_idx;
+            }
+
+            ulint remaining_length = curr_input_length - (last_start - curr_input_start);
+            result.max_length = std::max(result.max_length, remaining_length);
+            if (remaining_length > 0) {
+                ++union_size;
+            }
+            curr_input_start += curr_input_length;
+        }
+        assert(union_size < 2*lengths.size());
+
+        result.lengths = int_vector_t(union_size, bit_width(result.max_length));
+        result.img_rank_inv = int_vector_t(union_size, bit_width(union_size - 1));
+        result.is_fwd_interval = int_vector_t(union_size, bit_width(1));
+        result.is_inv_interval = int_vector_t(union_size, bit_width(1));
+
+        // Second pass to fill the lengths and img_rank_inv arrays, in output order
+        size_t curr_img_rank_inv_idx = 0;
+        for (size_t i = 0; i < lengths.size(); ++i) {
+            size_t j = img_rank_inv[i];
+            ulint curr_input_length = lengths[j];
+            ulint intersecting_output_idx = first_output_intersecting_input_idx[j];
+            ulint intersecting_offset = (intersecting_output_idx == NO_INTERSECT) ? 0 : intersecting_offsets[j];
+            ulint last_offset = 0;
+            size_t num_splits = 0;
+            while (intersecting_output_idx != NO_INTERSECT && intersecting_offset < curr_input_length) {
+                if (intersecting_offset > 0) {
+                    ulint new_length = intersecting_offset - last_offset;
+                    result.lengths[j + input_splits_exclusive_cumsum[j] + num_splits] = new_length;
+                    result.is_fwd_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = (last_offset == 0);
+                    result.is_inv_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = true;
+                    ++num_splits;
+                }
+                last_offset = intersecting_offset;
+                ulint curr_output_length = lengths[img_rank_inv[intersecting_output_idx]];
+                intersecting_offset += curr_output_length;
+                ++intersecting_output_idx;
+            }
+
+            ulint remaining_length = curr_input_length - last_offset;
+            if (remaining_length > 0) {
+                result.lengths[j + input_splits_exclusive_cumsum[j] + num_splits] = remaining_length;
+                if (remaining_length == curr_input_length) {
+                    result.is_fwd_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = true;
+                    result.is_inv_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = 
+                        first_output_intersecting_input_idx[j] != NO_INTERSECT && intersecting_offsets[j] == 0;
+                }
+                else {
+                    result.is_fwd_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = false;
+                    result.is_inv_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = true;
+                }
+            }
+
+            // Fill the img_rank_inv array
+            size_t curr_img_rank_inv_val = j + input_splits_exclusive_cumsum[j];
+            for (size_t k = 0; k < num_splits + 1; ++k) {
+                result.img_rank_inv[curr_img_rank_inv_idx] = curr_img_rank_inv_val + k;
+                ++curr_img_rank_inv_idx;
+            }
+        }
+    }
+
+    /* ============================================= Splitting by Balancing ============================================= */
     inline static ulint balancing_upper_bound(ulint balancing_factor, ulint original_intervals) {
         return (((balancing_factor + 1) * original_intervals)/(balancing_factor - 1)) + 1;
     }

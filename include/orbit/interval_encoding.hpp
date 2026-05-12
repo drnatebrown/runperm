@@ -6,7 +6,8 @@
 
 namespace orbit {
 
-using interval_encoding = interval_encoding_impl<>;
+using interval_encoding = interval_encoding_impl<false, int_vector_aligned>;
+using invertible_interval_encoding = interval_encoding_impl<true, int_vector_aligned>;
 
 } // namespace orbit
 

@@ -18,6 +18,18 @@ using namespace orbit;
 // Use the packed int_vector as IntVectorType for tests
 using test_int_vector = int_vector;
 using test_split_result = split_result<test_int_vector>;
+using test_split_result_union = split_result_union<test_int_vector>;
+
+static void assert_img_rank_inv_is_permutation(const test_int_vector &img, size_t n) {
+    std::vector<bool> seen(n, false);
+    assert(img.size() == n);
+    for (size_t i = 0; i < n; ++i) {
+        ulint v = img[i];
+        assert(v < n);
+        assert(!seen[v]);
+        seen[v] = true;
+    }
+}
 
 void test_split_by_length_capping_no_splitting() {
     // Three equal-length runs that should not be split.
@@ -57,7 +69,7 @@ void test_split_by_length_capping_with_splitting() {
     test_int_vector img_rank_inv(img_rank_inv_vec);
 
     test_split_result result;
-    move_splitting::split_by_max_allowed_length(lengths, img_rank_inv, domain, max_length, result);
+    move_splitting::split_by_max_allowed_length(lengths, img_rank_inv, max_length, result);
 
     const vector<ulint> expected_lengths = {2, 2, 1, 1, 2, 2, 1, 1, 1, 2, 1};
     const vector<ulint> expected_perm = {1, 9, 11, 3, 12, 4, 14, 0, 15, 6, 8};
@@ -205,6 +217,70 @@ ulint compute_max_output_weight(const int_vector_t &lengths, const int_vector_t 
     return max_weight;
 }
 
+void test_split_by_union_two_equal_runs() {
+    // Two runs of length 2 in input order; output order matches input (img_rank_inv identity).
+    const vector<ulint> lengths_vec = {2, 2};
+    const vector<ulint> img_rank_inv_vec = {0, 1};
+    const ulint domain = 4;
+    const ulint max_length = 2;
+
+    test_int_vector lengths(lengths_vec);
+    test_int_vector img_rank_inv(img_rank_inv_vec);
+
+    test_split_result_union result;
+    move_splitting::split_by_union(lengths, img_rank_inv, domain, max_length, result);
+
+    assert(result.lengths.size() == 2);
+    assert(result.max_length == 2);
+    ulint sum = 0;
+    for (size_t i = 0; i < result.lengths.size(); ++i) {
+        sum += static_cast<ulint>(result.lengths[i]);
+    }
+    assert(sum == domain);
+    assert_img_rank_inv_is_permutation(result.img_rank_inv, result.lengths.size());
+    assert(static_cast<ulint>(result.lengths[0]) == 2);
+    assert(static_cast<ulint>(result.lengths[1]) == 2);
+    assert(static_cast<ulint>(result.img_rank_inv[0]) == 0);
+    assert(static_cast<ulint>(result.img_rank_inv[1]) == 1);
+    for (size_t i = 0; i < result.is_fwd_interval.size(); ++i) {
+        assert(static_cast<bool>(result.is_fwd_interval[i]));
+        assert(static_cast<bool>(result.is_inv_interval[i]));
+    }
+}
+
+void test_split_by_union_nine_run_regression() {
+    // Run lengths / img_rank_inv from the 16-element permutation used in interval_encoding tests
+    // (get_permutation_intervals on {1,2,9,...,8}); domain is sum(lengths) == 16.
+    const vector<ulint> lengths_vec = {2, 3, 1, 2, 2, 1, 1, 1, 3};
+    const vector<ulint> img_rank_inv_vec = {6, 0, 2, 4, 8, 1, 3, 5, 7};
+    const ulint domain = 16;
+    const ulint max_length = 3;
+
+    test_int_vector lengths(lengths_vec);
+    test_int_vector img_rank_inv(img_rank_inv_vec);
+
+    test_split_result_union result;
+    move_splitting::split_by_union(lengths, img_rank_inv, domain, max_length, result);
+
+    const vector<ulint> expected_lengths = {1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1};
+    const vector<ulint> expected_img_rank_inv = {10, 0, 1, 5, 7, 8, 12, 13, 14, 2, 3, 4, 6, 9, 11};
+    const vector<ulint> expected_fwd = {1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0};
+    const vector<ulint> expected_inv = {1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1};
+
+    assert(result.lengths.size() == expected_lengths.size());
+    assert(result.max_length == 2);
+    ulint sum = 0;
+    for (size_t i = 0; i < result.lengths.size(); ++i) {
+        sum += static_cast<ulint>(result.lengths[i]);
+        assert(static_cast<ulint>(result.lengths[i]) == expected_lengths[i]);
+        assert(static_cast<ulint>(result.img_rank_inv[i]) == expected_img_rank_inv[i]);
+        assert(static_cast<ulint>(result.is_fwd_interval[i]) == expected_fwd[i]);
+        assert(static_cast<ulint>(result.is_inv_interval[i]) == expected_inv[i]);
+    }
+    assert(sum == domain);
+    assert_img_rank_inv_is_permutation(result.img_rank_inv, result.lengths.size());
+}
+
 void test_split_by_balancing_invariant() {
     const vector<ulint> lengths_vec = {4, 3, 1, 2, 2, 1, 4, 1, 1, 1, 2, 1, 1, 2, 1, 2, 1, 24, 1, 5};
     const vector<ulint> images_vec = {30, 47, 34, 50, 35, 52, 37, 53, 41, 54, 42, 55, 44, 56, 45, 58, 46, 1, 0, 29};
@@ -245,6 +321,8 @@ int main() {
     test_split_by_length_capping_no_splitting();
     test_split_by_length_capping_with_splitting();
     test_split_by_length_capping_mixed_lengths();
+    test_split_by_union_two_equal_runs();
+    test_split_by_union_nine_run_regression();
     test_split_by_balancing_no_change();
     test_split_by_balancing_splitting();
     test_split_by_balancing_invariant();

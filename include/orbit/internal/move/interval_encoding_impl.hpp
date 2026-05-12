@@ -81,8 +81,17 @@ inline int_vector_t compute_img_rank_inv(const container_t& interval_output_star
     return img_rank_inv;
 }
 
-template<typename int_vector_t = int_vector_aligned>
-class interval_encoding_impl {
+template<bool invertible, typename int_vector_t = int_vector_aligned>
+struct invertible_storage {};
+
+template<typename int_vector_t>
+struct invertible_storage<true, int_vector_t> {
+    int_vector_t is_fwd_interval;
+    int_vector_t is_inv_interval;
+};
+
+template<bool invertible = false, typename int_vector_t = int_vector_aligned>
+class interval_encoding_impl : private invertible_storage<invertible, int_vector_t> {
 public:
 
     interval_encoding_impl() = default;
@@ -98,7 +107,7 @@ public:
         *this = from_lengths_and_images(lengths, images, domain, max_length, sp);
     }
 
-    static interval_encoding_impl<int_vector_t> from_permutation(const std::vector<ulint>& permutation, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_permutation(const std::vector<ulint>& permutation, const split_params& sp = split_params()) {
         ulint max_length = 0;
         auto [lengths, images] = get_permutation_intervals(permutation, &max_length);
         assert(lengths.size() == images.size());
@@ -107,7 +116,7 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const split_params& sp = split_params()) {
         assert(lengths.size() == img_rank_inv.size());
         auto [domain, max_length] = sum_and_max(lengths);
         
@@ -115,16 +124,16 @@ public:
     }
     
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_lengths_and_img_rank_inv(const container1_t& lengths, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
         assert(lengths.size() == img_rank_inv.size());
-        interval_encoding_impl<int_vector_t> enc;
+        interval_encoding_impl<invertible, int_vector_t> enc;
         enc.set_initial_values(domain, lengths.size(), max_length, sp);
         enc.init_img_rank_inv(lengths, img_rank_inv);
         return enc;
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const split_params& sp = split_params()) {
         assert(lengths.size() == img_rank.size());
 
         auto [domain, max_length] = sum_and_max(lengths);
@@ -132,17 +141,17 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_lengths_and_img_rank(const container1_t& lengths, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
         assert(lengths.size() == img_rank.size());
 
-        interval_encoding_impl<int_vector_t> enc;
+        interval_encoding_impl<invertible, int_vector_t> enc;
         enc.set_initial_values(domain, lengths.size(), max_length, sp);
         enc.init_img_rank(lengths, img_rank);
         return enc;
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const split_params& sp = split_params()) {
         assert(lengths.size() == images.size());
 
         auto [domain, max_length] = sum_and_max(lengths);
@@ -150,7 +159,7 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_lengths_and_images(const container1_t& lengths, const container2_t& images, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
         assert(lengths.size() == images.size());
 
         int_vector_t img_rank_inv = compute_img_rank_inv<int_vector_t>(images);
@@ -158,14 +167,14 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const split_params& sp = split_params()) {
         assert(starts.size() == img_rank_inv.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
         return from_lengths_and_img_rank_inv(lengths, img_rank_inv, domain, max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_starts_and_img_rank_inv(const container1_t& starts, const container2_t& img_rank_inv, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
         assert(starts.size() == img_rank_inv.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
@@ -173,14 +182,14 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const split_params& sp = split_params()) {
         assert(starts.size() == img_rank.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
         return from_lengths_and_img_rank(lengths, img_rank, domain, max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_starts_and_img_rank(const container1_t& starts, const container2_t& img_rank, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
         assert(starts.size() == img_rank.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
@@ -188,14 +197,14 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const split_params& sp = split_params()) {
         assert(starts.size() == images.size());
         auto [lengths, max_length] = starts_to_lengths(starts, domain);
         return from_lengths_and_images(lengths, images, domain, max_length, sp);
     }
 
     template<typename container1_t, typename container2_t>
-    static interval_encoding_impl<int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
+    static interval_encoding_impl<invertible, int_vector_t> from_starts_and_images(const container1_t& starts, const container2_t& images, const size_t domain, const ulint max_length, const split_params& sp = split_params()) {
         assert(starts.size() == images.size());
         auto [lengths, calculated_max_length] = starts_to_lengths(starts, domain);
         assert(calculated_max_length == max_length);
@@ -243,6 +252,16 @@ public:
     }
     split_params get_split_params() const {
         return split_params_;
+    }
+
+    // Invertible interval accessors
+    template <bool b = invertible>
+    std::enable_if_t<b, bool> get_is_fwd_interval(size_t i) const {
+        return static_cast<bool>(this->is_fwd_interval[i]);
+    }
+    template <bool b = invertible>
+    std::enable_if_t<b, bool> get_is_inv_interval(size_t i) const {
+        return static_cast<bool>(this->is_inv_interval[i]);
     }
 
 protected:
@@ -305,24 +324,52 @@ protected:
 
     void apply_splitting(int_vector_t& curr_lengths, int_vector_t& curr_img_rank_inv, ulint& new_max_length) {
         if (this->split_params_ == NO_SPLITTING) {
-            new_max_length = this->max_length_;
+            if constexpr (invertible) {
+                invertible_splitting(curr_lengths, curr_img_rank_inv, new_max_length);
+            }
+            else {
+                new_max_length = this->max_length_;
+            }
             return;
         }
         
-        split_result<int_vector_t> split_result;
-        
         if (this->split_params_.length_capping) {
-            move_splitting::split_by_length_capping(curr_lengths, curr_img_rank_inv, this->domain_, *this->split_params_.length_capping, split_result);
-            curr_lengths = std::move(split_result.lengths);
-            curr_img_rank_inv = std::move(split_result.img_rank_inv);
-            new_max_length = split_result.max_length;
+            length_capping_splitting(curr_lengths, curr_img_rank_inv, new_max_length);
         }
         if (this->split_params_.balancing) {
-            move_splitting::split_by_balancing(curr_lengths, curr_img_rank_inv, this->domain_, *this->split_params_.balancing, split_result);
-            curr_lengths = std::move(split_result.lengths);
-            curr_img_rank_inv = std::move(split_result.img_rank_inv);
-            new_max_length = split_result.max_length;
+            balancing_splitting(curr_lengths, curr_img_rank_inv, new_max_length);
         }
+        if constexpr (invertible) {
+            invertible_splitting(curr_lengths, curr_img_rank_inv, new_max_length);
+        }
+    }
+
+    void length_capping_splitting(int_vector_t& curr_lengths, int_vector_t& curr_img_rank_inv, ulint& new_max_length) {
+        split_result<int_vector_t> split_result;
+        move_splitting::split_by_length_capping(curr_lengths, curr_img_rank_inv, this->domain_, *this->split_params_.length_capping, split_result);
+        curr_lengths = std::move(split_result.lengths);
+        curr_img_rank_inv = std::move(split_result.img_rank_inv);
+        new_max_length = split_result.max_length;
+    }
+
+    void balancing_splitting(int_vector_t& curr_lengths, int_vector_t& curr_img_rank_inv, ulint& new_max_length) {
+        split_result<int_vector_t> split_result;
+        move_splitting::split_by_balancing(curr_lengths, curr_img_rank_inv, this->domain_, *this->split_params_.balancing, split_result);
+        curr_lengths = std::move(split_result.lengths);
+        curr_img_rank_inv = std::move(split_result.img_rank_inv);
+        new_max_length = split_result.max_length;
+    }
+
+    void invertible_splitting(int_vector_t& curr_lengths, int_vector_t& curr_img_rank_inv, ulint& new_max_length) {
+        split_result_union<int_vector_t> split_result_union;
+        move_splitting::split_by_union(curr_lengths, curr_img_rank_inv, this->domain_, new_max_length, split_result_union);
+        curr_lengths = std::move(split_result_union.lengths);
+        curr_img_rank_inv = std::move(split_result_union.img_rank_inv);
+        new_max_length = split_result_union.max_length;
+
+        // Set the forward and inverse interval vectors here
+        this->is_fwd_interval = std::move(split_result_union.is_fwd_interval);
+        this->is_inv_interval = std::move(split_result_union.is_inv_interval);
     }
 };
 

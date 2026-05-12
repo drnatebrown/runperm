@@ -8,19 +8,19 @@
 
 namespace orbit::rlbwt {
 
-template<typename int_vector_t = int_vector_aligned, typename alphabet_t = nucleotide>
-class rlbwt_interval_encoding_impl : public interval_encoding_impl<int_vector_t> {
-    using base = interval_encoding_impl<int_vector_t>;
+template<bool invertible=false,typename int_vector_t = int_vector_aligned, typename alphabet_t = nucleotide>
+class rlbwt_interval_encoding_impl : public interval_encoding_impl<invertible, int_vector_t> {
+    using base = interval_encoding_impl<invertible, int_vector_t>;
 public:
     using alphabet_tag = alphabet_t;
 
     rlbwt_interval_encoding_impl() = default;
 
     template<typename container1_t, typename container2_t>
-    static rlbwt_interval_encoding_impl lf_interval_encoding(const container1_t& rlbwt_heads, const container2_t& rlbwt_run_lengths, const split_params& sp = split_params()) {
+    static rlbwt_interval_encoding_impl<invertible, int_vector_t, alphabet_t> lf_interval_encoding(const container1_t& rlbwt_heads, const container2_t& rlbwt_run_lengths, const split_params& sp = split_params()) {
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
 
-        rlbwt_interval_encoding_impl enc;
+        rlbwt_interval_encoding_impl<invertible, int_vector_t, alphabet_t> enc;
 
         auto [head_counts, n, max_length] = get_LF_head_counts(rlbwt_heads, rlbwt_run_lengths);
         enc.set_initial_values(n, rlbwt_heads.size(), max_length, sp);
@@ -35,10 +35,10 @@ public:
     }
 
     template<typename container1_t, typename container2_t>
-    static rlbwt_interval_encoding_impl fl_interval_encoding(const container1_t& rlbwt_heads, const container2_t& rlbwt_run_lengths, const split_params& sp = split_params()) {
+    static rlbwt_interval_encoding_impl<invertible, int_vector_t, alphabet_t> fl_interval_encoding(const container1_t& rlbwt_heads, const container2_t& rlbwt_run_lengths, const split_params& sp = split_params()) {
         assert(rlbwt_heads.size() == rlbwt_run_lengths.size());
 
-        rlbwt_interval_encoding_impl enc;
+        rlbwt_interval_encoding_impl<invertible, int_vector_t, alphabet_t> enc;
 
         auto [head_counts, F_lens_and_origin_run, n, max_length] = get_FL_head_counts(rlbwt_heads, rlbwt_run_lengths);
         enc.set_initial_values(n, rlbwt_heads.size(), max_length, sp);
