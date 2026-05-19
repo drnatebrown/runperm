@@ -239,6 +239,7 @@ public:
             ulint curr_input_length = lengths[j];
             ulint intersecting_output_idx = first_output_intersecting_input_idx[j];
             ulint intersecting_offset = (intersecting_output_idx == NO_INTERSECT) ? 0 : intersecting_offsets[j];
+            const bool union_at_input_start = first_output_intersecting_input_idx[j] != NO_INTERSECT && intersecting_offset == 0;
             ulint last_offset = 0;
             size_t num_splits = 0;
             while (intersecting_output_idx != NO_INTERSECT && intersecting_offset < curr_input_length) {
@@ -246,7 +247,7 @@ public:
                     ulint new_length = intersecting_offset - last_offset;
                     result.lengths[j + input_splits_exclusive_cumsum[j] + num_splits] = new_length;
                     result.is_fwd_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = (last_offset == 0);
-                    result.is_inv_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = true;
+                    result.is_inv_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = (last_offset == 0) ? union_at_input_start : true;
                     ++num_splits;
                 }
                 last_offset = intersecting_offset;
@@ -260,8 +261,7 @@ public:
                 result.lengths[j + input_splits_exclusive_cumsum[j] + num_splits] = remaining_length;
                 if (remaining_length == curr_input_length) {
                     result.is_fwd_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = true;
-                    result.is_inv_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = 
-                        first_output_intersecting_input_idx[j] != NO_INTERSECT && intersecting_offsets[j] == 0;
+                    result.is_inv_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = union_at_input_start;
                 }
                 else {
                     result.is_fwd_interval[j + input_splits_exclusive_cumsum[j] + num_splits] = false;

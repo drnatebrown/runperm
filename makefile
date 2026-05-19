@@ -38,6 +38,7 @@ UNIT_TESTS = $(UNIT_BUILD_DIR)/packed_vector_test \
              $(UNIT_BUILD_DIR)/move_table_test \
              $(UNIT_BUILD_DIR)/move_splitting_test \
              $(UNIT_BUILD_DIR)/move_structure_test \
+             $(UNIT_BUILD_DIR)/invertible_structure_test \
              $(UNIT_BUILD_DIR)/move_test \
              $(UNIT_BUILD_DIR)/permutation_test \
              $(UNIT_BUILD_DIR)/permutation_random_test \
@@ -69,6 +70,7 @@ test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	$(UNIT_BUILD_DIR)/move_table_test
 	$(UNIT_BUILD_DIR)/move_splitting_test
 	$(UNIT_BUILD_DIR)/move_structure_test
+	$(UNIT_BUILD_DIR)/invertible_structure_test
 	$(UNIT_BUILD_DIR)/move_test
 	$(UNIT_BUILD_DIR)/permutation_test
 	$(UNIT_BUILD_DIR)/permutation_random_test
@@ -121,6 +123,10 @@ $(UNIT_BUILD_DIR)/move_splitting_test: ./tests/unit/move/move_splitting_test.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(UNIT_BUILD_DIR)/move_structure_test: ./tests/unit/move/move_structure_test.cpp $(HEADERS)
+	mkdir -p $(UNIT_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(UNIT_BUILD_DIR)/invertible_structure_test: ./tests/unit/move/invertible_structure_test.cpp $(HEADERS)
 	mkdir -p $(UNIT_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 

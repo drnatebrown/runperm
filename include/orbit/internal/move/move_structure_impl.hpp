@@ -402,7 +402,8 @@ public:
         if constexpr (cols_traits::RELATIVE) {
             pos = {get_pointer_func(pos), new_offset};
         } else {
-            pos = {get_pointer_func(pos), new_offset, this->get_start(pos.interval) + new_offset};
+            ulint next_interval = get_pointer_func(pos);
+            pos = {next_interval, new_offset, this->get_start(next_interval) + new_offset};
         }
         if constexpr (linear) {
             return this->fast_forward(pos);
@@ -462,12 +463,10 @@ public:
             
             while (img_rank_inv_idx < enc.intervals() && output_start_val < input_start_val + length) {
                 ulint img_rank_inv_val = enc.get_img_rank_inv(img_rank_inv_idx);
-                if (enc.get_is_fwd_interval(img_rank_inv_val)) {
-                    assert(output_start_val == input_start_val);
+                if (enc.get_is_fwd_interval(img_rank_inv_val) && output_start_val == input_start_val) {
                     structure.template set<to_cols(cols_traits::POINTER_FWD)>(img_rank_inv_val, i);
                 }
-                if (enc.get_is_inv_interval(img_rank_inv_val)) {
-                    assert(output_start_val == input_start_val);
+                if (enc.get_is_inv_interval(i) && output_start_val == input_start_val) {
                     structure.template set<to_cols(cols_traits::POINTER_INV)>(i, img_rank_inv_val);
                 }
                 output_start_val += enc.get_length(img_rank_inv_val);

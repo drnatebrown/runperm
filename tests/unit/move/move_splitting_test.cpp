@@ -336,7 +336,7 @@ void test_split_by_union_nine_run_regression() {
     const vector<ulint> expected_lengths = {1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1};
     const vector<ulint> expected_img_rank_inv = {10, 0, 1, 5, 7, 8, 12, 13, 14, 2, 3, 4, 6, 9, 11};
     const vector<ulint> expected_fwd = {1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0};
-    const vector<ulint> expected_inv = {1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1};
+    const vector<ulint> expected_inv = {1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1};
 
     assert(result.lengths.size() == expected_lengths.size());
     assert(result.max_length == 2);
@@ -441,7 +441,7 @@ void test_split_by_union_three_element_permutation() {
     const vector<ulint> expected_lengths = {1, 1, 1};
     const vector<ulint> expected_img_rank_inv = {1, 2, 0};
     const vector<ulint> expected_fwd = {1, 1, 0};
-    const vector<ulint> expected_inv = {1, 1, 1};
+    const vector<ulint> expected_inv = {1, 0, 1};
 
     assert(result.lengths.size() == expected_lengths.size());
     assert(result.max_length == 1);
