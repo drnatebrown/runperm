@@ -16,18 +16,16 @@ public:
     // Sets Columns, ColsTraits, and NumCols
     MOVE_CLASS_TRAITS(typename base::columns)
     using position = typename cols_traits::position;
+    using interval_encoding_t = typename base::interval_encoding_t;
 
     rlbwt_move_structure() = default;
 
     rlbwt_move_structure(const std::vector<uchar>& head_chars, const std::vector<ulint>& lengths, const std::vector<ulint>& images, const ulint domain, const uchar sigma, const split_params& sp = split_params())
     : base(find_structure(head_chars, lengths, images, sigma, sp), domain, lengths.size()) {}
 
-    template<typename rlbwt_permutation_t>
-    rlbwt_move_structure(const rlbwt_permutation_t& permutation) {
-        this->n = permutation.domain();
-        this->r = permutation.runs();
-        this->table = find_structure(permutation);
-    }
+    template<typename rlbwt_interval_encoding_t>
+    rlbwt_move_structure(const rlbwt_interval_encoding_t& enc)
+    : base(find_structure(enc), enc.domain(), enc.runs()) {}
 
     rlbwt_move_structure(packed_vector<columns> &&structure, const size_t domain, ulint runs) : base(std::move(structure), domain, runs) {}
 
@@ -37,7 +35,7 @@ public:
     static packed_vector<columns> find_structure(const std::vector<uchar>& head_chars, const std::vector<ulint>& lengths, const std::vector<ulint>& images, const uchar sigma, const split_params& sp = split_params()) {
         assert(head_chars.size() == lengths.size());
 
-        interval_encoding_impl<> enc(lengths, images, sp);
+        interval_encoding_t enc(lengths, images, sp);
         assert(enc.runs() == lengths.size());
 
         packed_vector<columns> structure(enc.intervals(), get_move_widths(enc.domain(), enc.intervals(), enc.max_length(), sigma));
@@ -48,8 +46,9 @@ public:
     }
 
     // When the permutation is already computed with a regular encoding
-    template<typename interval_encoding_t>
-    static packed_vector<columns> find_structure(const std::vector<uchar>& rlbwt_chars, const interval_encoding_t& enc, const uchar sigma) {
+    template<typename rlbwt_interval_encoding_t>
+    static packed_vector<columns> find_structure(const std::vector<uchar>& rlbwt_chars, const rlbwt_interval_encoding_t& enc, const uchar sigma) {
+        static_assert(rlbwt_interval_encoding_t::invertible_tag == cols_traits::INVERTIBLE, "Invertible type mismatch");
         assert(rlbwt_chars.size() == enc.intervals());
 
         // Also initialize with the character width
@@ -62,15 +61,16 @@ public:
     }
 
     // When the permutation is already computed with a rlbwt encoding
-    template<typename rlbwt_permutation_t>
-    static packed_vector<columns> find_structure(const rlbwt_permutation_t& permutation) {
-        assert(permutation.get_heads().size() == permutation.intervals());
+    template<typename rlbwt_interval_encoding_t>
+    static packed_vector<columns> find_structure(const rlbwt_interval_encoding_t& enc) {
+        static_assert(rlbwt_interval_encoding_t::invertible_tag == cols_traits::INVERTIBLE, "Invertible type mismatch");
+        assert(enc.get_heads().size() == enc.intervals());
 
         // Also initialize with the character width
-        packed_vector<columns> structure(permutation.intervals(), get_move_widths(permutation.domain(), permutation.intervals(), permutation.max_length(), permutation.sigma()));
-        base::populate_structure(structure, permutation);
+        packed_vector<columns> structure(enc.intervals(), get_move_widths(enc.domain(), enc.intervals(), enc.max_length(), enc.sigma()));
+        base::populate_structure(structure, enc);
         // Set the character field
-        set_characters(structure, permutation.get_heads());
+        set_characters(structure, enc.get_heads());
 
         return structure; 
     }

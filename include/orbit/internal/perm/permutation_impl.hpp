@@ -63,7 +63,7 @@ public:
 
     // check if we're using move_table
     static constexpr bool is_move_table_type() {
-        return std::is_same_v<table_t<void>, move_table<void>>;
+        return std::is_same_v<table_t<base_columns>, move_table<base_columns>>;
     }
 
     // At compile time, check if trying to integrate user data to MoveTable, which uses bitpacked structs
@@ -171,23 +171,19 @@ public:
         return result;
     }
 
-    /*** NAVIGATION METHODS ***/
-    
+    /*** FORWARD NAVIGATION METHODS ***/
     position next(position position) { 
         if constexpr (store_absolute_positions && exponential_search) {
-            return move_structure.move_exponential(position);
+            return next_exponential(position);
         } else {
-            return move_structure.move(position);
+            return next_linear(position);
         }
     }
-
     position next(position position, ulint steps) {
-        for (ulint i = 0; i < steps; ++i) {
-            if constexpr (store_absolute_positions && exponential_search) {
-                position = move_structure.move_exponential(position);
-            } else {
-                position = move_structure.move(position);
-            }
+        if constexpr (store_absolute_positions && exponential_search) {
+            position = next_exponential(position, steps);
+        } else {
+            position = next_linear(position, steps);
         }
         return position;
     }
@@ -196,7 +192,6 @@ public:
     position next_linear(position position) {
         return move_structure.move(position);
     }
-
     position next_linear(position position, ulint steps) {
         for (ulint i = 0; i < steps; ++i) {
             position = move_structure.move(position);
@@ -205,17 +200,61 @@ public:
     }
 
     // Exponential search version of next()
-    position next_exponential(position position) {
+    template<bool b = store_absolute_positions>
+    std::enable_if_t<b, position> next_exponential(position position) {
         return move_structure.move_exponential(position);
     }
-
-    position next_exponential(position position, ulint steps) {
+    template<bool b = store_absolute_positions>
+    std::enable_if_t<b, position> next_exponential(position position, ulint steps) {
         for (ulint i = 0; i < steps; ++i) {
             position = move_structure.move_exponential(position);
         }
         return position;
     }
 
+    /*** BACKWARD NAVIGATION METHODS ***/
+    template<bool b = cols_traits::INVERTIBLE>
+    std::enable_if_t<b, position> prev(position position) {
+        if constexpr (store_absolute_positions && exponential_search) {
+            return prev_exponential(position);
+        } else {
+            return prev_linear(position);
+        }
+    }
+    template<bool b = cols_traits::INVERTIBLE>
+    std::enable_if_t<b, position> prev(position position, ulint steps) {
+        if constexpr (store_absolute_positions && exponential_search) {
+            return prev_exponential(position, steps);
+        } else {
+            return prev_linear(position, steps);
+        }
+    }
+
+    template<bool b = cols_traits::INVERTIBLE>
+    std::enable_if_t<b, position> prev_linear(position position) {
+        return move_structure.move_inv(position);
+    }
+    template<bool b = cols_traits::INVERTIBLE>
+    std::enable_if_t<b, position> prev_linear(position position, ulint steps) {
+        for (ulint i = 0; i < steps; ++i) {
+            position = move_structure.move_inv(position);
+        }
+        return position;
+    }
+
+    template<bool b = cols_traits::INVERTIBLE>
+    std::enable_if_t<b, position> prev_exponential(position position) {
+        return move_structure.move_inv_exponential(position);
+    }
+    template<bool b = cols_traits::INVERTIBLE>
+    std::enable_if_t<b, position> prev_exponential(position position, ulint steps) {
+        for (ulint i = 0; i < steps; ++i) {
+            position = move_structure.move_inv_exponential(position);
+        }
+        return position;
+    }
+
+    /*** OTHER NAVIGATION METHODS ***/
     // Set position to interval above in underlying move structure, or circularly wrap to the bottom if already at top
     position up(position position) {
         if (position.interval == 0)

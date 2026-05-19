@@ -3,13 +3,11 @@
 
 #include <fstream>
 #include <iostream>
-#include <optional>
 #include <string>
 #include <vector>
 #include <cassert>
 #include <cstdio>
 #include <algorithm>
-#include <numeric>
 
 #include "orbit/common.hpp"
 #include "orbit/internal/move/interval_encoding_impl.hpp"
@@ -18,36 +16,34 @@
 
 namespace orbit {
 
-template <typename columns_t = move_columns, template<typename> class table_t = move_vector>
-class move_structure
-{
+template<typename columns_t, template<typename> class table_t, typename derived>
+class move_structure_base {
 public:
     // Sets NumCols, Columns, and cols_traits
     MOVE_CLASS_TRAITS(typename table_t<columns_t>::columns)
     using position = typename cols_traits::position;
+    using interval_encoding_t = interval_encoding_impl<cols_traits::INVERTIBLE>;
 
-    move_structure() = default;
+    move_structure_base() = default;
     
     // Constructor from permutation data
     template<typename container1_t, typename container2_t>
-    move_structure(const container1_t& lengths, const container2_t& images, const split_params& sp = split_params())
-    : move_structure(interval_encoding_impl<>::from_lengths_and_images(lengths, images, sp)) {}
+    move_structure_base(const container1_t& lengths, const container2_t& images, const split_params& sp = split_params())
+    : move_structure_base(interval_encoding_t::from_lengths_and_images(lengths, images, sp)) {}
 
-    template<typename interval_encoding_t>
-    move_structure(const interval_encoding_t& enc) {
-        n = enc.domain();
-        r = enc.runs();
-        table = find_structure(enc);
-    }
+    template<typename interval_encoding_impl_t>
+    move_structure_base(const interval_encoding_impl_t& enc)
+    : move_structure_base(find_structure(enc), enc.domain(), enc.runs()) {}
 
     // Constructor from pre-computed table (move semantics) for advanced users
-    move_structure(packed_vector<columns> &&structure, const size_t domain, const ulint runs) 
+    move_structure_base(packed_vector<columns> &&structure, const size_t domain, const ulint runs) 
         : table(std::move(structure)), n(domain), r(runs) {}
 
-    template<typename interval_encoding_t>
-    static packed_vector<columns> find_structure(const interval_encoding_t& enc) {
-        packed_vector<columns> structure(enc.intervals(), get_move_widths(enc.domain(), enc.intervals(), enc.max_length()));
-        populate_structure(structure, enc);
+    template<typename interval_encoding_impl_t>
+    static packed_vector<columns> find_structure(const interval_encoding_impl_t& enc) {
+        static_assert(interval_encoding_impl_t::invertible_tag == cols_traits::INVERTIBLE, "Invertible type mismatch");
+        packed_vector<columns> structure(enc.intervals(), derived::get_move_widths(enc.domain(), enc.intervals(), enc.max_length()));
+        derived::populate_structure(structure, enc);
         return structure;
     }
 
@@ -76,23 +72,6 @@ public:
     }
     inline ulint get_length(position pos) const {
         return get_length(pos.interval);
-    }
-
-    // === Pointer/Offset Accessors ===
-    ulint get_pointer(size_t i) const {
-        assert(i < table.size());
-        return table.get_pointer(i);
-    }
-    inline ulint get_pointer(position pos) const {
-        return get_pointer(pos.interval);
-    }
-    
-    ulint get_offset(size_t i) const {
-        assert(i < table.size());
-        return table.get_offset(i);
-    }
-    inline ulint get_offset(position pos) const {
-        return get_offset(pos.interval);
     }
 
     // === Generic Column Accessors ===
@@ -140,38 +119,10 @@ public:
         }
     }
 
-    position move(position pos) const
-    {
-        assert(pos.interval < table.size());
-        if constexpr (cols_traits::RELATIVE) {
-            assert(pos.offset < get_length(pos));
-            pos = {get_pointer(pos), pos.offset + get_offset(pos)};
-        } else {
-            assert(pos.idx < get_start(pos.interval + 1));
-            ulint next_interval = get_pointer(pos);
-            ulint next_offset = get_offset(pos) + pos.offset;
-            pos = {next_interval, next_offset, get_start(next_interval) + next_offset};
-        }
-        return fast_forward(pos);
-    }
-
-    position move_exponential(position pos) const {
-        if constexpr (cols_traits::RELATIVE) {
-            return move(pos);
-        } else {
-            assert(pos.interval < table.size());
-            assert(pos.idx < get_start(pos.interval + 1));
-            ulint next_interval = get_pointer(pos);
-            ulint next_offset = get_offset(pos) + pos.offset;
-            pos = {next_interval, next_offset, get_start(next_interval) + next_offset};
-            return fast_forward_exponential(pos);
-        }
-    }
-
     // === Utility Methods ===
     std::string get_file_extension() const
     {
-        return MOVE_STRUCTURE_EXTENSION;
+        return derived::MOVE_STRUCTURE_EXTENSION;
     }
 
     void move_stats() const
@@ -186,7 +137,7 @@ public:
     size_t serialize(std::ostream &out) {
         size_t written_bytes = 0;
 
-        written_bytes += write_magic(out, MAGIC);
+        written_bytes += write_magic(out, derived::MAGIC);
         written_bytes += serialize_version(out);
 
         out.write((char *)&n, sizeof(n));
@@ -202,9 +153,7 @@ public:
 
     void load(std::istream &in)
     {
-        size_t size;
-
-        check_magic(in, MAGIC);
+        check_magic(in, derived::MAGIC);
         auto [serialized_major, serialized_minor, serialized_patch] = load_version(in);
         if (serialized_major != VERSION_MAJOR || serialized_minor != VERSION_MINOR || serialized_patch != VERSION_PATCH) {
             // TODO handle version mismatches
@@ -217,55 +166,9 @@ public:
     }
 
 protected:
-    // OrBit Move Structure
-    static constexpr std::array<char, MAGIC_BYTES> MAGIC = {'O', 'B', 'M', 'S'};
-
     table_t<columns_t> table;
     ulint n;
     ulint r;
-    
-    static std::array<uchar, num_cols> get_move_widths(const ulint domain, const ulint intervals, const ulint max_length) {
-        std::array<uchar, num_cols> widths = {0};
-        for (size_t i = 0; i < num_cols; ++i) {
-            widths[i] = bytes_to_bits(DEFAULT_BYTES);
-        }
-
-        if constexpr (cols_traits::RELATIVE) {
-            widths[static_cast<size_t>(cols_traits::PRIMARY)] = bit_width(max_length);
-        } else {
-            widths[static_cast<size_t>(cols_traits::PRIMARY)] = bit_width(domain - 1);
-        }
-
-        widths[static_cast<size_t>(cols_traits::POINTER)] = bit_width(intervals - 1);
-        widths[static_cast<size_t>(cols_traits::OFFSET)] = bit_width(max_length);
-
-        return widths;
-    }
-    
-    template<typename interval_encoding_t>
-    static void populate_structure(packed_vector<columns>& structure, const interval_encoding_t& enc) {
-        size_t start_val = 0;
-        size_t output_start_val = 0;
-        size_t img_rank_inv_idx = 0;
-        for (size_t i = 0; i < enc.intervals(); ++i) {
-            size_t length = enc.get_length(i);
-            if constexpr (cols_traits::RELATIVE) {
-                structure.template set<to_cols(cols_traits::PRIMARY)>(i, length);
-            }
-            else {
-                structure.template set<to_cols(cols_traits::PRIMARY)>(i, start_val);
-            }
-
-            while (img_rank_inv_idx < enc.intervals() && output_start_val < start_val + length) {
-                ulint img_rank_inv_val = enc.get_img_rank_inv(img_rank_inv_idx);
-                structure.template set<to_cols(cols_traits::POINTER)>(img_rank_inv_val, i);
-                structure.template set<to_cols(cols_traits::OFFSET)>(img_rank_inv_val, output_start_val - start_val);
-                output_start_val += enc.get_length(img_rank_inv_val);
-                ++img_rank_inv_idx;
-            }
-            start_val += length;
-        }
-    }
 
     // === position Navigation ===
     inline position fast_forward(position pos) const {
@@ -319,6 +222,266 @@ protected:
         }
     }
 };
+
+template<typename columns_t = move_columns, template<typename> class table_t = move_vector>
+class move_structure_impl : public move_structure_base<columns_t, table_t, move_structure_impl<columns_t, table_t>> {
+public:
+    using base = move_structure_base<columns_t, table_t, move_structure_impl<columns_t, table_t>>;
+    using base::base;
+
+    MOVE_CLASS_TRAITS(typename table_t<columns_t>::columns)
+    using position = typename cols_traits::position;
+
+    static_assert(!base::cols_traits::INVERTIBLE);
+
+    // === Pointer/Offset Accessors ===
+    ulint get_pointer(size_t i) const {
+        assert(i < this->table.size());
+        return this->table.get_pointer(i);
+    }
+    inline ulint get_pointer(position pos) const {
+        return get_pointer(pos.interval);
+    }
+    
+    ulint get_offset(size_t i) const {
+        assert(i < this->table.size());
+        return this->table.get_offset(i);
+    }
+    inline ulint get_offset(position pos) const {
+        return get_offset(pos.interval);
+    }
+
+    // === Position Navigation ===
+    template<bool linear=true>
+    position move(position pos) const {
+        assert(pos.interval < this->table.size());
+        if constexpr (cols_traits::RELATIVE) {
+            assert(pos.offset < this->get_length(pos));
+            pos = {get_pointer(pos), pos.offset + get_offset(pos)};
+        } else {
+            assert(pos.idx < this->get_start(pos.interval + 1));
+            ulint next_interval = get_pointer(pos);
+            ulint next_offset = get_offset(pos) + pos.offset;
+            pos = {next_interval, next_offset, this->get_start(next_interval) + next_offset};
+        }
+        if constexpr (linear) {
+            return this->fast_forward(pos);
+        } else {
+            return this->fast_forward_exponential(pos);
+        }
+    }
+
+    position move_exponential(position pos) const {
+        return move<false>(pos);
+    }
+
+    // === Required from Base Class ===
+    // OrBit Move Structure
+    static constexpr std::array<char, MAGIC_BYTES> MAGIC = {'O', 'B', 'M', 'S'};
+    inline constexpr static const char MOVE_STRUCTURE_EXTENSION[] = ".move";
+
+    static std::array<uchar, num_cols> get_move_widths(const ulint domain, const ulint intervals, const ulint max_length) {
+        std::array<uchar, num_cols> widths = {0};
+        for (size_t i = 0; i < num_cols; ++i) {
+            widths[i] = bytes_to_bits(DEFAULT_BYTES);
+        }
+
+        if constexpr (cols_traits::RELATIVE) {
+            widths[static_cast<size_t>(cols_traits::PRIMARY)] = bit_width(max_length);
+        } else {
+            widths[static_cast<size_t>(cols_traits::PRIMARY)] = bit_width(domain - 1);
+        }
+
+        widths[static_cast<size_t>(cols_traits::POINTER)] = bit_width(intervals - 1);
+        widths[static_cast<size_t>(cols_traits::OFFSET)] = bit_width(max_length);
+
+        return widths;
+    }
+
+    template<typename interval_encoding_impl_t>
+    static void populate_structure(packed_vector<columns>& structure, const interval_encoding_impl_t& enc) {
+        static_assert(interval_encoding_impl_t::invertible_tag == false, "Invertible type mismatch");
+        size_t start_val = 0;
+        size_t output_start_val = 0;
+        size_t img_rank_inv_idx = 0;
+        for (size_t i = 0; i < enc.intervals(); ++i) {
+            size_t length = enc.get_length(i);
+            if constexpr (cols_traits::RELATIVE) {
+                structure.template set<to_cols(cols_traits::PRIMARY)>(i, length);
+            }
+            else {
+                structure.template set<to_cols(cols_traits::PRIMARY)>(i, start_val);
+            }
+
+            while (img_rank_inv_idx < enc.intervals() && output_start_val < start_val + length) {
+                ulint img_rank_inv_val = enc.get_img_rank_inv(img_rank_inv_idx);
+                structure.template set<to_cols(cols_traits::POINTER)>(img_rank_inv_val, i);
+                structure.template set<to_cols(cols_traits::OFFSET)>(img_rank_inv_val, output_start_val - start_val);
+                output_start_val += enc.get_length(img_rank_inv_val);
+                ++img_rank_inv_idx;
+            }
+            start_val += length;
+        }
+    }
+};
+
+template<typename columns_t = invertible_columns, template<typename> class table_t = move_vector>
+class invertible_structure_impl : public move_structure_base<columns_t, table_t, invertible_structure_impl<columns_t, table_t>> {
+public:
+    using base = move_structure_base<columns_t, table_t, invertible_structure_impl<columns_t, table_t>>;
+    using base::base;
+
+    MOVE_CLASS_TRAITS(typename table_t<columns_t>::columns)
+    using position = typename cols_traits::position;
+
+    static_assert(base::cols_traits::INVERTIBLE);
+
+    // === Pointer/Offset Accessors ===
+    ulint get_pointer_fwd(size_t i) const {
+        assert(i < this->table.size());
+        return this->table.get_pointer_fwd(i);
+    }
+    inline ulint get_pointer_fwd(position pos) const {
+        return get_pointer_fwd(pos.interval);
+    }
+
+    ulint get_pointer_inv(size_t i) const {
+        assert(i < this->table.size());
+        return this->table.get_pointer_inv(i);
+    }
+    inline ulint get_pointer_inv(position pos) const {
+        return get_pointer_inv(pos.interval);
+    }   
+
+    bool get_fwd_interval(size_t i) const {
+        assert(i < this->table.size());
+        return this->table.get_fwd_interval(i);
+    }
+    inline bool get_fwd_interval(position pos) const {
+        return get_fwd_interval(pos.interval);
+    }
+
+    bool get_inv_interval(size_t i) const {
+        assert(i < this->table.size());
+        return this->table.get_inv_interval(i);
+    }
+    inline bool get_inv_interval(position pos) const {
+        return get_inv_interval(pos.interval);
+    }
+
+    // === Position Navigation ===
+    template<bool linear=true>
+    position move_fwd(position pos) const { return move<true, linear>(pos); }
+    template<bool linear=true>
+    position move_inv(position pos) const { return move<false, linear>(pos); }
+    position move_fwd_exponential(position pos) const { return move<true, false>(pos); }
+    position move_inv_exponential(position pos) const { return move<false, false>(pos); }
+
+    template<bool is_fwd=true, bool linear=true>
+    position move(position pos) const {
+        auto orig_interval_func = [this](size_t i) -> bool {
+            if constexpr (is_fwd)
+            return get_fwd_interval(i);
+            else
+            return get_inv_interval(i);
+        };
+        assert(orig_interval_func(0));
+        auto get_pointer_func = [this](position pos) -> ulint {
+            if constexpr (is_fwd)
+            return get_pointer_fwd(pos);
+            else
+            return get_pointer_inv(pos);
+        };
+        
+        ulint new_offset = pos.offset;
+        while (!orig_interval_func(pos.interval)) {
+            --pos.interval;
+            new_offset += this->get_length(pos.interval);
+        }
+
+        if constexpr (cols_traits::RELATIVE) {
+            pos = {get_pointer_func(pos), new_offset};
+        } else {
+            pos = {get_pointer_func(pos), new_offset, this->get_start(pos.interval) + new_offset};
+        }
+        if constexpr (linear) {
+            return this->fast_forward(pos);
+        } else {
+            return this->fast_forward_exponential(pos);
+        }
+    }
+
+    template<bool is_fwd=true>
+    position move_exponential(position pos) const {
+        return move<is_fwd, false>(pos);
+    }
+
+    // === Required from Base Class ===
+    // OrBit Invertible Structure
+    static constexpr std::array<char, MAGIC_BYTES> MAGIC = {'O', 'B', 'I', 'S'};
+    inline constexpr static const char MOVE_STRUCTURE_EXTENSION[] = ".imove";
+
+    static std::array<uchar, num_cols> get_move_widths(const ulint domain, const ulint intervals, const ulint max_length) {
+        std::array<uchar, num_cols> widths = {0};
+        for (size_t i = 0; i < num_cols; ++i) {
+            widths[i] = bytes_to_bits(DEFAULT_BYTES);
+        }
+
+        if constexpr (cols_traits::RELATIVE) {
+            widths[static_cast<size_t>(cols_traits::PRIMARY)] = bit_width(max_length);
+        } else {
+            widths[static_cast<size_t>(cols_traits::PRIMARY)] = bit_width(domain - 1);
+        }
+
+        widths[static_cast<size_t>(cols_traits::POINTER_FWD)] = bit_width(intervals - 1);
+        widths[static_cast<size_t>(cols_traits::POINTER_INV)] = bit_width(intervals - 1);
+
+        widths[static_cast<size_t>(cols_traits::FWD_INTERVAL)] = 1;
+        widths[static_cast<size_t>(cols_traits::INV_INTERVAL)] = 1;
+
+        return widths;
+    }
+
+    template<typename interval_encoding_impl_t>
+    static void populate_structure(packed_vector<columns>& structure, const interval_encoding_impl_t& enc) {
+        static_assert(interval_encoding_impl_t::invertible_tag == true, "Invertible type mismatch");
+        size_t input_start_val = 0;
+        size_t output_start_val = 0;
+        size_t img_rank_inv_idx = 0;
+        for (size_t i = 0; i < enc.intervals(); ++i) {
+            size_t length = enc.get_length(i);
+            if constexpr (cols_traits::RELATIVE) {
+                structure.template set<to_cols(cols_traits::PRIMARY)>(i, length);
+            }
+            else {
+                structure.template set<to_cols(cols_traits::PRIMARY)>(i, input_start_val);
+            }
+            structure.template set<to_cols(cols_traits::FWD_INTERVAL)>(i, enc.get_is_fwd_interval(i));
+            structure.template set<to_cols(cols_traits::INV_INTERVAL)>(i, enc.get_is_inv_interval(i));
+
+            
+            while (img_rank_inv_idx < enc.intervals() && output_start_val < input_start_val + length) {
+                ulint img_rank_inv_val = enc.get_img_rank_inv(img_rank_inv_idx);
+                if (enc.get_is_fwd_interval(img_rank_inv_val)) {
+                    assert(output_start_val == input_start_val);
+                    structure.template set<to_cols(cols_traits::POINTER_FWD)>(img_rank_inv_val, i);
+                }
+                if (enc.get_is_inv_interval(img_rank_inv_val)) {
+                    assert(output_start_val == input_start_val);
+                    structure.template set<to_cols(cols_traits::POINTER_INV)>(i, img_rank_inv_val);
+                }
+                output_start_val += enc.get_length(img_rank_inv_val);
+                ++img_rank_inv_idx;
+            }
+            input_start_val += length;
+        }
+    }
+};
+
+template<typename columns_t = move_columns, template<typename> class table_t = move_vector>
+using move_structure = std::conditional_t<resolve_cols_traits<columns_t>::type::INVERTIBLE, 
+    invertible_structure_impl<columns_t, table_t>, 
+    move_structure_impl<columns_t, table_t>>;
 
 } // namespace orbit
 

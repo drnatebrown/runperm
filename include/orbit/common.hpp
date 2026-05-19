@@ -63,8 +63,6 @@ inline constexpr size_t pow2(size_t bits) { return 1ULL << bits; }
 inline constexpr size_t max_val(size_t bits) { return pow2(bits) - 1; }
 inline constexpr size_t mask(size_t bits) { return max_val(bits); }
 
-inline constexpr const char MOVE_STRUCTURE_EXTENSION[] = ".move";
-
 inline constexpr uchar bit_width(ulint value) {
     return value == 0 ? 1 : 64 - __builtin_clzll(value);
 }

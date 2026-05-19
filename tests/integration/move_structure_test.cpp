@@ -15,8 +15,8 @@ using namespace orbit;
 
 template <typename ColumnsT>
 static ulint compute_global_index(
-    const move_structure<ColumnsT>& ms,
-    typename move_structure<ColumnsT>::position pos
+    const move_structure_impl<ColumnsT>& ms,
+    typename move_structure_impl<ColumnsT>::position pos
 ) {
     if constexpr (move_cols_traits<ColumnsT>::RELATIVE) {
         // Convert (interval, offset) to absolute index via prefix sums of lengths.
@@ -36,7 +36,7 @@ static void test_move_structure_move_matches_image_relative() {
     const vector<ulint> perm = {4, 0, 9, 2, 7};
     const ulint domain = 10;
 
-    using MS = move_structure<move_columns>;
+    using MS = move_structure_impl<move_columns>;
     MS ms(lengths, perm, NO_SPLITTING);
     using position = typename MS::position;
 
@@ -59,7 +59,7 @@ static void test_move_structure_move_matches_image_absolute() {
     const vector<ulint> perm = {4, 0, 9, 2, 7};
     const ulint domain = 10;
 
-    using MS = move_structure<move_columns_idx>;
+    using MS = move_structure_impl<move_columns_idx>;
     MS ms(lengths, perm, NO_SPLITTING);
     using position = typename MS::position;
 
@@ -87,7 +87,7 @@ static void test_move_structure_move_exponential_agrees_with_move_absolute() {
     const vector<ulint> perm = {4, 0, 9, 2, 7};
     const ulint domain = 10;
 
-    using MS = move_structure<move_columns_idx>;
+    using MS = move_structure_impl<move_columns_idx>;
     MS ms(lengths, perm, NO_SPLITTING);
     using position = typename MS::position;
 
@@ -115,7 +115,7 @@ static void test_move_structure_splitting_preserves_semantics_relative() {
     const vector<ulint> perm = {4, 0, 9, 2, 7};
     const ulint domain = 10;
 
-    using MS = move_structure<move_columns>;
+    using MS = move_structure_impl<move_columns>;
     MS base_ms(lengths, perm, NO_SPLITTING);
 
     // Use only length capping with a small factor to trigger splitting.

@@ -73,6 +73,7 @@ struct move_cols_traits;
 template <>
 struct move_cols_traits<move_columns> {
     static constexpr bool RELATIVE = true;
+    static constexpr bool INVERTIBLE = false;
     static constexpr move_columns PRIMARY = move_columns::LENGTH;
 
     static constexpr move_columns LENGTH = move_columns::LENGTH;
@@ -86,6 +87,7 @@ struct move_cols_traits<move_columns> {
 template <>
 struct move_cols_traits<move_columns_idx> {
     static constexpr bool RELATIVE = false;
+    static constexpr bool INVERTIBLE = false;
     static constexpr move_columns_idx PRIMARY = move_columns_idx::START;
 
     static constexpr move_columns_idx START = move_columns_idx::START;
@@ -161,6 +163,7 @@ enum class invertible_columns_idx {
 template<>
 struct move_cols_traits<invertible_columns> {
     static constexpr bool RELATIVE = true;
+    static constexpr bool INVERTIBLE = true;
     static constexpr invertible_columns PRIMARY = invertible_columns::LENGTH;
 
     static constexpr invertible_columns LENGTH = invertible_columns::LENGTH;
@@ -176,6 +179,7 @@ struct move_cols_traits<invertible_columns> {
 template<>
 struct move_cols_traits<invertible_columns_idx> {
     static constexpr bool RELATIVE = false;
+    static constexpr bool INVERTIBLE = true;
     static constexpr invertible_columns_idx PRIMARY = invertible_columns_idx::START;
 
     static constexpr invertible_columns_idx START = invertible_columns_idx::START;

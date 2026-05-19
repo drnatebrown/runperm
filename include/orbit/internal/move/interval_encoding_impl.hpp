@@ -93,6 +93,7 @@ struct invertible_storage<true, int_vector_t> {
 template<bool invertible = false, typename int_vector_t = int_vector_aligned>
 class interval_encoding_impl : private invertible_storage<invertible, int_vector_t> {
 public:
+    static constexpr bool invertible_tag = invertible;
 
     interval_encoding_impl() = default;
     interval_encoding_impl(const std::vector<ulint>& permutation, const split_params& sp = split_params()) {
