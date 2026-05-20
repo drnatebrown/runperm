@@ -103,9 +103,21 @@ void test_rlbwt_fl_permutation_heads_and_alphabet() {
     }
 }
 
+void test_rlbwt_invertible_lf_encoding_flags() {
+    vector<uchar> heads =       {'T','C','G','A','T', 1 ,'A','T','A'};
+    vector<ulint> lengths  =    { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
+
+    auto enc = invertible_rlbwt_interval_encoding<>::lf_interval_encoding(heads, lengths, NO_SPLITTING);
+    static_assert(invertible_rlbwt_interval_encoding<>::invertible_tag == true);
+    assert(enc.domain() == 27);
+    assert(enc.get_is_fwd_interval(0));
+    assert(enc.intervals() >= heads.size());
+}
+
 int main() {
     test_rlbwt_lf_permutation_heads_and_alphabet();
     test_rlbwt_fl_permutation_heads_and_alphabet();
+    test_rlbwt_invertible_lf_encoding_flags();
     std::cout << "rlbwt_permutation unit tests passed" << std::endl;
     return 0;
 }

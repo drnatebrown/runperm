@@ -7,11 +7,39 @@
 #include <vector>
 #include <sstream>
 
+#include "orbit/internal/rlbwt/specializations/rlbwt_structure.hpp"
+#include "orbit/interval_encoding.hpp"
 #include "orbit/rlbwt.hpp"
 #include "orbit/permutation.hpp"
 
+using std::vector;
 using namespace orbit;
 using namespace orbit::rlbwt;
+
+using rlbwt_invertible_structure = rlbwt_move_structure<rlbwt_invertible_columns>;
+
+template <typename MS>
+static ulint global_index_relative(const MS& ms, typename MS::position pos) {
+    ulint idx = 0;
+    for (size_t i = 0; i < pos.interval; ++i) {
+        idx += ms.get_length(i);
+    }
+    return idx + pos.offset;
+}
+
+template <typename MS>
+static typename MS::position position_from_index_relative(const MS& ms, ulint idx) {
+    ulint prefix = 0;
+    for (ulint interval = 0; interval < ms.intervals(); ++interval) {
+        const ulint len = ms.get_length(interval);
+        if (idx < prefix + len) {
+            return {interval, idx - prefix};
+        }
+        prefix += len;
+    }
+    assert(false && "index out of range");
+    return {};
+}
 
 void test_move_lf(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::string text) {
     lf_move<> mlf(bwt_heads, bwt_run_lengths);
@@ -483,6 +511,71 @@ void test_move_phi_inv(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_
     }
 }
 
+void test_invertible_rlbwt_lf_splitting_preserves_fwd_inv(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths) {
+    const auto enc_base = invertible_rlbwt_interval_encoding<>::lf_interval_encoding(
+        bwt_heads, bwt_run_lengths, NO_SPLITTING);
+    const auto enc_capped = invertible_rlbwt_interval_encoding<>::lf_interval_encoding(
+        bwt_heads, bwt_run_lengths, ONLY_LENGTH_CAPPING);
+
+    rlbwt_invertible_structure ms_base(enc_base);
+    rlbwt_invertible_structure ms_capped(enc_capped);
+    lf_move<> ref_base(bwt_heads, bwt_run_lengths, NO_SPLITTING);
+
+    assert(ms_base.domain() == ref_base.domain());
+    assert(ms_capped.domain() == ms_base.domain());
+
+    vector<ulint> perm(ms_base.domain());
+    for (ulint idx = 0; idx < ms_base.domain(); ++idx) {
+        auto pos = position_from_index_relative(ms_base, idx);
+        pos = ms_base.move_fwd(pos);
+        perm[idx] = global_index_relative(ms_base, pos);
+    }
+    const vector<ulint> inverse = get_inverse_permutation(perm);
+
+    for (ulint idx = 0; idx < ms_base.domain(); ++idx) {
+        auto pos_base = position_from_index_relative(ms_base, idx);
+        auto pos_cap = position_from_index_relative(ms_capped, idx);
+
+        pos_base = ms_base.move_fwd(pos_base);
+        pos_cap = ms_capped.move_fwd(pos_cap);
+        assert(global_index_relative(ms_base, pos_base) == global_index_relative(ms_capped, pos_cap));
+
+        auto ref_pos = position_from_index_relative(ref_base, idx);
+        ref_pos = ref_base.next(ref_pos);
+        assert(global_index_relative(ms_base, pos_base) == global_index_relative(ref_base, ref_pos));
+
+        pos_base = position_from_index_relative(ms_base, idx);
+        pos_cap = position_from_index_relative(ms_capped, idx);
+        pos_base = ms_base.move_inv(pos_base);
+        pos_cap = ms_capped.move_inv(pos_cap);
+        assert(global_index_relative(ms_base, pos_base) == global_index_relative(ms_capped, pos_cap));
+        assert(global_index_relative(ms_base, pos_base) == inverse[idx]);
+    }
+}
+
+void test_invertible_rlbwt_move_lf(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::string text) {
+    const auto enc = invertible_rlbwt_interval_encoding<>::lf_interval_encoding(
+        bwt_heads, bwt_run_lengths, NO_SPLITTING);
+    rlbwt_invertible_structure mlf(enc);
+    const auto& alpha = enc.get_alphabet();
+
+    using position = typename rlbwt_invertible_structure::position;
+    auto pos = mlf.first();
+    for (size_t i = 0; i < mlf.domain(); ++i) {
+        pos = mlf.move_fwd(pos);
+    }
+    assert(pos.interval == 0);
+    assert(pos.offset == 0);
+
+    std::string recovered_text(text.size(), '\0');
+    pos = mlf.first();
+    for (size_t i = 1; i < mlf.domain(); ++i) {
+        recovered_text[text.size() - i] = static_cast<char>(alpha.unmap_char(mlf.get_character(pos)));
+        pos = mlf.move_fwd(pos);
+    }
+    assert(recovered_text.compare(text) == 0);
+}
+
 void test_move_phi_inv_with_splitting(std::vector<uchar> bwt_heads, std::vector<ulint> bwt_run_lengths, std::vector<ulint> sa) {
     size_t inv_domain;
     ulint max_length_inv;
@@ -531,6 +624,8 @@ int main() {
     test_runperm_phi_inv(bwt_heads, bwt_run_lengths, sa);
     test_move_phi_inv(bwt_heads, bwt_run_lengths, sa);
     test_move_phi_inv_with_splitting(bwt_heads, bwt_run_lengths, sa);
+    test_invertible_rlbwt_lf_splitting_preserves_fwd_inv(bwt_heads, bwt_run_lengths);
+    test_invertible_rlbwt_move_lf(bwt_heads, bwt_run_lengths, text);
     std::cout << "rlbwt integration tests passed" << std::endl;
     return 0;
 }

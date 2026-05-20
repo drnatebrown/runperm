@@ -49,6 +49,7 @@ UNIT_TESTS = $(UNIT_BUILD_DIR)/packed_vector_test \
              $(UNIT_BUILD_DIR)/rlbwt_interval_encoding_test
 INTEGRATION_TESTS = $(INTEGRATION_BUILD_DIR)/rlbwt_test \
                     $(INTEGRATION_BUILD_DIR)/move_structure_test \
+                    $(INTEGRATION_BUILD_DIR)/invertible_structure_test \
                     $(INTEGRATION_BUILD_DIR)/move_test \
                     $(INTEGRATION_BUILD_DIR)/permutation_test
 BENCH_TESTS = $(BENCH_BUILD_DIR)/move_bench \
@@ -81,6 +82,7 @@ test: $(UNIT_TESTS) $(INTEGRATION_TESTS)
 	$(UNIT_BUILD_DIR)/rlbwt_interval_encoding_test
 	$(INTEGRATION_BUILD_DIR)/rlbwt_test
 	$(INTEGRATION_BUILD_DIR)/move_structure_test
+	$(INTEGRATION_BUILD_DIR)/invertible_structure_test
 	$(INTEGRATION_BUILD_DIR)/move_test
 	$(INTEGRATION_BUILD_DIR)/permutation_test
 	@echo "==============================================="
@@ -168,6 +170,10 @@ $(INTEGRATION_BUILD_DIR)/rlbwt_test: ./tests/integration/rlbwt_test.cpp $(HEADER
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 $(INTEGRATION_BUILD_DIR)/move_structure_test: ./tests/integration/move_structure_test.cpp $(HEADERS)
+	mkdir -p $(INTEGRATION_BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(INTEGRATION_BUILD_DIR)/invertible_structure_test: ./tests/integration/invertible_structure_test.cpp $(HEADERS)
 	mkdir -p $(INTEGRATION_BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 

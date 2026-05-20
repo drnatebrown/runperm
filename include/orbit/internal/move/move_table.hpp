@@ -4,6 +4,7 @@
 #include "orbit/common.hpp"
 #include "orbit/internal/move/move_row.hpp"
 #include "orbit/internal/move/move_columns.hpp"
+#include "orbit/internal/rlbwt/specializations/rlbwt_row.hpp"
 #include "orbit/internal/ds/packed_vector.hpp"
 
 #include <cassert>
@@ -149,9 +150,9 @@ struct invertible_table_interface {
 
 // ============================================= MOVE TABLE =============================================
 
-template<typename columns_t = move_columns, template<typename, typename> class interface = move_table_interface>
-struct move_table_impl : public interface<move_table_impl<columns_t, interface>, columns_t> {
-    using row = move_row<columns_t>;
+template<typename columns_t = move_columns, template<typename, typename> class interface = move_table_interface, typename row_t = typename table_row_for<columns_t>::type>
+struct move_table_impl : public interface<move_table_impl<columns_t, interface, row_t>, columns_t> {
+    using row = row_t;
     using row_traits = typename row::row_traits;
     // Sets num_cols, columns, and cols_traits
     MOVE_CLASS_TRAITS(columns_t)

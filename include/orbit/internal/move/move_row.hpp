@@ -17,6 +17,9 @@ struct move_row_traits;
 template <typename columns_t, size_t PRIMARY_BITS, size_t POINTER_BITS, size_t OFFSET_BITS>
 struct move_row_bits {};
 
+template<typename columns_t>
+struct table_row_for {};
+
 template <typename columns_t, size_t P, size_t PTR, size_t OFF>
 struct move_row_traits<move_row_bits<columns_t, P, PTR, OFF>> {
     static constexpr size_t PRIMARY_BITS = P;
@@ -117,16 +120,26 @@ struct move_row_traits<move_columns> : move_row_traits<move_cols_default> {};
 template <>
 struct move_row_traits<move_columns_idx> : move_row_traits<move_cols_idx_default> {};
 
+template<>
+struct table_row_for<move_columns> {
+    using type = move_row<move_columns>;
+};
+
+template<>
+struct table_row_for<move_columns_idx> {
+    using type = move_row<move_columns_idx>;
+};
+
 // ============================================= INVERTIBLE =============================================
 
-template <typename columns_t, size_t PRIMARY_BITS, size_t POINTER_FWD_BITS, size_t POINTER_INV_BITS>
+template <typename columns_t, size_t PRIMARY_BITS, size_t POINTER_BITS>
 struct invertible_row_bits {};
 
-template <typename columns_t, size_t P, size_t PTR_FWD, size_t PTR_INV>
-struct move_row_traits<invertible_row_bits<columns_t, P, PTR_FWD, PTR_INV>> {
+template <typename columns_t, size_t P, size_t PTR>
+struct move_row_traits<invertible_row_bits<columns_t, P, PTR>> {
     static constexpr size_t PRIMARY_BITS = P;
-    static constexpr size_t POINTER_FWD_BITS = PTR_FWD;
-    static constexpr size_t POINTER_INV_BITS = PTR_INV;
+    static constexpr size_t POINTER_FWD_BITS = PTR;
+    static constexpr size_t POINTER_INV_BITS = PTR;
 
     static constexpr size_t FWD_INTERVAL_BITS = 1;
     static constexpr size_t INV_INTERVAL_BITS = 1;
@@ -203,37 +216,29 @@ struct invertible_row {
 
 } __attribute__((packed));
 
-// Column Sizes for move_columns (+ 2 bits for fwd/inv interval)
-using invertible_cols_4 = invertible_row_bits<invertible_columns, 8, 14, 8>;     // (4 bytes)
-using invertible_cols_5 = invertible_row_bits<invertible_columns, 8, 22, 8>;     // (5 bytes)
-using invertible_cols_6 = invertible_row_bits<invertible_columns, 12, 22, 12>; // (6 bytes)
-using invertible_cols_7 = invertible_row_bits<invertible_columns, 12, 30, 12>; // (7 bytes)
-using invertible_cols_8 = invertible_row_bits<invertible_columns, 16, 30, 16>; // (8 bytes)
-using invertible_cols_9 = invertible_row_bits<invertible_columns, 16, 38, 16>; // (9 bytes)
-using invertible_cols_10 = invertible_row_bits<invertible_columns, 20, 38, 20>; // (10 bytes)
-using invertible_cols_11 = invertible_row_bits<invertible_columns, 20, 46, 20>; // (11 bytes)
-using invertible_cols_12 = invertible_row_bits<invertible_columns, 24, 46, 24>; // (12 bytes)
-using invertible_cols_default = invertible_cols_9;
+// Column Sizes for move_columns (2xPTR + 2 bits for fwd/inv interval)
+using invertible_cols_14 = invertible_row_bits<invertible_columns, 16, 39>; // (12 bytes)
+using invertible_cols_default = invertible_cols_14;
 
-// Column Sizes for move_columns_idx (+ 2 bits for fwd/inv interval)
-using invertible_cols_idx_5 = invertible_row_bits<invertible_columns_idx, 16, 14, 8>; // (5 bytes)
-using invertible_cols_idx_6 = invertible_row_bits<invertible_columns_idx, 20, 18, 8>; // (6 bytes)
-using invertible_cols_idx_7 = invertible_row_bits<invertible_columns_idx, 26, 24, 8>; // (7 bytes)
-using invertible_cols_idx_8 = invertible_row_bits<invertible_columns_idx, 28, 26, 12>; // (8 bytes)
-using invertible_cols_idx_9 = invertible_row_bits<invertible_columns_idx, 32, 30, 12>; // (9 bytes)
-using invertible_cols_idx_10 = invertible_row_bits<invertible_columns_idx, 34, 32, 12>; // (10 bytes)
-using invertible_cols_idx_11 = invertible_row_bits<invertible_columns_idx, 36, 34, 16>; // (11 bytes)
-using invertible_cols_idx_12 = invertible_row_bits<invertible_columns_idx, 40, 38, 16>; // (12 bytes)
-using invertible_cols_idx_13 = invertible_row_bits<invertible_columns_idx, 44, 42, 16>; // (13 bytes)
-using invertible_cols_idx_14 = invertible_row_bits<invertible_columns_idx, 46, 44, 20>; // (14 bytes)
-using invertible_cols_idx_15 = invertible_row_bits<invertible_columns_idx, 50, 48, 20>; // (15 bytes)
-using invertible_cols_idx_default = invertible_cols_idx_12;
+// Column Sizes for move_columns_idx (2xPTR+ 2 bits for fwd/inv interval)
+using invertible_cols_idx_17 = invertible_row_bits<invertible_columns_idx, 42, 38>; // (15 bytes)
+using invertible_cols_idx_default = invertible_cols_idx_17;
 
 template <>
 struct move_row_traits<invertible_columns> : move_row_traits<invertible_cols_default> {};
 
 template <>
 struct move_row_traits<invertible_columns_idx> : move_row_traits<invertible_cols_idx_default> {};
+
+template<>
+struct table_row_for<invertible_columns> {
+    using type = invertible_row<invertible_columns>;
+};
+
+template<>
+struct table_row_for<invertible_columns_idx> {
+    using type = invertible_row<invertible_columns_idx>;
+};
 
 } // namespace orbit
 

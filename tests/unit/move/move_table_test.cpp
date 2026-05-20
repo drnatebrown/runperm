@@ -231,6 +231,27 @@ void test_move_table_serialize_roundtrip() {
     }
 }
 
+void test_invertible_row_relative_basic() {
+    using Row = invertible_row<invertible_columns>;
+
+    Row row;
+    const ulint length = static_cast<ulint>(7) & mask(Row::row_traits::PRIMARY_BITS);
+    const ulint pointer_fwd = static_cast<ulint>(3) & mask(Row::row_traits::POINTER_FWD_BITS);
+    const ulint pointer_inv = static_cast<ulint>(5) & mask(Row::row_traits::POINTER_INV_BITS);
+
+    row.set<invertible_columns::LENGTH>(length);
+    row.set<invertible_columns::POINTER_FWD>(pointer_fwd);
+    row.set<invertible_columns::POINTER_INV>(pointer_inv);
+    row.set<invertible_columns::FWD_INTERVAL>(1);
+    row.set<invertible_columns::INV_INTERVAL>(0);
+
+    assert(row.get<invertible_columns::LENGTH>() == length);
+    assert(row.get<invertible_columns::POINTER_FWD>() == pointer_fwd);
+    assert(row.get<invertible_columns::POINTER_INV>() == pointer_inv);
+    assert(row.get<invertible_columns::FWD_INTERVAL>() == 1);
+    assert(row.get<invertible_columns::INV_INTERVAL>() == 0);
+}
+
 void test_move_table_bits_needed() {
     using Columns = move_columns;
     using Table = move_table<Columns>;
@@ -248,6 +269,7 @@ int main() {
     test_move_row_relative_basic();
     test_move_row_absolute_basic();
     test_move_row_assert_widths();
+    test_invertible_row_relative_basic();
 
     test_move_table_from_packed_vector_relative();
     test_move_table_interface_relative_and_absolute();
