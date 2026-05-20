@@ -23,7 +23,6 @@ struct separated_data_holder<data_columns_t, false> { [[no_unique_address]] pack
 template <typename data_columns_t>
 struct separated_data_holder<data_columns_t, true> { /* empty */ };
 
-// TODO InversePermutation, which builds both the forward and inverse move structures if needed
 template<typename data_columns_t = empty_data_columns, // Fields to be stored alongside the move structure representing a runny permutation
          bool integrated_move_structure = DEFAULT_INTEGRATED_MOVE_STRUCTURE, // Whether to pack the run data alongside the move structure
          bool store_absolute_positions = DEFAULT_STORE_ABSOLUTE_POSITIONS, // Whether to store absolute positions instead of interval/offset
@@ -57,6 +56,7 @@ public:
     using data_columns = data_columns_t;
     using data_tuple = columns_tuple<data_columns>;
     using position = typename move_structure_perm::position;
+    using interval_encoding_t = interval_encoding_impl<cols_traits::INVERTIBLE>;
 
     static_assert(has_count_enumerator<data_columns>::value, "data_columns_t must have a COUNT enumerator");
     static_assert(!(!store_absolute_positions && exponential_search), "Exponential search is only supported with absolute positions");
@@ -80,13 +80,13 @@ public:
     permutation_impl(std::vector<ulint>& perm, const split_params& sp = split_params())
     : permutation_impl([&]{
             auto [lengths, images] = get_permutation_intervals(perm);
-            return interval_encoding_impl<>::from_lengths_and_images(lengths, images, sp);
+            return interval_encoding_t::from_lengths_and_images(lengths, images, sp);
     }()) {}
 
-    template<typename interval_encoding_t,
+    template<typename interval_encoding_impl_t,
              class dc = data_columns_t,
              std::enable_if_t<std::is_same_v<dc, empty_data_columns>, int> = 0>
-    permutation_impl(const interval_encoding_t& enc) 
+    permutation_impl(const interval_encoding_impl_t& enc) 
     : permutation_impl(enc, std::vector<data_tuple>(enc.intervals())) {}
     
     // Constructor from lengths and interval permutation
@@ -97,8 +97,8 @@ public:
     : permutation_impl(lengths, images, sp, std::vector<data_tuple>(lengths.size())) {}
 
     // Intended constructor for manual splitting of run data
-    template<typename interval_encoding_t>
-    permutation_impl(const interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
+    template<typename interval_encoding_impl_t>
+    permutation_impl(const interval_encoding_impl_t& enc, const std::vector<data_tuple> &run_data) {
         build_from_interval_encoding(enc, run_data);
     }
 
@@ -425,8 +425,9 @@ protected:
     move_structure_perm move_structure;
     split_params split_params_;
 
-    template<typename interval_encoding_t>
-    void build_from_interval_encoding(const interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
+    template<typename interval_encoding_impl_t>
+    void build_from_interval_encoding(const interval_encoding_impl_t& enc, const std::vector<data_tuple> &run_data) {
+        static_assert(interval_encoding_impl_t::invertible_tag == cols_traits::INVERTIBLE, "Invertible type mismatch");
         split_params_ = enc.get_split_params();
         packed_vector<base_columns> base_structure = move_structure_base::find_structure(enc);
         if (run_data.size() == enc.intervals()) {
@@ -442,12 +443,13 @@ protected:
     template<typename container1_t, typename container2_t>
     void build_from_lengths_and_images(const container1_t &lengths, const container2_t &images, const split_params &sp, const std::vector<data_tuple>* run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
         assert(lengths.size() == images.size());
-        auto enc = interval_encoding_impl<>::from_lengths_and_images(lengths, images, sp);
+        auto enc = interval_encoding_t::from_lengths_and_images(lengths, images, sp);
         build_from_interval_encoding_callback(enc, lengths, run_data, std::move(get_run_cols_data));
     }
 
-    template<typename container1_t, typename interval_encoding_t = interval_encoding_impl<>>
-    void build_from_interval_encoding_callback(const interval_encoding_t& enc, const container1_t &lengths, const std::vector<data_tuple>* run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+    template<typename container1_t, typename interval_encoding_impl_t>
+    void build_from_interval_encoding_callback(const interval_encoding_impl_t& enc, const container1_t &lengths, const std::vector<data_tuple>* run_data, std::function<data_tuple(ulint, ulint, ulint, ulint)> get_run_cols_data) {
+        static_assert(interval_encoding_impl_t::invertible_tag == cols_traits::INVERTIBLE, "Invertible type mismatch");
         split_params_ = enc.get_split_params();
         // Find the base structure (move structure without run data)
         size_t domain = enc.domain();

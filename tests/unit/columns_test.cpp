@@ -218,45 +218,45 @@ void test_invertible_column_switcher_and_switch_columns() {
                   "switch_columns<invertible_columns,false> must yield invertible_columns");
 }
 
-void test_rlbwt_invertible_columns_traits_and_switcher() {
-    using rlbwt_inv_rel_traits = move_cols_traits<rlbwt_invertible_columns>;
-    static_assert(rlbwt_inv_rel_traits::RELATIVE, "rlbwt_invertible_columns should be relative");
-    static_assert(rlbwt_inv_rel_traits::INVERTIBLE, "rlbwt_invertible_columns must be invertible");
-    static_assert(rlbwt_inv_rel_traits::PRIMARY == rlbwt_invertible_columns::LENGTH, "primary must alias length");
-    static_assert(rlbwt_inv_rel_traits::POINTER_FWD == rlbwt_invertible_columns::POINTER_FWD,
+void test_invertible_rlbwt_columns_traits_and_switcher() {
+    using rlbwt_inv_rel_traits = move_cols_traits<invertible_rlbwt_columns>;
+    static_assert(rlbwt_inv_rel_traits::RELATIVE, "invertible_rlbwt_columns should be relative");
+    static_assert(rlbwt_inv_rel_traits::INVERTIBLE, "invertible_rlbwt_columns must be invertible");
+    static_assert(rlbwt_inv_rel_traits::PRIMARY == invertible_rlbwt_columns::LENGTH, "primary must alias length");
+    static_assert(rlbwt_inv_rel_traits::POINTER_FWD == invertible_rlbwt_columns::POINTER_FWD,
                   "pointer_fwd alias mismatch");
-    static_assert(rlbwt_inv_rel_traits::POINTER_INV == rlbwt_invertible_columns::POINTER_INV,
+    static_assert(rlbwt_inv_rel_traits::POINTER_INV == invertible_rlbwt_columns::POINTER_INV,
                   "pointer_inv alias mismatch");
-    static_assert(rlbwt_inv_rel_traits::CHARACTER == rlbwt_invertible_columns::CHARACTER,
+    static_assert(rlbwt_inv_rel_traits::CHARACTER == invertible_rlbwt_columns::CHARACTER,
                   "character alias mismatch");
     static_assert(
-        rlbwt_inv_rel_traits::NUM_COLS == static_cast<size_t>(rlbwt_invertible_columns::COUNT),
-        "num_cols must match rlbwt_invertible_columns::COUNT"
+        rlbwt_inv_rel_traits::NUM_COLS == static_cast<size_t>(invertible_rlbwt_columns::COUNT),
+        "num_cols must match invertible_rlbwt_columns::COUNT"
     );
 
-    using rlbwt_inv_abs_traits = move_cols_traits<rlbwt_invertible_columns_idx>;
-    static_assert(!rlbwt_inv_abs_traits::RELATIVE, "rlbwt_invertible_columns_idx should be absolute");
-    static_assert(rlbwt_inv_abs_traits::INVERTIBLE, "rlbwt_invertible_columns_idx must be invertible");
-    static_assert(rlbwt_inv_abs_traits::PRIMARY == rlbwt_invertible_columns_idx::START,
+    using rlbwt_inv_abs_traits = move_cols_traits<invertible_rlbwt_columns_idx>;
+    static_assert(!rlbwt_inv_abs_traits::RELATIVE, "invertible_rlbwt_columns_idx should be absolute");
+    static_assert(rlbwt_inv_abs_traits::INVERTIBLE, "invertible_rlbwt_columns_idx must be invertible");
+    static_assert(rlbwt_inv_abs_traits::PRIMARY == invertible_rlbwt_columns_idx::START,
                   "primary must alias start");
-    static_assert(rlbwt_inv_abs_traits::CHARACTER == rlbwt_invertible_columns_idx::CHARACTER,
+    static_assert(rlbwt_inv_abs_traits::CHARACTER == invertible_rlbwt_columns_idx::CHARACTER,
                   "character alias mismatch");
     static_assert(
-        rlbwt_inv_abs_traits::NUM_COLS == static_cast<size_t>(rlbwt_invertible_columns_idx::COUNT),
-        "num_cols must match rlbwt_invertible_columns_idx::COUNT"
+        rlbwt_inv_abs_traits::NUM_COLS == static_cast<size_t>(invertible_rlbwt_columns_idx::COUNT),
+        "num_cols must match invertible_rlbwt_columns_idx::COUNT"
     );
 
-    using switch_rlbwt_inv_rel = column_switcher<rlbwt_invertible_columns>;
-    using switch_rlbwt_inv_abs = column_switcher<rlbwt_invertible_columns_idx>;
+    using switch_rlbwt_inv_rel = column_switcher<invertible_rlbwt_columns>;
+    using switch_rlbwt_inv_abs = column_switcher<invertible_rlbwt_columns_idx>;
 
-    static_assert(std::is_same<switch_rlbwt_inv_rel::relative, rlbwt_invertible_columns>::value,
-                  "column_switcher<rlbwt_invertible_columns>::relative mismatch");
-    static_assert(std::is_same<switch_rlbwt_inv_rel::absolute, rlbwt_invertible_columns_idx>::value,
-                  "column_switcher<rlbwt_invertible_columns>::absolute mismatch");
-    static_assert(std::is_same<switch_rlbwt_inv_abs::relative, rlbwt_invertible_columns>::value,
-                  "column_switcher<rlbwt_invertible_columns_idx>::relative mismatch");
-    static_assert(std::is_same<switch_rlbwt_inv_abs::absolute, rlbwt_invertible_columns_idx>::value,
-                  "column_switcher<rlbwt_invertible_columns_idx>::absolute mismatch");
+    static_assert(std::is_same<switch_rlbwt_inv_rel::relative, invertible_rlbwt_columns>::value,
+                  "column_switcher<invertible_rlbwt_columns>::relative mismatch");
+    static_assert(std::is_same<switch_rlbwt_inv_rel::absolute, invertible_rlbwt_columns_idx>::value,
+                  "column_switcher<invertible_rlbwt_columns>::absolute mismatch");
+    static_assert(std::is_same<switch_rlbwt_inv_abs::relative, invertible_rlbwt_columns>::value,
+                  "column_switcher<invertible_rlbwt_columns_idx>::relative mismatch");
+    static_assert(std::is_same<switch_rlbwt_inv_abs::absolute, invertible_rlbwt_columns_idx>::value,
+                  "column_switcher<invertible_rlbwt_columns_idx>::absolute mismatch");
 }
 
 // Simple RunColsWrapper usage: ensure extended columns are resolved and indexed correctly.
@@ -302,7 +302,7 @@ int main() {
     test_invertible_columns_basic_traits();
     test_invertible_column_switcher_and_switch_columns();
     test_rlbwt_columns_traits_and_switcher();
-    test_rlbwt_invertible_columns_traits_and_switcher();
+    test_invertible_rlbwt_columns_traits_and_switcher();
     test_run_columns_wrapper_and_resolve_traits();
 
     std::cout << "columns tests passed" << std::endl;

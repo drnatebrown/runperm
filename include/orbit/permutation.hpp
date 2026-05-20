@@ -143,6 +143,33 @@ using permutation_integrated_absolute = permutation<data_columns_t, true, true>;
 *};
 */
 
+// Same for invertible permutation
+
+template<typename data_columns_t = empty_data_columns,
+         bool integrated_move_structure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
+         bool store_absolute_positions = DEFAULT_STORE_ABSOLUTE_POSITIONS>
+class invertible_permutation : public permutation_impl<data_columns_t, integrated_move_structure, store_absolute_positions, DEFAULT_EXPONENTIAL_SEARCH, invertible_columns, move_structure, move_vector> {
+    using base = permutation_impl<data_columns_t, integrated_move_structure, store_absolute_positions, DEFAULT_EXPONENTIAL_SEARCH, invertible_columns, move_structure, move_vector>;
+public:
+    using typename base::data_columns;
+    using typename base::data_tuple;
+    using typename base::position;
+
+    using base::base;
+    using base::operator=;
+};
+
+/* === Basic types === */
+template<typename data_columns_t = empty_data_columns>
+using invertible_permutation_separated = invertible_permutation<data_columns_t, false, false>; // Same as invertible_permutation<data_columns_t>, the default
+template<typename data_columns_t = empty_data_columns>
+using invertible_permutation_integrated = invertible_permutation<data_columns_t, true, false>;
+template<typename data_columns_t = empty_data_columns>
+using invertible_permutation_absolute = invertible_permutation<data_columns_t, false, true>;
+template<typename data_columns_t = empty_data_columns>
+using invertible_permutation_separated_absolute = invertible_permutation<data_columns_t, false, true>;
+template<typename data_columns_t = empty_data_columns>
+using invertible_permutation_integrated_absolute = invertible_permutation<data_columns_t, true, true>;
 
 // =============================== move_permutation ===============================
 
@@ -154,6 +181,13 @@ using move_permutation = move_permutation_impl<store_absolute_positions>;
 // Basic types
 using move_permutation_absolute = move_permutation<true>;
 using move_permutation_relative = move_permutation<false>; // Same as move_permutation<>, the default
+
+// Same for invertible move_permutation
+template<bool store_absolute_positions = DEFAULT_STORE_ABSOLUTE_POSITIONS>
+using invertible_move_permutation = move_permutation_impl<store_absolute_positions, DEFAULT_EXPONENTIAL_SEARCH, invertible_columns, move_structure, move_vector>;
+
+using invertible_move_permutation_absolute = invertible_move_permutation<true>;
+using invertible_move_permutation_relative = invertible_move_permutation<false>; // Same as invertible_move_permutation<>, the default
 
 } // namespace orbit
 

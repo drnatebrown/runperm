@@ -11,13 +11,16 @@ namespace orbit::rlbwt {
 template<typename data_columns_t = empty_data_columns,
          bool integrated_move_structure = DEFAULT_INTEGRATED_MOVE_STRUCTURE,
          bool exponential_search = DEFAULT_EXPONENTIAL_SEARCH,
+         typename base_columns_t = move_columns,
+         template<typename, template<typename> class> class move_structure_t = move_structure,
          template<typename> class table_t = move_vector>
-class phi_permutation_impl : public permutation_impl<data_columns_t, integrated_move_structure, true, exponential_search, move_columns, move_structure, table_t> {
-    using base = permutation_impl<data_columns_t, integrated_move_structure, true, exponential_search, move_columns, move_structure, table_t>;
+class phi_permutation_impl : public permutation_impl<data_columns_t, integrated_move_structure, true, exponential_search, base_columns_t, move_structure_t, table_t> {
+    using base = permutation_impl<data_columns_t, integrated_move_structure, true, exponential_search, base_columns_t, move_structure_t, table_t>;
 public:
     using base::base;
     using base::operator=;
     using position = typename base::position;
+    using interval_encoding_t = typename base::interval_encoding_t;
 
     template<class dc = data_columns_t,
              std::enable_if_t<std::is_same_v<dc, empty_data_columns>, int> = 0>
@@ -30,7 +33,7 @@ public:
         auto [phi_lengths, phi_img_rank_inv] =
             rlbwt_to_phi_img_rank_inv<>(rlbwt_heads, rlbwt_run_lengths,
                                         &domain, &max_length);
-        return interval_encoding_impl<>::from_lengths_and_img_rank_inv(
+        return interval_encoding_t::from_lengths_and_img_rank_inv(
             phi_lengths, phi_img_rank_inv, domain, max_length, sp);
       }()) {}
 
@@ -49,8 +52,10 @@ public:
 
 // Always use absolute positions for phi
 template<bool exponential_search = DEFAULT_EXPONENTIAL_SEARCH,
+         typename base_columns_t = move_columns,
+         template<typename, template<typename> class> class move_structure_t = move_structure,
          template<typename> class table_t = move_vector>
-using phi_move_impl = phi_permutation_impl<empty_data_columns, false, exponential_search, table_t>;
+using phi_move_impl = phi_permutation_impl<empty_data_columns, false, exponential_search, base_columns_t, move_structure_t, table_t>;
 
 } // namespace orbit::rlbwt
 

@@ -251,18 +251,18 @@ void test_rlbwt_invertible_api() {
     const auto enc = invertible_rlbwt_interval_encoding<>::lf_interval_encoding(
         heads, run_lengths, NO_SPLITTING);
     // All rlbwt_move_structure column x table combinations (invertible).
-    rlbwt_move_structure<rlbwt_invertible_columns> ms(enc);
-    rlbwt_move_structure<rlbwt_invertible_columns_idx> ms_idx(enc);
-    rlbwt_move_structure<rlbwt_invertible_columns, move_table> ms_tbl(enc);
-    rlbwt_move_structure<rlbwt_invertible_columns_idx, move_table> ms_tbl_idx(enc);
+    rlbwt_move_structure<invertible_rlbwt_columns> ms(enc);
+    rlbwt_move_structure<invertible_rlbwt_columns_idx> ms_idx(enc);
+    rlbwt_move_structure<invertible_rlbwt_columns, move_table> ms_tbl(enc);
+    rlbwt_move_structure<invertible_rlbwt_columns_idx, move_table> ms_tbl_idx(enc);
 
     static_assert(invertible_rlbwt_interval_encoding<>::invertible_tag == true);
     static_assert(std::is_same_v<
-        typename table_row_for<rlbwt_invertible_columns>::type,
-        invertible_rlbwt_row<rlbwt_invertible_columns>>);
+        typename table_row_for<invertible_rlbwt_columns>::type,
+        invertible_rlbwt_row<invertible_rlbwt_columns>>);
     static_assert(std::is_same_v<
-        typename table_row_for<rlbwt_invertible_columns_idx>::type,
-        invertible_rlbwt_row<rlbwt_invertible_columns_idx>>);
+        typename table_row_for<invertible_rlbwt_columns_idx>::type,
+        invertible_rlbwt_row<invertible_rlbwt_columns_idx>>);
 
     assert(ms.domain() == 5);
     assert(ms.get_file_extension() == ".imove");
@@ -277,6 +277,49 @@ void test_rlbwt_invertible_api() {
     (void)ms_idx;
     (void)ms_tbl;
     (void)ms_tbl_idx;
+
+    // Invertible LF/FL move and permutation aliases.
+    invertible_lf_move_relative inv_lf_rel(heads, run_lengths);
+    invertible_lf_move_absolute inv_lf_abs(heads, run_lengths);
+
+    static_assert(std::is_same_v<invertible_lf_move<>, invertible_lf_move_relative>);
+
+    assert(inv_lf_rel.domain() == 5);
+    assert(inv_lf_abs.domain() == 5);
+    auto inv_lf_pos = inv_lf_rel.first();
+    inv_lf_pos = inv_lf_rel.LF(inv_lf_pos);
+    inv_lf_pos = inv_lf_rel.prev(inv_lf_pos);
+    (void)inv_lf_pos;
+
+    enum class inv_run_cols {
+        VAL,
+        COUNT
+    };
+    static constexpr size_t NUM_INV_FIELDS = static_cast<size_t>(inv_run_cols::COUNT);
+    vector<std::array<ulint, NUM_INV_FIELDS>> inv_run_data(heads.size());
+
+    invertible_lf_permutation_separated<inv_run_cols> inv_rp_lf_sep(heads, run_lengths, inv_run_data);
+    invertible_lf_permutation_integrated<inv_run_cols> inv_rp_lf_int(heads, run_lengths, inv_run_data);
+    invertible_lf_permutation_absolute<inv_run_cols> inv_rp_lf_abs(heads, run_lengths, inv_run_data);
+    invertible_lf_permutation_separated_absolute<inv_run_cols> inv_rp_lf_sep_abs(
+        heads, run_lengths, inv_run_data);
+
+    static_assert(std::is_same_v<
+        invertible_lf_permutation<inv_run_cols>,
+        invertible_lf_permutation_separated<inv_run_cols>>);
+
+    assert(inv_rp_lf_sep.domain() == 5);
+    assert(inv_rp_lf_int.domain() == 5);
+    assert(inv_rp_lf_abs.domain() == 5);
+    assert(inv_rp_lf_sep_abs.domain() == 5);
+
+    auto inv_rp_pos = inv_rp_lf_sep.first();
+    inv_rp_pos = inv_rp_lf_sep.LF(inv_rp_pos);
+    inv_rp_pos = inv_rp_lf_sep.prev(inv_rp_pos);
+    (void)inv_rp_pos;
+    (void)inv_rp_lf_int;
+    (void)inv_rp_lf_abs;
+    (void)inv_rp_lf_sep_abs;
 }
 
 void test_permutation_api() {
@@ -320,6 +363,49 @@ void test_permutation_api() {
     assert(mp_abs.domain() == perm.size());
     (void)mp_rel.first();
     (void)mp_abs.first();
+
+    // Invertible permutation aliases (forward + inverse navigation).
+    invertible_permutation_separated<test_cols> inv_sep(lengths, interval_perm, data);
+    invertible_permutation_integrated<test_cols> inv_int(lengths, interval_perm, data);
+    invertible_permutation_absolute<test_cols> inv_abs(lengths, interval_perm, data);
+    invertible_permutation_integrated_absolute<test_cols> inv_int_abs(lengths, interval_perm, data);
+
+    const auto inv_enc = invertible_interval_encoding::from_permutation(perm, NO_SPLITTING);
+
+    static_assert(std::is_same_v<
+        invertible_permutation<test_cols>,
+        invertible_permutation_separated<test_cols>>);
+
+    assert(inv_sep.domain() == perm.size());
+    assert(inv_int.domain() == perm.size());
+    assert(inv_abs.domain() == perm.size());
+    assert(inv_int_abs.domain() == perm.size());
+
+    auto inv_pos = inv_sep.first();
+    inv_pos = inv_sep.next(inv_pos);
+    inv_pos = inv_sep.prev(inv_pos);
+    (void)inv_pos;
+    (void)inv_int.first();
+    (void)inv_abs.first();
+    (void)inv_int_abs.first();
+
+    invertible_move_permutation_relative inv_mp_rel(perm);
+    invertible_move_permutation_relative inv_mp_enc(inv_enc);
+    invertible_move_permutation_absolute inv_mp_abs(lengths, interval_perm);
+
+    static_assert(std::is_same_v<
+        invertible_move_permutation<>,
+        invertible_move_permutation_relative>);
+
+    assert(inv_mp_rel.domain() == perm.size());
+    assert(inv_mp_enc.domain() == perm.size());
+    assert(inv_mp_abs.domain() == perm.size());
+    auto inv_mp_pos = inv_mp_rel.first();
+    inv_mp_pos = inv_mp_rel.next(inv_mp_pos);
+    inv_mp_pos = inv_mp_rel.prev(inv_mp_pos);
+    (void)inv_mp_pos;
+    (void)inv_mp_enc.first();
+    (void)inv_mp_abs.first();
 }
 
 int main() {

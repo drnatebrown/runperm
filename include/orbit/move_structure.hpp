@@ -20,6 +20,6 @@ using invertible_structure_tbl_idx = move_structure<invertible_columns_idx, move
 using invertible_structure_vec = move_structure<invertible_columns, move_vector>;
 using invertible_structure_vec_idx = move_structure<invertible_columns_idx, move_vector>;
 
-} // namespace orbit``
+} // namespace orbit
 
 #endif /* end of include guard: _MOVE_HPP */

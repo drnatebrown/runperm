@@ -81,7 +81,7 @@ struct column_switcher<rlbwt::rlbwt_columns_idx> {
 
 namespace orbit::rlbwt {
 
-enum class rlbwt_invertible_columns {
+enum class invertible_rlbwt_columns {
     LENGTH, // Length of move interval
     POINTER_FWD, // Pointer to forward move interval
     POINTER_INV, // Pointer to inverse move interval
@@ -92,7 +92,7 @@ enum class rlbwt_invertible_columns {
     COUNT // Helper to get the number of columns
 };
 
-enum class rlbwt_invertible_columns_idx {
+enum class invertible_rlbwt_columns_idx {
     START, // i is the start of the interval
     POINTER_FWD, // Pointer to forward move interval
     POINTER_INV, // Pointer to inverse move interval
@@ -108,49 +108,49 @@ enum class rlbwt_invertible_columns_idx {
 namespace orbit {
 
 template<>
-struct move_cols_traits<rlbwt::rlbwt_invertible_columns> {
+struct move_cols_traits<rlbwt::invertible_rlbwt_columns> {
     static constexpr bool RELATIVE = true;
     static constexpr bool INVERTIBLE = true;
-    static constexpr rlbwt::rlbwt_invertible_columns PRIMARY = rlbwt::rlbwt_invertible_columns::LENGTH;
+    static constexpr rlbwt::invertible_rlbwt_columns PRIMARY = rlbwt::invertible_rlbwt_columns::LENGTH;
 
-    static constexpr rlbwt::rlbwt_invertible_columns LENGTH = rlbwt::rlbwt_invertible_columns::LENGTH;
-    static constexpr rlbwt::rlbwt_invertible_columns POINTER_FWD = rlbwt::rlbwt_invertible_columns::POINTER_FWD;
-    static constexpr rlbwt::rlbwt_invertible_columns POINTER_INV = rlbwt::rlbwt_invertible_columns::POINTER_INV;
-    static constexpr rlbwt::rlbwt_invertible_columns FWD_INTERVAL = rlbwt::rlbwt_invertible_columns::FWD_INTERVAL;
-    static constexpr rlbwt::rlbwt_invertible_columns INV_INTERVAL = rlbwt::rlbwt_invertible_columns::INV_INTERVAL;
-    static constexpr rlbwt::rlbwt_invertible_columns CHARACTER = rlbwt::rlbwt_invertible_columns::CHARACTER;
-    static constexpr size_t NUM_COLS = static_cast<size_t>(rlbwt::rlbwt_invertible_columns::COUNT);
+    static constexpr rlbwt::invertible_rlbwt_columns LENGTH = rlbwt::invertible_rlbwt_columns::LENGTH;
+    static constexpr rlbwt::invertible_rlbwt_columns POINTER_FWD = rlbwt::invertible_rlbwt_columns::POINTER_FWD;
+    static constexpr rlbwt::invertible_rlbwt_columns POINTER_INV = rlbwt::invertible_rlbwt_columns::POINTER_INV;
+    static constexpr rlbwt::invertible_rlbwt_columns FWD_INTERVAL = rlbwt::invertible_rlbwt_columns::FWD_INTERVAL;
+    static constexpr rlbwt::invertible_rlbwt_columns INV_INTERVAL = rlbwt::invertible_rlbwt_columns::INV_INTERVAL;
+    static constexpr rlbwt::invertible_rlbwt_columns CHARACTER = rlbwt::invertible_rlbwt_columns::CHARACTER;
+    static constexpr size_t NUM_COLS = static_cast<size_t>(rlbwt::invertible_rlbwt_columns::COUNT);
 
     using position = move_position<RELATIVE>::type;
 };
 
 template<>
-struct move_cols_traits<rlbwt::rlbwt_invertible_columns_idx> {
+struct move_cols_traits<rlbwt::invertible_rlbwt_columns_idx> {
     static constexpr bool RELATIVE = false;
     static constexpr bool INVERTIBLE = true;
-    static constexpr rlbwt::rlbwt_invertible_columns_idx PRIMARY = rlbwt::rlbwt_invertible_columns_idx::START;
+    static constexpr rlbwt::invertible_rlbwt_columns_idx PRIMARY = rlbwt::invertible_rlbwt_columns_idx::START;
 
-    static constexpr rlbwt::rlbwt_invertible_columns_idx START = rlbwt::rlbwt_invertible_columns_idx::START;
-    static constexpr rlbwt::rlbwt_invertible_columns_idx POINTER_FWD = rlbwt::rlbwt_invertible_columns_idx::POINTER_FWD;
-    static constexpr rlbwt::rlbwt_invertible_columns_idx POINTER_INV = rlbwt::rlbwt_invertible_columns_idx::POINTER_INV;
-    static constexpr rlbwt::rlbwt_invertible_columns_idx FWD_INTERVAL = rlbwt::rlbwt_invertible_columns_idx::FWD_INTERVAL;
-    static constexpr rlbwt::rlbwt_invertible_columns_idx INV_INTERVAL = rlbwt::rlbwt_invertible_columns_idx::INV_INTERVAL;
-    static constexpr rlbwt::rlbwt_invertible_columns_idx CHARACTER = rlbwt::rlbwt_invertible_columns_idx::CHARACTER;
-    static constexpr size_t NUM_COLS = static_cast<size_t>(rlbwt::rlbwt_invertible_columns_idx::COUNT);
+    static constexpr rlbwt::invertible_rlbwt_columns_idx START = rlbwt::invertible_rlbwt_columns_idx::START;
+    static constexpr rlbwt::invertible_rlbwt_columns_idx POINTER_FWD = rlbwt::invertible_rlbwt_columns_idx::POINTER_FWD;
+    static constexpr rlbwt::invertible_rlbwt_columns_idx POINTER_INV = rlbwt::invertible_rlbwt_columns_idx::POINTER_INV;
+    static constexpr rlbwt::invertible_rlbwt_columns_idx FWD_INTERVAL = rlbwt::invertible_rlbwt_columns_idx::FWD_INTERVAL;
+    static constexpr rlbwt::invertible_rlbwt_columns_idx INV_INTERVAL = rlbwt::invertible_rlbwt_columns_idx::INV_INTERVAL;
+    static constexpr rlbwt::invertible_rlbwt_columns_idx CHARACTER = rlbwt::invertible_rlbwt_columns_idx::CHARACTER;
+    static constexpr size_t NUM_COLS = static_cast<size_t>(rlbwt::invertible_rlbwt_columns_idx::COUNT);
 
     using position = move_position<RELATIVE>::type;
 };
 
 template<>
-struct column_switcher<rlbwt::rlbwt_invertible_columns> {
-    using relative = rlbwt::rlbwt_invertible_columns;
-    using absolute = rlbwt::rlbwt_invertible_columns_idx;
+struct column_switcher<rlbwt::invertible_rlbwt_columns> {
+    using relative = rlbwt::invertible_rlbwt_columns;
+    using absolute = rlbwt::invertible_rlbwt_columns_idx;
 };
 
 template<>
-struct column_switcher<rlbwt::rlbwt_invertible_columns_idx> {
-    using relative = rlbwt::rlbwt_invertible_columns;
-    using absolute = rlbwt::rlbwt_invertible_columns_idx;
+struct column_switcher<rlbwt::invertible_rlbwt_columns_idx> {
+    using relative = rlbwt::invertible_rlbwt_columns;
+    using absolute = rlbwt::invertible_rlbwt_columns_idx;
 };
 
 } // namespace orbit

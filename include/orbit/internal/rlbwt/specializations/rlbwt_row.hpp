@@ -280,18 +280,18 @@ using invertible_rlbwt_columns_idx_default = invertible_dna_seq_cols_idx_17;
 
 namespace orbit {
 template <>
-struct move_row_traits<rlbwt::rlbwt_invertible_columns> : move_row_traits<rlbwt::invertible_rlbwt_columns_default> {};
+struct move_row_traits<rlbwt::invertible_rlbwt_columns> : move_row_traits<rlbwt::invertible_rlbwt_columns_default> {};
 template <>
-struct move_row_traits<rlbwt::rlbwt_invertible_columns_idx> : move_row_traits<rlbwt::invertible_rlbwt_columns_idx_default> {};
+struct move_row_traits<rlbwt::invertible_rlbwt_columns_idx> : move_row_traits<rlbwt::invertible_rlbwt_columns_idx_default> {};
 
 template<>
-struct table_row_for<rlbwt::rlbwt_invertible_columns> {
-    using type = rlbwt::invertible_rlbwt_row<rlbwt::rlbwt_invertible_columns>;
+struct table_row_for<rlbwt::invertible_rlbwt_columns> {
+    using type = rlbwt::invertible_rlbwt_row<rlbwt::invertible_rlbwt_columns>;
 };
 
 template<>
-struct table_row_for<rlbwt::rlbwt_invertible_columns_idx> {
-    using type = rlbwt::invertible_rlbwt_row<rlbwt::rlbwt_invertible_columns_idx>;
+struct table_row_for<rlbwt::invertible_rlbwt_columns_idx> {
+    using type = rlbwt::invertible_rlbwt_row<rlbwt::invertible_rlbwt_columns_idx>;
 };
 } // namespace orbit
 

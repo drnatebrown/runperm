@@ -17,28 +17,30 @@ template<typename derived,
          bool store_absolute_positions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          bool exponential_search = DEFAULT_EXPONENTIAL_SEARCH,
          typename alphabet_t = nucleotide,
+         typename base_columns_t = rlbwt_columns,
+         template<typename, template<typename> class> class move_structure_t = rlbwt_move_structure,
          template<typename> class table_t = move_vector>
-class rlbwt_permutation : public permutation_impl<data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, rlbwt_columns, rlbwt_move_structure, table_t> {
-    using base = permutation_impl<data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, rlbwt_columns, rlbwt_move_structure, table_t>;
+class rlbwt_permutation : public permutation_impl<data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, base_columns_t, move_structure_t, table_t> {
+    using base = permutation_impl<data_columns_t, integrated_move_structure, store_absolute_positions, exponential_search, base_columns_t, move_structure_t, table_t>;
 protected:
     using base_columns = typename base::base_columns;
     using move_structure_perm = typename base::move_structure_perm;
     // TODO: Add invertible template parameter
-    using rlbwt_interval_encoding = rlbwt_interval_encoding_impl<false, int_vector_aligned, alphabet_t>;
-public:
+    public:
     // Sets Columns, ColsTraits, and NumCols
-    MOVE_CLASS_TRAITS(data_columns_t)
+    MOVE_CLASS_TRAITS(base_columns)
     using data_columns = typename base::data_columns;
     using data_tuple = typename base::data_tuple;
     using position = typename base::position;
+    using rlbwt_interval_encoding_t = rlbwt_interval_encoding_impl<cols_traits::INVERTIBLE, int_vector_aligned, alphabet_t>;
 
     rlbwt_permutation() = default;
 
     // Gated constructors for empty data columns
-    template<typename rlbwt_interval_encoding_t,
+    template<typename rlbwt_interval_encoding_impl_t,
              typename dc = data_columns_t,
              std::enable_if_t<std::is_same_v<dc, empty_data_columns>, int> = 0>
-    rlbwt_permutation(const rlbwt_interval_encoding_t &enc) 
+    rlbwt_permutation(const rlbwt_interval_encoding_impl_t &enc) 
     : rlbwt_permutation(enc, std::vector<data_tuple>(enc.intervals())) {}
 
     template<typename dc = data_columns_t,
@@ -46,7 +48,7 @@ public:
     rlbwt_permutation(const std::vector<uchar>& bwt, const split_params& sp = {})
     : rlbwt_permutation([&]{
         auto [heads, lens] = bwt_to_rlbwt(bwt);
-        return rlbwt_interval_encoding(heads, lens, sp);
+        return rlbwt_interval_encoding_t(heads, lens, sp);
     }()) {}
 
     template<typename container1_t, typename container2_t,
@@ -57,10 +59,9 @@ public:
     : rlbwt_permutation(rlbwt_heads, rlbwt_run_lengths, sp, std::vector<data_tuple>(rlbwt_heads.size())) {}
 
     // Regular non-gated constructors for user defined data columns
-    template<typename rlbwt_interval_encoding_t>
-    rlbwt_permutation(const rlbwt_interval_encoding_t& enc, const std::vector<data_tuple> &run_data) {
-        static_assert(std::is_same_v<alphabet_t, typename rlbwt_interval_encoding_t::alphabet_tag>, "alphabet_t must be the same as the alphabet type used to create the interval encoding");
-
+    template<typename rlbwt_interval_encoding_impl_t>
+    rlbwt_permutation(const rlbwt_interval_encoding_impl_t& enc, const std::vector<data_tuple> &run_data) {
+        static_assert(std::is_same_v<alphabet_t, typename rlbwt_interval_encoding_impl_t::alphabet_tag>, "alphabet_t must be the same as the alphabet type used to create the interval encoding");
         alphabet_ = enc.get_alphabet();
         base::build_from_interval_encoding(enc, run_data);
     }
@@ -177,7 +178,7 @@ protected:
 
     // Special logic for LF or FL
     template<typename container1_t, typename container2_t>
-    rlbwt_interval_encoding find_interval_encoding(
+    rlbwt_interval_encoding_t find_interval_encoding(
         const container1_t& rlbwt_heads,
         const container2_t& rlbwt_run_lengths,
         const split_params& sp
@@ -190,8 +191,10 @@ template<typename derived,
          bool store_absolute_positions = DEFAULT_STORE_ABSOLUTE_POSITIONS,
          bool exponential_search = DEFAULT_EXPONENTIAL_SEARCH,
          typename alphabet_t = nucleotide,
+         typename base_columns_t = rlbwt_columns,
+         template<typename, template<typename> class> class move_structure_t = rlbwt_move_structure,
          template<typename> class table_t = move_vector>
-using rlbwt_move = rlbwt_permutation<derived, empty_data_columns, false, store_absolute_positions, exponential_search, alphabet_t, table_t>;
+using rlbwt_move = rlbwt_permutation<derived, empty_data_columns, false, store_absolute_positions, exponential_search, alphabet_t, base_columns_t, move_structure_t, table_t>;
 
 } // namespace orbit::rlbwt
 

@@ -16,7 +16,7 @@ using std::vector;
 using namespace orbit;
 using namespace orbit::rlbwt;
 
-using rlbwt_invertible_structure = rlbwt_move_structure<rlbwt_invertible_columns>;
+using rlbwt_invertible_structure = rlbwt_move_structure<invertible_rlbwt_columns>;
 
 template <typename MS>
 static ulint global_index_relative(const MS& ms, typename MS::position pos) {

@@ -88,12 +88,12 @@ static void test_rlbwt_move_structure_relative_splitting_preserves_chars() {
 static const vector<uchar> kBwtHeads =       {'T','C','G','A','T', 1 ,'A','T','A'};
 static const vector<ulint> kBwtRunLengths = { 5 , 3 , 3 , 3 , 1 , 1 , 1 , 4 , 6 };
 
-using rlbwt_invertible_structure = rlbwt_move_structure<rlbwt_invertible_columns>;
-using rlbwt_invertible_structure_idx = rlbwt_move_structure<rlbwt_invertible_columns_idx>;
+using rlbwt_invertible_structure = rlbwt_move_structure<invertible_rlbwt_columns>;
+using rlbwt_invertible_structure_idx = rlbwt_move_structure<invertible_rlbwt_columns_idx>;
 
 static_assert(std::is_same_v<
-    move_structure<rlbwt_invertible_columns, move_vector>,
-    invertible_structure_impl<rlbwt_invertible_columns, move_vector>>);
+    move_structure<invertible_rlbwt_columns, move_vector>,
+    invertible_structure_impl<invertible_rlbwt_columns, move_vector>>);
 
 template <typename MS>
 static ulint global_index_relative(const MS& ms, typename MS::position pos) {
@@ -207,7 +207,7 @@ static void test_rlbwt_invertible_structure_widths() {
     rlbwt_invertible_structure ms(enc);
 
     const auto widths = ms.get_widths();
-    using ColsTraits = move_cols_traits<rlbwt_invertible_columns>;
+    using ColsTraits = move_cols_traits<invertible_rlbwt_columns>;
     assert(widths[static_cast<size_t>(ColsTraits::POINTER_FWD)] >= bit_width(ms.intervals()));
     assert(widths[static_cast<size_t>(ColsTraits::POINTER_INV)] >= bit_width(ms.intervals()));
     assert(widths[static_cast<size_t>(ColsTraits::FWD_INTERVAL)] == 1);
